@@ -231,3 +231,44 @@ Track *active days* and *articles read* (one read per article per user), not raw
   Keep `.env.example` updated with variable names only.
 - Use Supabase Row Level Security on every table.
 - Run `npm run build` and fix errors before saying a step is done.
+
+## Where we left off (updated 2026-09-27)
+### Done — Phase 1, steps 1–5 (all on `main`, pushed)
+1. Design system: warm light/dark tokens via `light-dark()`, UQ purple, Newsreader + Inter,
+   paper grain, `prose` styles, flash-free theme script (Next 16 inline-script pattern).
+2. Layout shell: header tab bar, footer, theme toggle.
+3. Supabase `posts` table + RLS (public reads published only; verified with the
+   publishable key: 7 visible, draft hidden, writes blocked), sample seed posts,
+   `lib/posts.ts` data layer with `"use cache"` + `cacheTag("posts")`.
+4. Home: chester-style 4-column grid, badges, status cards; page widened to 1460px.
+5. Writing page (`/writing`): section header, card grid, search, tag filters, load more,
+   lazily loaded body search index.
+
+### Next — Step 6: the article page (`/writing/[slug]`)
+Clean reading layout (not cards): title, date, reading time, tag badges, optional cover,
+markdown body in `prose` (~68ch), optional YouTube embed, per-article metadata, and a
+proper 404 for unknown slugs or drafts. Plan it first, then build. Then step 7 (README),
+then plan Phase 2 (admin sign-in + Writing editor).
+
+### Still open
+- **Placeholders for Ivan** (all marked `TODO(Ivan)`): home intro (`app/page.tsx`),
+  Writing intro (`app/writing/page.tsx`), "Now producing" and "Learning" cards
+  (`lib/site.ts`).
+- **Sample posts**: delete before launch with
+  `delete from public.posts where slug like 'sample-%';`
+- **Vercel** (Ivan to confirm it's done): Production Branch = `main`; env vars
+  `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (the publishable
+  key, NOT `..._ANON_KEY` as first suggested); check the latest deploy succeeded.
+- **Known dead links** until later steps: article cards → "page not found" until step 6;
+  Projects / Reading / Music / Hobbies tabs until Phase 3; the newsletter line is plain
+  text until Phase 6.
+- UQ palette beyond purple is still a TODO (see Colors).
+
+### Notes for the next session
+- Next.js 16: read `node_modules/next/dist/docs/` before using an API (see AGENTS.md).
+  Cache Components is on: anything using the clock, cookies or URL data must be
+  cached (`"use cache"`) or wrapped in `<Suspense>`, or the build fails.
+  Middleware is called **Proxy** in this version.
+- chester.how blocks automated fetches; use the screenshots in `design-refs/`.
+- Visual checks were done with headless Edge + `puppeteer-core` installed in a temp
+  folder (not a project dependency) at 1280 / 1440 / 1920 px, dark mode, and 390 px mobile.
