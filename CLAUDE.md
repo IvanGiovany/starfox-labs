@@ -24,39 +24,45 @@ code quality, clear structure, and a good README matter.
 - `npm run lint` — lint
 
 ## Design references — READ THIS BEFORE ANY UI WORK
-### Primary reference: https://www.jmduke.com/
+### Primary reference: https://chester.how/
 This is the site Ivan wants Starfox Labs to feel most like. Before building any page,
-fetch and study it (and look at the screenshots in `design-refs/`). Take its ideas and
-structure; write our own code and content — do not copy its code, text, or assets.
+study it (and the chester screenshot in `design-refs/`). Take its ideas and structure;
+write our own code and content — do not copy its code, text, or assets.
+(Note: chester.how sits behind Vercel bot protection, so automated fetches fail.
+Rely on the screenshots in `design-refs/`; ask Ivan for more if something is unclear.)
 
-Elements to take from jmduke.com:
-- **Tiny, quiet header**: short site name on the left, a few text links and RSS on the right.
-  No big nav bar, no hero banner.
-- **Short personal intro** at the top of the home page: 2–3 sentences in normal prose with
-  inline links (YouTube, GitHub), plus a one-line "subscribe to the newsletter" link.
-- **⌘K / Ctrl+K search** that opens a command-palette style search over all articles.
-- **Tag filters with counts**, e.g. `nextjs (12)`, as plain text links, not pill buttons.
+Elements to take from chester.how:
+- **"Digital garden" feel** — the site is a lived-in personal space, not a corporate blog.
+- **Header**: nav links grouped on the left (site name first, then the page links), social
+  links as small muted text on the right. Quiet and small, no big nav bar, no hero banner.
+- **Friendly intro**: a few short sentences in a large, light serif. Most words are muted;
+  the key words (YouTube, music, what Ivan builds) are in full-strength ink and are links.
+- **Home = a dense grid of mixed cards** next to / below the intro:
+  - Card types: latest articles, YouTube videos, **"Now producing"** (Ivan's music as
+    Spektral), **"Currently learning"**.
+  - Varied sizes (some cards span 2 columns or 2 rows), small gaps (~8px), soft rounded
+    corners, a subtle raised background instead of borders.
+  - Each card has a small muted label in the top-left (e.g. `Article · Next.js`,
+    `Video`, `Now producing`) and a small ↗ arrow in the top-right when it links out.
+  - Image cards can carry a short caption overlaid bottom-left (e.g. a date and place).
+  - The grid must be DENSE and varied — never sparse boxes floating in empty space.
+
+### Secondary reference: https://www.jmduke.com/
+Used for the **Articles page** and search, not the home page:
 - **Dense article list**: each row = title, date, and a one-line excerpt. No cards,
   no thumbnails in the list. Rows separated by spacing/thin lines, not boxes.
-  The page is full of content, not decoration.
-- **Collections further down the page** (later phases): e.g. bookmarks grouped by category
-  with counts, and a shelf (books/tools/albums) with grid and list views and sort options.
-- **Warm dark mode**: near-black with warm undertones (jmduke uses `#1C1B1A`), not cold blue-black.
+- **Tag filters with counts**, e.g. `nextjs (12)`, as plain text links, not pill buttons.
+- **⌘K / Ctrl+K search** that opens a command-palette style search over all articles.
+- **Collections** (later phases): e.g. bookmarks grouped by category with counts, and a
+  shelf (books/tools/albums) with grid and list views and sort options.
+- **Warm dark mode**: near-black with warm undertones (`#1C1B1A`), not cold blue-black.
 - Light and dark both supported (`color-scheme: light dark`).
 
-### Secondary reference: https://chester.how/
-Take its *personality*, not its layout rules:
-- "Digital garden" feel — the site is a lived-in personal space, not a corporate blog.
-- Small personal status cards, like his "Now brewing" coffee card. For us: a
-  **"Now producing"** card (Ivan's music as Spektral) and a **"Currently learning"** card.
-- Mixed content types (articles, videos, projects) can appear together.
-- If we use a grid of cards anywhere, it must be DENSE and varied like chester.how,
-  never sparse boxes floating in empty space.
-
 ## Pages
-- **Home (`/`)** — jmduke-style: short intro + subscribe line, latest YouTube videos
-  (a single row, compact), then the most recent articles as a dense list. Small personal
-  status cards ("Now producing", "Currently learning") can sit alongside or below.
+- **Home (`/`)** — chester-style digital garden: a short friendly intro (with a one-line
+  "subscribe to the newsletter" link) and a dense grid of mixed cards: latest articles,
+  latest YouTube videos, "Now producing" (Spektral), "Currently learning".
+  On mobile the grid collapses to one or two columns but stays dense.
 - **Articles (`/articles`)** — every article, newest first, dense list (title, date, excerpt),
   tag filters with counts, and search (searches title, summary, tags, and body; updates as you type).
   ⌘K search works from any page.
@@ -70,7 +76,8 @@ Take its *personality*, not its layout rules:
 - **Sign in (`/login`)** — Google or email (magic link).
 - **Admin (`/admin`)** — Ivan only. Write/edit/publish articles, delete comments.
 - **Privacy (`/privacy`)** — what data is stored and why.
-- Header: site name, Home, Articles, RSS, theme toggle, and a small profile avatar button
+- Header (chester-style): on the left, site name + Home, Articles; on the right, small muted
+  social links (YouTube, GitHub), RSS, theme toggle, and a small profile avatar button
   (opens menu → Settings, Sign out) or a "Sign in" text link if logged out.
 
 ## Writing articles (admin editor)
@@ -92,18 +99,22 @@ Take its *personality*, not its layout rules:
   comments remain but display as "deleted user".
 
 ## Visual design
-- **Feel:** modern and minimal in structure (like jmduke.com), cozy in atmosphere —
+- **Feel:** a lived-in digital garden (like chester.how), cozy in atmosphere —
   like reading in a warm, softly lit study at night. Warm neutrals, soft shadows,
   subtle paper/grain texture, gentle glow on accents. Calm and inviting, not corporate or flashy.
 - **Colors:** University of Queensland palette. Primary accent: UQ Purple `#51247A`.
   (TODO: Ivan to add the rest from UQ brand guidelines.) Dark mode: warm near-black
   (around `#1C1B1A`) with warm off-white text and purple accents. Light mode: warm off-white
   (not pure white) with dark warm text. Use UQ colors only — never the UQ logo or crest.
-- **Fonts:** TODO (suggestion: a warm serif for headings and article body, clean sans for UI and metadata).
+- **Fonts:** Newsreader (serif) for headings, the home intro, and article body; Inter (sans)
+  for UI and metadata. Loaded with `next/font`.
+- **Already built, keep as is:** color tokens, UQ purple, fonts, paper grain, theme toggle.
 - **Layout rules — IMPORTANT:**
-  - Text-first. Typography, spacing, and alignment do the work — not boxes, borders, or shadows.
-  - NO small floating cards scattered with large empty gaps around them.
-  - NO grids of identical boxes for articles. Articles are always a list.
+  - Cards live on the **home page grid** only. Everywhere else is text-first: typography,
+    spacing, and alignment do the work — not boxes, borders, or shadows.
+  - The home grid is dense and varied (mixed sizes and card types, small gaps).
+    NO small floating cards scattered with large empty gaps around them.
+  - NO grids of identical boxes. On the Articles page, articles are always a list.
   - NO big hero banners or giant centered headings.
   - Content aligns to one consistent column/grid; the page should feel full of content.
   - Article body: comfortable reading width (~65–75 characters per line).
@@ -115,14 +126,15 @@ Take its *personality*, not its layout rules:
 
 ## Build phases (build ONE phase at a time)
 1. **Foundation** — Next.js setup, design system (colors, fonts, light/dark theme), header/footer,
-   Supabase project + `posts` table, Home, Articles (list, tags with counts, search), Article page
-   using seed posts. Study jmduke.com before starting.
+   Supabase project + `posts` table, Home (intro + card grid with article cards and static
+   "Now producing" / "Currently learning" cards), Articles (list, tags with counts, search),
+   Article page using seed posts. Study chester.how (screenshots) before starting.
 2. **Admin editor** — Ivan-only `/admin/write` to create, edit, and publish articles with images.
 3. **Accounts + Settings** — Google + email login, profile pictures, Settings tabs, delete account.
 4. **Comments** — comments and replies on articles, moderation.
 5. **Newsletter** — subscribe (with or without account), double opt-in, send on publish, unsubscribe.
 6. **Ranks** — see rules below; show rank badges next to usernames and on profiles.
-7. **YouTube + polish** — latest videos on home, status cards, ⌘K search, page transitions,
+7. **YouTube + polish** — live YouTube video cards on home, ⌘K search, page transitions,
    SEO, RSS feed, sitemap, OG images.
 8. **Collections (optional)** — bookmarks and a shelf (e.g. tools, books, or albums in rotation).
 
