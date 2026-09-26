@@ -48,8 +48,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to content
         </a>
-        {/* One column for everything, so all pages line up. */}
-        <div className="mx-auto flex min-h-dvh max-w-2xl flex-col px-5">
+        {/* One container for everything, so all pages line up. The home grid
+            uses its full width; reading pages center a narrower column. */}
+        <div className="mx-auto flex min-h-dvh max-w-6xl flex-col px-4 sm:px-6">
           <SiteHeader />
           <main id="main" className="flex-1">
             {children}

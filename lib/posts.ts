@@ -66,7 +66,7 @@ export async function getPublishedPosts(): Promise<PostSummary[]> {
   return data.map(toSummary);
 }
 
-/** Published posts including their markdown body. Used for full-text search on /articles. */
+/** Published posts including their markdown body. Used for full-text search on /writing. */
 export async function getPublishedPostsWithBody(): Promise<Post[]> {
   "use cache";
   cacheLife("hours");
