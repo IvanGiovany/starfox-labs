@@ -1,7 +1,7 @@
 // Temporary design-system check. Replaced by the real home page in step 4.
 export default function Home() {
   return (
-    <main className="mx-auto max-w-2xl px-5 py-16">
+    <div className="py-8">
       <h1 className="font-serif text-3xl font-semibold tracking-tight">Starfox Labs</h1>
       <p className="mt-2 text-sm text-fg-muted">Design system preview</p>
 
@@ -21,6 +21,6 @@ export default function Home() {
         <span className="glow text-accent">Accent with glow</span>
         <span className="text-fg-muted"> · muted metadata · 2026-09-26</span>
       </p>
-    </main>
+    </div>
   );
 }

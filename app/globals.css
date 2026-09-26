@@ -34,6 +34,22 @@
   color-scheme: dark;
 }
 
+/*
+ * `dark:` in Tailwind classes matches the same rules as the tokens: a saved
+ * dark choice, or an OS dark setting when nothing is saved. Colors don't need
+ * it (the tokens switch themselves); it's for things like swapping icons.
+ */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]), :root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
+}
+
 /* Expose the tokens to Tailwind, e.g. `bg-bg`, `text-fg-muted`, `border-rule`, `font-serif`. */
 @theme inline {
   --color-bg: var(--bg);
