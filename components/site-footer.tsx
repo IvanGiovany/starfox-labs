@@ -1,6 +1,12 @@
+import { cacheLife } from "next/cache";
 import { site } from "@/lib/site";
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  // The year comes from the clock, so it's cached (refreshed daily) and can
+  // still be part of the prerendered page.
+  "use cache";
+  cacheLife("days");
+
   const links = [
     { label: "YouTube", href: site.links.youtube },
     { label: "GitHub", href: site.links.github },
