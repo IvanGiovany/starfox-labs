@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Badge, Badges } from "@/components/badge";
 import { Card } from "@/components/card";
 import { CurrentlyLearningCard, NowProducingCard } from "@/components/status-cards";
-import { formatDate } from "@/lib/format";
+import { PostDate, WritingCard } from "@/components/writing-card";
 import { countTags, getPublishedPosts, type PostSummary, type TagCount } from "@/lib/posts";
 import { site } from "@/lib/site";
 
@@ -87,25 +87,6 @@ function FeaturedWritingCard({ post, className }: { post: PostSummary; className
       <PostDate post={post} />
       <p className="mt-2 line-clamp-2 max-w-prose text-sm text-fg-muted sm:text-base">{post.summary}</p>
     </Card>
-  );
-}
-
-function WritingCard({ post }: { post: PostSummary }) {
-  return (
-    <Card label="Writing · Article" href={writingHref(post)}>
-      <Badges items={post.tags.slice(0, 1)} />
-      <h2 className="mt-2 line-clamp-3 font-serif text-xl leading-tight sm:text-2xl xl:text-[1.75rem]">{post.title}</h2>
-      <PostDate post={post} />
-      <p className="mt-2 line-clamp-2 hidden text-sm text-fg-muted sm:block">{post.summary}</p>
-    </Card>
-  );
-}
-
-function PostDate({ post }: { post: PostSummary }) {
-  return (
-    <time dateTime={post.publishedAt} className="mt-1.5 text-xs text-fg-muted">
-      {formatDate(post.publishedAt)}
-    </time>
   );
 }
 

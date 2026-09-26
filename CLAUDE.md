@@ -62,7 +62,16 @@ called Starfox Labs (page titles, footer, emails).
   NEON DRIFT and NEON BREACH browser games. Cards link to the live project (↗).
 - **Writing (`/writing`)** — `writing.` Articles as cards (label, tag badges, serif title,
   date, excerpt), newest first. Above the grid: search (title, summary, tags and body;
-  updates as you type) and tag filters with counts. Filter state lives in the URL.
+  updates as you type) and tag filters with counts. Filter state lives in the URL
+  (`?tag=&q=`): typing uses `history.replaceState` (no history entry per keystroke, so
+  Back still leaves the page); clicking a tag uses `history.pushState`.
+  Shows the first **24** cards, then a "Load more" button (+24 each click).
+  Search: title, summary and tags are always on the page; article bodies come from a
+  separate index (`/writing/search-index`) fetched only when someone starts typing.
+  **Next step when needed** (Ivan posts daily, so expect a few hundred articles within a
+  year; switch when the index nears ~1 MB or typing feels slow): Postgres full-text
+  search — a generated `tsvector` column on `posts` with a GIN index, queried through
+  an RPC using `websearch_to_tsquery`, with paging done in SQL.
 - **Article (`/writing/[slug]`)** — clean reading layout, NOT cards: title, date, reading
   time, tag badges, optional cover image, body, optional embedded YouTube video.
   Comments at the bottom.
