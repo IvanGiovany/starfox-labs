@@ -10,9 +10,11 @@ code quality, clear structure, and a good README matter.
 
 ## Tech stack
 - Next.js (App Router) + TypeScript + Tailwind CSS
-- Supabase: Postgres (posts, profiles, comments, subscribers), Auth, Storage (images, avatars)
-- Articles are stored in the database and written through an admin editor on the site
-  (NOT markdown files in the repo) so Ivan can post daily without touching code.
+- Supabase: Postgres (posts, projects, books, releases, hobbies, profiles, comments,
+  subscribers), Auth, Storage (images, covers, screenshots, avatars)
+- ALL content (articles, projects, books, music, hobbies) lives in the database and is
+  managed through `/admin` on the site (NOT files in the repo), so Ivan can add things
+  without touching code.
 - Resend: newsletter + account emails
 - YouTube Data API: latest videos on the home page
 - Motion (framer-motion) for page transitions
@@ -26,66 +28,105 @@ code quality, clear structure, and a good README matter.
 ## Design references — READ THIS BEFORE ANY UI WORK
 ### Primary reference: https://chester.how/
 This is the site Ivan wants Starfox Labs to feel most like. Before building any page,
-study it (and the chester screenshot in `design-refs/`). Take its ideas and structure;
-write our own code and content — do not copy its code, text, or assets.
-(Note: chester.how sits behind Vercel bot protection, so automated fetches fail.
-Rely on the screenshots in `design-refs/`; ask Ivan for more if something is unclear.)
+study the chester screenshots in `design-refs/` (home, projects, writing, hobbies).
+Take its ideas and structure; write our own code and content — do not copy its code,
+text, or assets. (chester.how sits behind Vercel bot protection, so automated fetches
+fail. Rely on the screenshots; ask Ivan for more if something is unclear.)
 
 Elements to take from chester.how:
-- **"Digital garden" feel** — the site is a lived-in personal space, not a corporate blog.
-- **Header**: nav links grouped on the left (site name first, then the page links), social
-  links as small muted text on the right. Quiet and small, no big nav bar, no hero banner.
-- **Friendly intro**: a few short sentences in a large, light serif. Most words are muted;
-  the key words (YouTube, music, what Ivan builds) are in full-strength ink and are links.
-- **Home = a dense grid of mixed cards** next to / below the intro:
-  - Card types: latest articles, YouTube videos, **"Now producing"** (Ivan's music as
-    Spektral), **"Currently learning"**.
-  - Varied sizes (some cards span 2 columns or 2 rows), small gaps (~8px), soft rounded
-    corners, a subtle raised background instead of borders.
-  - Each card has a small muted label in the top-left (e.g. `Article · Next.js`,
-    `Video`, `Now producing`) and a small ↗ arrow in the top-right when it links out.
-  - Image cards can carry a short caption overlaid bottom-left (e.g. a date and place).
-  - The grid must be DENSE and varied — never sparse boxes floating in empty space.
+- **"Digital garden" feel** — a lived-in personal space made of sections, not a corporate blog.
+- **Header**: a small tab bar on the left (soft border + faint shadow) holding the home
+  link and the section links; the current section is in full ink, the rest muted. Social
+  links as small muted text on the right. No big nav bar, no hero banner.
+- **Friendly intro** on the home page: a few short sentences in a large, light serif.
+  Most words are muted; key words are in full ink and link somewhere.
+- **Section pages**: a huge lowercase serif title ending in a period (`writing.`), a short
+  muted sans intro (2–3 lines, ~65ch wide), then that section's card grid.
+- **Card grid** (exact rules under "Cards" in Visual design).
 
-### Secondary reference: https://www.jmduke.com/
-Used for the **Articles page** and search, not the home page:
-- **Dense article list**: each row = title, date, and a one-line excerpt. No cards,
-  no thumbnails in the list. Rows separated by spacing/thin lines, not boxes.
-- **Tag filters with counts**, e.g. `nextjs (12)`, as plain text links, not pill buttons.
-- **⌘K / Ctrl+K search** that opens a command-palette style search over all articles.
-- **Collections** (later phases): e.g. bookmarks grouped by category with counts, and a
-  shelf (books/tools/albums) with grid and list views and sort options.
-- **Warm dark mode**: near-black with warm undertones (`#1C1B1A`), not cold blue-black.
-- Light and dark both supported (`color-scheme: light dark`).
+### Minor reference: https://www.jmduke.com/
+Only for: **tag filters with counts** (e.g. `nextjs (12)`), **⌘K / Ctrl+K search** in a
+command palette, and the **warm dark mode** (`#1C1B1A`, not cold blue-black).
 
-## Pages
-- **Home (`/`)** — chester-style digital garden: a short friendly intro (with a one-line
-  "subscribe to the newsletter" link) and a dense grid of mixed cards: latest articles,
-  latest YouTube videos, "Now producing" (Spektral), "Currently learning".
-  On mobile the grid collapses to one or two columns but stays dense.
-- **Articles (`/articles`)** — every article, newest first, dense list (title, date, excerpt),
-  tag filters with counts, and search (searches title, summary, tags, and body; updates as you type).
-  ⌘K search works from any page.
-- **Article (`/articles/[slug]`)** — clean, simple reading layout. Title, date, reading time,
-  tags, optional cover image, body, optional embedded YouTube video. Comments at the bottom.
+## Site structure
+Header tab bar: **Gvan · Projects · Writing · Reading · Music · Hobbies**
+("Gvan" is the home link, like "Chester" on chester.how). The site itself is still
+called Starfox Labs (page titles, footer, emails).
+
+- **Home (`/`)** — the intro (with a one-line "subscribe to the newsletter" link) sits in
+  the top-left of one dense grid that mixes cards from every section, each labelled
+  `Section · Name` (e.g. `Writing · Article`, `Projects · NEON DRIFT`, `Music · Spektral`).
+  Only items marked "Show on home" appear, plus the status cards. Latest YouTube videos
+  join in the polish phase.
+- **Projects (`/projects`)** — `projects.` Software projects as screenshot cards, e.g. the
+  NEON DRIFT and NEON BREACH browser games. Cards link to the live project (↗).
+- **Writing (`/writing`)** — `writing.` Articles as cards (label, tag badges, serif title,
+  date, excerpt), newest first. Above the grid: search (title, summary, tags and body;
+  updates as you type) and tag filters with counts. Filter state lives in the URL.
+- **Article (`/writing/[slug]`)** — clean reading layout, NOT cards: title, date, reading
+  time, tag badges, optional cover image, body, optional embedded YouTube video.
+  Comments at the bottom.
+- **Reading (`/reading`)** — `reading.` Books: cover image, title, author, and a
+  `READING` / `READ` badge. Currently-reading books first.
+- **Music (`/music`)** — `music.` Ivan's releases as Spektral: cover art, release type
+  and date, an embedded player (Spotify / SoundCloud / Bandcamp / YouTube) or streaming links.
+- **Hobbies (`/hobbies`)** — `hobbies.` Mixed cards: full-bleed photos, cut-out images,
+  big serif names with badges, labelled by category (`Hobbies · Coffee`, ...).
 - **Settings (`/settings`)** — tabs:
   - *Profile*: display name, username, profile picture upload, linked sign-in methods
   - *Appearance*: light / dark / system theme
   - *Newsletter*: subscribe / unsubscribe
   - *Account*: delete account (with a typed confirmation step)
 - **Sign in (`/login`)** — Google or email (magic link).
-- **Admin (`/admin`)** — Ivan only. Write/edit/publish articles, delete comments.
+- **Admin (`/admin`)** — Ivan only (see below).
 - **Privacy (`/privacy`)** — what data is stored and why.
-- Header (chester-style): on the left, site name + Home, Articles; on the right, small muted
-  social links (YouTube, GitHub), RSS, theme toggle, and a small profile avatar button
-  (opens menu → Settings, Sign out) or a "Sign in" text link if logged out.
+- Header right side: small muted social links (YouTube, GitHub), RSS, theme toggle, and a
+  small avatar button (menu → Settings, Sign out) or a "Sign in" text link when logged out.
 
-## Writing articles (admin editor)
-- `/admin/write`: title, slug (auto from title), summary, tags, optional cover image,
-  optional YouTube video link, and a markdown body with side-by-side live preview.
-- Images can be pasted or dragged into the editor and upload to Supabase Storage.
-- Buttons: Save draft, Preview, Publish. Publishing optionally sends the newsletter.
-- Only Ivan's account can access `/admin` (enforced server-side and by RLS, not just hidden in the UI).
+## Admin (`/admin`)
+- Ivan only: enforced server-side and by RLS (`public.is_admin()`), not just hidden in the UI.
+- One tab per content type: **Writing, Projects, Reading, Music, Hobbies**. Each tab lists
+  items (drafts included) with New / Edit / Delete, and a form for one item.
+- Every form has: title, slug (auto from title), image upload (paste, drag or pick;
+  stored in Supabase Storage), badges, **Show on home** toggle, **Card size**
+  (small / wide), Save draft, Publish.
+- Writing form extras: summary, tags, optional YouTube link, markdown body with
+  side-by-side live preview, images pasted/dragged into the body. Publishing
+  optionally sends the newsletter.
+- Saving or publishing refreshes the cached pages (`revalidateTag`) so changes show at once.
+- Moderation: delete any comment.
+
+## Data model
+One table per content type, not one generic table. Each type has different fields
+(a book has an author and reading status, a release has streaming links and an embed,
+a project has a live URL and a stack). Separate tables give real columns with
+constraints and exact TypeScript types, simple per-table RLS, and admin forms that
+map 1:1 to a table. The one place that needs everything together, the home grid,
+reads from a Postgres view that unions the tables into one card shape.
+
+Shared columns on every content table: `id`, `slug` (unique), `title`, `status`
+(`draft` | `published`), `show_on_home` (bool), `card_size` (`small` | `wide`),
+`sort_order`, `badges text[]`, `image_path` (Storage path), `created_at`, `updated_at`.
+
+| Table | Extra columns |
+|---|---|
+| `posts` (exists) | summary, body_md, tags, cover_image_url, youtube_url, published_at |
+| `projects` | summary, url, repo_url, stack text[], started_on |
+| `books` | author, reading_status (`reading` / `read` / `want`), started_on, finished_on, rating, note, url |
+| `releases` | release_type (`single` / `ep` / `album`), released_on, in_progress (bool), embed_url, links jsonb (spotify, soundcloud, bandcamp, youtube, apple), note |
+| `hobby_items` | category (e.g. Coffee), subtitle, note, image_style (`photo` / `cutout` / `none`), caption, url |
+
+- `home_feed` view (`security_invoker = true`, so RLS still applies): published items with
+  `show_on_home` from every table, as `section, slug, title, label, href, image_path,
+  image_style, caption, badges, card_size, sort_date`.
+- **Status cards come from data, not code:** "Now producing" = a release with
+  `in_progress = true`; "Reading" = books with `reading_status = 'reading'`;
+  "Learning" = a hobby item in the `Learning` category.
+- `admins` table (`user_id`) + `public.is_admin()` function. Every table gets two kinds of
+  policy: "anyone reads published rows" and "admin does everything".
+- Storage: one public-read `media` bucket, admin-only writes, folders per section
+  (`projects/`, `books/`, `music/`, `hobbies/`, `writing/`).
+- Migrations live in `supabase/migrations/` (Ivan runs them in the SQL editor).
 
 ## Accounts, comments, newsletter
 - Accounts are **optional**. Anyone can read articles and comments.
@@ -109,14 +150,29 @@ Used for the **Articles page** and search, not the home page:
 - **Fonts:** Newsreader (serif) for headings, the home intro, and article body; Inter (sans)
   for UI and metadata. Loaded with `next/font`.
 - **Already built, keep as is:** color tokens, UQ purple, fonts, paper grain, theme toggle.
+- **Cards** (home and section pages), modelled on chester.how and adapted to our palette:
+  - A **4-column grid** on desktop with **consistent row heights** (roughly square cells);
+    cards span 1 or 2 columns (`card_size`). Small gaps (~8px). 2 columns on mobile.
+  - Background: a very light raised tone just off the page color (warm light grey in
+    light mode, a slightly lifted warm near-black in dark mode). **No border**, soft
+    rounded corners, no heavy shadows.
+  - A small muted label top-left (`Section · Name`) and a small ↗ top-right on every
+    card that links anywhere.
+  - Content sits in the **lower half** of the card. Screenshots and images **bleed off the
+    bottom edge**. Photo cards are **full-bleed** with a white caption bottom-left.
+  - Titles in the serif, often large. Excerpts clamp to a few lines.
+  - The grid is always full: no holes, no sparse boxes floating in empty space.
+- **Badges**: small uppercase monospace labels on soft pastel backgrounds with a slightly
+  darker outline of the same hue (like chester's `NOW BREWING`). Used for status
+  (`NOW PRODUCING`, `READING`, `READ`, `LEARNING`) and for article tags. They must work in
+  both themes (low-alpha tints with light text in dark mode).
 - **Layout rules — IMPORTANT:**
-  - Cards live on the **home page grid** only. Everywhere else is text-first: typography,
-    spacing, and alignment do the work — not boxes, borders, or shadows.
-  - The home grid is dense and varied (mixed sizes and card types, small gaps).
-    NO small floating cards scattered with large empty gaps around them.
-  - NO grids of identical boxes. On the Articles page, articles are always a list.
-  - NO big hero banners or giant centered headings.
-  - Content aligns to one consistent column/grid; the page should feel full of content.
+  - Cards are for the home and section grids. The article reading page and settings/admin
+    forms are text-first: typography, spacing and alignment do the work.
+  - NO sparse layouts: every grid is dense, every page feels full of content.
+  - NO hero banners or giant centered headings. (Section titles are huge but left-aligned
+    and sit in the normal flow, chester-style.)
+  - Content aligns to one consistent container/grid.
   - Article body: comfortable reading width (~65–75 characters per line).
 - **Motion:** smooth page transitions between routes and a fade/slide-in for article content.
   Subtle and fast (200–400ms). Respect `prefers-reduced-motion`.
@@ -125,18 +181,24 @@ Used for the **Articles page** and search, not the home page:
 - Do not use any Nintendo / Star Fox artwork or logos.
 
 ## Build phases (build ONE phase at a time)
-1. **Foundation** — Next.js setup, design system (colors, fonts, light/dark theme), header/footer,
-   Supabase project + `posts` table, Home (intro + card grid with article cards and static
-   "Now producing" / "Currently learning" cards), Articles (list, tags with counts, search),
-   Article page using seed posts. Study chester.how (screenshots) before starting.
-2. **Admin editor** — Ivan-only `/admin/write` to create, edit, and publish articles with images.
-3. **Accounts + Settings** — Google + email login, profile pictures, Settings tabs, delete account.
-4. **Comments** — comments and replies on articles, moderation.
-5. **Newsletter** — subscribe (with or without account), double opt-in, send on publish, unsubscribe.
-6. **Ranks** — see rules below; show rank badges next to usernames and on profiles.
-7. **YouTube + polish** — live YouTube video cards on home, ⌘K search, page transitions,
+1. **Foundation** — design system, header/footer, Supabase + `posts`, chester-style Home
+   (grid with writing and status cards), **Writing** page (cards, search, tag filters),
+   **Article** page, README. Seed posts. *(Steps 1–4 done: design system, layout shell,
+   posts table, home.)*
+2. **Admin sign-in + Writing editor** — Ivan-only sign-in (magic link), `admins` table and
+   `is_admin()`, admin RLS policies on `posts`, `/admin` shell with tabs, the Writing
+   editor with image uploads, `media` bucket, cache refresh on save/publish.
+   (Admin needs sign-in, so the admin part of auth comes before reader accounts.)
+3. **Sections** — migrations for `projects`, `books`, `releases`, `hobby_items` and the
+   `home_feed` view; admin forms for each; the Projects, Reading, Music and Hobbies pages;
+   home grid mixes all sections; status cards from data. One step per section.
+4. **Accounts + Settings** — reader sign-in (Google + email), profiles, profile pictures,
+   Settings tabs, delete account.
+5. **Comments** — comments and replies on articles, moderation.
+6. **Newsletter** — subscribe (with or without account), double opt-in, send on publish, unsubscribe.
+7. **Ranks** — see rules below; show rank badges next to usernames and on profiles.
+8. **YouTube + polish** — live YouTube video cards on home, ⌘K search, page transitions,
    SEO, RSS feed, sitemap, OG images.
-8. **Collections (optional)** — bookmarks and a shelf (e.g. tools, books, or albums in rotation).
 
 ## Rank rules (draft — Ivan to confirm)
 Track *active days* and *articles read* (one read per article per user), not raw page views.
