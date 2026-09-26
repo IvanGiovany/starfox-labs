@@ -48,9 +48,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to content
         </a>
-        {/* One container for everything, so all pages line up. The home grid
-            uses its full width; reading pages center a narrower column. */}
-        <div className="mx-auto flex min-h-dvh max-w-6xl flex-col px-4 sm:px-6">
+        {/* One container for everything, so all pages line up. Card grids use
+            its full width; reading pages center a narrower column.
+            Width and padding come from --page-max / --page-pad in globals.css. */}
+        <div className="mx-auto flex min-h-dvh w-full max-w-[calc(var(--page-max)+2*var(--page-pad))] flex-col px-(--page-pad)">
           <SiteHeader />
           <main id="main" className="flex-1">
             {children}

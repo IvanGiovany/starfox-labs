@@ -23,7 +23,7 @@ export default async function Home() {
   const small = rest.slice(0, smallCount);
 
   return (
-    <div className="grid grid-flow-dense grid-cols-2 gap-2 pt-2 pb-8 sm:auto-rows-[minmax(11rem,auto)] lg:grid-cols-4 lg:auto-rows-[17rem]">
+    <div className="grid grid-flow-dense grid-cols-2 gap-(--grid-gap) pt-2 pb-8 sm:auto-rows-[minmax(11rem,auto)] lg:grid-cols-4 lg:auto-rows-(--cell)">
       <Intro className="col-span-2 lg:row-span-2" />
       {latest && <FeaturedWritingCard post={latest} className="col-span-2" />}
       <NowProducingCard />
@@ -45,7 +45,7 @@ function Intro({ className }: { className?: string }) {
 
   return (
     <section
-      className={`pt-2 pr-4 pb-8 font-serif text-[1.6rem] leading-[1.3] font-light text-fg-muted sm:text-[1.85rem] lg:pb-0 ${className}`}
+      className={`pt-2 pr-4 pb-8 font-serif text-[1.6rem] leading-[1.3] font-light text-fg-muted sm:text-[1.9rem] lg:pb-0 lg:text-[clamp(2rem,2.3vw,2.6rem)] ${className}`}
     >
       {/* TODO(Ivan): rewrite in your own words. */}
       <p>
@@ -83,7 +83,7 @@ function FeaturedWritingCard({ post, className }: { post: PostSummary; className
   return (
     <Card label="Writing · Latest" href={writingHref(post)} className={className}>
       <Badges items={post.tags} />
-      <h2 className="mt-3 line-clamp-2 font-serif text-3xl leading-[1.1] sm:text-[2.5rem]">{post.title}</h2>
+      <h2 className="mt-3 line-clamp-2 font-serif text-3xl leading-[1.1] sm:text-[2.5rem] xl:text-5xl">{post.title}</h2>
       <PostDate post={post} />
       <p className="mt-2 line-clamp-2 max-w-prose text-sm text-fg-muted sm:text-base">{post.summary}</p>
     </Card>
@@ -94,7 +94,7 @@ function WritingCard({ post }: { post: PostSummary }) {
   return (
     <Card label="Writing · Article" href={writingHref(post)}>
       <Badges items={post.tags.slice(0, 1)} />
-      <h2 className="mt-2 line-clamp-3 font-serif text-xl leading-tight sm:text-2xl">{post.title}</h2>
+      <h2 className="mt-2 line-clamp-3 font-serif text-xl leading-tight sm:text-2xl xl:text-[1.75rem]">{post.title}</h2>
       <PostDate post={post} />
       <p className="mt-2 line-clamp-2 hidden text-sm text-fg-muted sm:block">{post.summary}</p>
     </Card>
@@ -119,7 +119,7 @@ function YouTubeCard() {
           <path d="M8 5.5v13l10.5-6.5z" />
         </svg>
       </span>
-      <p className="mt-3 font-serif text-xl leading-tight sm:text-2xl">New videos on the channel</p>
+      <p className="mt-3 font-serif text-xl leading-tight sm:text-2xl xl:text-[1.75rem]">New videos on the channel</p>
     </Card>
   );
 }
@@ -127,7 +127,7 @@ function YouTubeCard() {
 function ArchiveCard({ postCount, tags, className }: { postCount: number; tags: TagCount[]; className?: string }) {
   return (
     <Card label="Writing · Archive" href="/writing" className={className}>
-      <p className="font-serif text-5xl leading-none">
+      <p className="font-serif text-5xl leading-none xl:text-6xl">
         {postCount}
         <span className="ml-2 font-sans text-sm text-fg-muted">{postCount === 1 ? "article" : "articles"}</span>
       </p>

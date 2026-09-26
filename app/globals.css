@@ -15,7 +15,7 @@
   /* light: warm paper and dark warm ink / dark: warm near-black and warm off-white */
   --bg: light-dark(#f7f3ec, #1c1b1a);
   /* Cards: a very light lift off the page, like chester.how's light grey. */
-  --bg-raised: light-dark(#f0ebe3, #242220);
+  --bg-raised: light-dark(#ebe4d8, #282624);
   --fg: light-dark(#2a2521, #e8e1d6);
   --fg-muted: light-dark(#6e655c, #a39a8e);
   --rule: light-dark(#ddd5c8, #36322e);
@@ -28,6 +28,30 @@
   --accent-glow: light-dark(rgb(81 36 122 / 0.18), rgb(195 166 224 / 0.22));
   --selection: light-dark(rgb(81 36 122 / 0.16), rgb(195 166 224 / 0.25));
 }
+/*
+ * Page width. Content is at most 1460px wide (about 80% of a 1920px screen,
+ * like chester.how), with side padding that grows with the screen.
+ * --cell is the width of one column in the 4-column card grid; grids use it
+ * as their row height so cards stay roughly square at every width, and
+ * the cards grow instead of the gaps.
+ */
+:root {
+  --page-max: 1460px;
+  --page-pad: 1rem;
+  --grid-gap: 0.5rem;
+  --cell: calc((min(100vw - 2 * var(--page-pad), var(--page-max)) - 3 * var(--grid-gap)) / 4);
+}
+@media (width >= 40rem) {
+  :root {
+    --page-pad: 1.5rem;
+  }
+}
+@media (width >= 64rem) {
+  :root {
+    --page-pad: 2.5rem;
+  }
+}
+
 :root[data-theme="light"] {
   color-scheme: light;
 }

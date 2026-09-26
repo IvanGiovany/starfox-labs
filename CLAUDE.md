@@ -172,7 +172,11 @@ Shared columns on every content table: `id`, `slug` (unique), `title`, `status`
   - NO sparse layouts: every grid is dense, every page feels full of content.
   - NO hero banners or giant centered headings. (Section titles are huge but left-aligned
     and sit in the normal flow, chester-style.)
-  - Content aligns to one consistent container/grid.
+  - Content aligns to one consistent container/grid: **max 1460px wide** (about 80% of a
+    1920px screen, like chester.how), centered, with side padding of 16px / 24px / 40px
+    (mobile / tablet / desktop). Set by `--page-max` and `--page-pad` in `globals.css`.
+    Card grids use `--cell` (one column's width) as their row height, so cards stay square
+    and grow with the screen instead of the gaps growing.
   - Article body: comfortable reading width (~65–75 characters per line).
 - **Motion:** smooth page transitions between routes and a fade/slide-in for article content.
   Subtle and fast (200–400ms). Respect `prefers-reduced-motion`.

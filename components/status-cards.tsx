@@ -26,7 +26,7 @@ export function NowProducingCard({ className }: { className?: string }) {
         ))}
       </div>
       <Badges items={["Now producing"]} />
-      <p className="mt-2 line-clamp-2 font-serif text-[1.75rem] leading-[1.05] sm:text-3xl">{title}</p>
+      <p className="mt-2 line-clamp-2 font-serif text-[1.75rem] leading-[1.05] sm:text-3xl xl:text-4xl">{title}</p>
       <p className="mt-2 line-clamp-2 text-sm text-fg-muted">{note}</p>
     </Card>
   );
@@ -38,7 +38,7 @@ export function CurrentlyLearningCard({ className }: { className?: string }) {
   return (
     <Card label="Hobbies · Learning" className={className}>
       <Badges items={["Learning"]} />
-      <p className="mt-2 line-clamp-2 font-serif text-[1.75rem] leading-[1.05] sm:text-3xl">{topic}</p>
+      <p className="mt-2 line-clamp-2 font-serif text-[1.75rem] leading-[1.05] sm:text-3xl xl:text-4xl">{topic}</p>
       <p className="mt-2 line-clamp-3 text-sm text-fg-muted">{items.join(" · ")}</p>
     </Card>
   );
