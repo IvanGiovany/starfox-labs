@@ -10,10 +10,10 @@ code quality, clear structure, and a good README matter.
 
 ## Tech stack
 - Next.js (App Router) + TypeScript + Tailwind CSS
-- Supabase: Postgres (posts, projects, books, releases, hobbies, profiles, comments,
-  subscribers), Auth, Storage (images, covers, screenshots, avatars)
-- ALL content (articles, projects, books, music, hobbies) lives in the database and is
-  managed through `/admin` on the site (NOT files in the repo), so Ivan can add things
+- Supabase: Postgres (posts, projects, books, tracks, games, hobby items, profiles,
+  comments, subscribers), Auth, Storage (images, covers, screenshots, audio snippets, avatars)
+- ALL content (articles, projects, books, songs, games, hobbies) lives in the database and
+  is managed through `/admin` on the site (NOT files in the repo), so Ivan can add things
   without touching code.
 - Resend: newsletter + account emails
 - YouTube Data API: latest videos on the home page
@@ -49,17 +49,32 @@ Only for: **tag filters with counts** (e.g. `nextjs (12)`), **⌘K / Ctrl+K sear
 command palette, and the **warm dark mode** (`#1C1B1A`, not cold blue-black).
 
 ## Site structure
-Header tab bar: **Gvan · Projects · Writing · Reading · Music · Hobbies**
-("Gvan" is the home link, like "Chester" on chester.how). The site itself is still
-called Starfox Labs (page titles, footer, emails).
+Header tab bar: **Gvan · Projects · Writing · Reading · Music · Games · Hobbies**
+("Gvan" is the home link, like "Chester" on chester.how). On phones the tab bar scrolls
+sideways instead of wrapping. The site itself is still called Starfox Labs (page titles,
+footer, emails).
 
+### Core idea: items and articles
+- Every **item** (project, book, song, game, hobby) is a **card on its section page**.
+- Any card can **link to an article** Ivan wrote about it. Reviews and write-ups are normal
+  articles, so they also appear on `/writing` like any other post.
+- When an article is linked from an item, the article shows a small **"about this"
+  panel** near the top (e.g. a book's cover and author, a game's platform, hours and
+  rating, or a song's audio snippet and full-track link).
+- An item links to **at most one** article, and an article belongs to **at most one** item.
+
+### Pages
 - **Home (`/`)** — the intro (with a one-line "subscribe to the newsletter" link) sits in
   the top-left of one dense grid that mixes cards from every section, each labelled
   `Section · Name` (e.g. `Writing · Article`, `Projects · NEON DRIFT`, `Music · Spektral`).
   Only items marked "Show on home" appear, plus the status cards. Latest YouTube videos
   join in the polish phase.
-- **Projects (`/projects`)** — `projects.` Software projects as screenshot cards, e.g. the
-  NEON DRIFT and NEON BREACH browser games. Cards link to the live project (↗).
+- **Projects (`/projects`)** — `projects.` Like chester's projects page (`design-refs/`):
+  wide and small cards, each with a **framed screenshot** sitting in the lower half and
+  bleeding off the bottom edge. A card links to the live project, else its GitHub repo,
+  else Ivan's article about it; the other links show as small text links on the card.
+  Examples: the NEON DRIFT and NEON BREACH browser games. **Starfox Labs itself is not
+  listed as a project.**
 - **Writing (`/writing`)** — `writing.` Articles as cards (label, tag badges, serif title,
   date, excerpt), newest first. Above the grid: search (title, summary, tags and body;
   updates as you type) and tag filters with counts. Filter state lives in the URL
@@ -73,14 +88,26 @@ called Starfox Labs (page titles, footer, emails).
   search — a generated `tsvector` column on `posts` with a GIN index, queried through
   an RPC using `websearch_to_tsquery`, with paging done in SQL.
 - **Article (`/writing/[slug]`)** — clean reading layout, NOT cards: title, date, reading
-  time, tag badges, optional cover image, body, optional embedded YouTube video.
-  Comments at the bottom.
-- **Reading (`/reading`)** — `reading.` Books: cover image, title, author, and a
-  `READING` / `READ` badge. Currently-reading books first.
-- **Music (`/music`)** — `music.` Ivan's releases as Spektral: cover art, release type
-  and date, an embedded player (Spotify / SoundCloud / Bandcamp / YouTube) or streaming links.
-- **Hobbies (`/hobbies`)** — `hobbies.` Mixed cards: full-bleed photos, cut-out images,
-  big serif names with badges, labelled by category (`Hobbies · Coffee`, ...).
+  time, tag badges, optional cover image, the "about this" panel when an item links here,
+  body, optional embedded YouTube video. Comments at the bottom.
+- **Reading (`/reading`)** — `reading.` Clean book cards like chester's reading page
+  (`design-refs/`): square cards labelled `Reading · Books`; the cover sits bottom-left
+  (about 40% of the card width, soft shadow), and beside it, aligned to the bottom, the
+  `READING` / `READ` / `TO READ` badge, the title and the author (muted). Currently reading
+  first, then read (newest finished first), then to read. A card links to Ivan's article
+  about the book when there is one.
+- **Music (`/music`)** — `music.` Song cards in the same style as the book cards: cover
+  art and title. **Every song has an article**, and clicking a card always opens it. Every
+  song article shows, near the top, a **20–30 second audio snippet** Ivan uploads, in a
+  custom player in the site's style (play/pause, progress, time), plus a link to the full
+  track. The song still being made is the "Now producing" card on home.
+- **Games (`/games`)** — `games.` Ivan's own screenshots shown in **window-style frames**
+  like chester's project cards (a thin frame with a small title bar, bleeding off the
+  bottom of the card), with the platform, hours played, an optional rating, and a
+  `PLAYING` / `FINISHED` / `DROPPED` badge. Clicking a card opens Ivan's review article.
+- **Hobbies (`/hobbies`)** — `hobbies.` Like chester's hobbies page (`design-refs/`):
+  mixed cards with full-bleed photos, cut-out images, big serif names with badges,
+  labelled by category (`Hobbies · Coffee`, ...).
 - **Settings (`/settings`)** — tabs:
   - *Profile*: display name, username, profile picture upload, linked sign-in methods
   - *Appearance*: light / dark / system theme
@@ -93,48 +120,93 @@ called Starfox Labs (page titles, footer, emails).
   small avatar button (menu → Settings, Sign out) or a "Sign in" text link when logged out.
 
 ## Admin (`/admin`)
-- Ivan only: enforced server-side and by RLS (`public.is_admin()`), not just hidden in the UI.
-- One tab per content type: **Writing, Projects, Reading, Music, Hobbies**. Each tab lists
-  items (drafts included) with New / Edit / Delete, and a form for one item.
-- Every form has: title, slug (auto from title), image upload (paste, drag or pick;
-  stored in Supabase Storage), badges, **Show on home** toggle, **Card size**
-  (small / wide), Save draft, Publish.
-- Writing form extras: summary, tags, optional YouTube link, markdown body with
-  side-by-side live preview, images pasted/dragged into the body. Publishing
-  optionally sends the newsletter.
+- Ivan only: enforced server-side (the page checks the session) and by RLS
+  (`public.is_admin()`), not just hidden in the UI.
+- **Adding entries must be quick and easy** — Ivan does it often, frequently on his phone:
+  - **Minimum required fields** (everything else optional; drafts need only a title):
+
+    | Type | To save a draft | To publish |
+    |---|---|---|
+    | Article | title | title, body (summary falls back to the first sentence) |
+    | Project | title | title + one of live URL / repo / linked article |
+    | Book | title | title (status defaults to `TO READ`) |
+    | Song | title | title, audio snippet, linked article |
+    | Game | title | title, linked review article (status defaults to `PLAYING`) |
+    | Hobby item | title | title, category |
+
+  - **Books autofill from Open Library** (free, no API key): type a title or ISBN, pick a
+    result, and the cover, author, year and page count fill in. The cover is copied into
+    our Storage (not hotlinked). Requests identify the site in their User-Agent, as Open
+    Library asks.
+  - **One-click status changes** in the list view (`TO READ → READING → READ`,
+    `PLAYING → FINISHED / DROPPED`, draft → published) without opening the form. Setting
+    READ fills `finished_on` with today.
+  - **"Save and add another"** on every form (saves, then opens a fresh form of the same type).
+  - **Images: drag and drop, paste, or pick** (camera roll on phones). Resized and compressed
+    in the browser before upload (longest edge 2400 px, covers 1200 px; WebP, or JPEG where
+    WebP encoding isn't available), with EXIF orientation applied and location data dropped.
+  - **Song snippets made in the browser:** upload the full track (it stays on the device,
+    only the snippet is uploaded), see its waveform, drag to pick where the 30 s starts,
+    preview it, and the snippet is cut with short fades and encoded to MP3 in the
+    browser. Manual upload of a ready-made snippet remains as a fallback.
+  - **Drag to reorder** cards within each section (sets `sort_order`); on touch screens a
+    drag handle plus keyboard/button alternatives (move up / move down).
+  - **Works well on a phone:** single-column forms, large tap targets (44 px+), sticky
+    Save bar at the bottom, the right keyboard for each field (URL, number), no hover-only
+    controls.
+- One tab per content type: **Writing, Projects, Reading, Music, Games, Hobbies**. Each tab
+  lists items (drafts included) with New / Edit / Delete, and a form for one item.
+- Every item form has: title, image upload (paste, drag or pick; stored in Supabase
+  Storage), badges, **linked article** (a picker over published and draft posts, with a
+  "Write the article" shortcut that opens a new Writing draft already linked),
+  **Show on home**, **Card size** (small / wide), Save draft, Publish.
+- Per-section fields: see the Data model table. Music also has an **audio snippet upload**
+  (MP3/M4A, max 30 s / 2 MB) and a full-track link; a song can only be published once its
+  article exists. Games need their review article before publishing, too.
+- Writing form: title, slug (auto from title), summary, tags, optional cover image,
+  optional YouTube link, markdown body with side-by-side live preview, images pasted or
+  dragged into the body. Publishing optionally sends the newsletter.
 - Saving or publishing refreshes the cached pages (`revalidateTag`) so changes show at once.
 - Moderation: delete any comment.
 
 ## Data model
-One table per content type, not one generic table. Each type has different fields
-(a book has an author and reading status, a release has streaming links and an embed,
-a project has a live URL and a stack). Separate tables give real columns with
-constraints and exact TypeScript types, simple per-table RLS, and admin forms that
-map 1:1 to a table. The one place that needs everything together, the home grid,
-reads from a Postgres view that unions the tables into one card shape.
+**One table per content type**, not one generic table. Each type has its own fields (a book
+has an author and reading status, a song has an audio snippet and a full-track link, a game
+has a platform and hours played). Separate tables give real columns with database checks,
+exact TypeScript types, simple per-table RLS, and admin forms that map 1:1 to a table.
+The two places that need everything together read from Postgres **views** instead.
 
-Shared columns on every content table: `id`, `slug` (unique), `title`, `status`
-(`draft` | `published`), `show_on_home` (bool), `card_size` (`small` | `wide`),
-`sort_order`, `badges text[]`, `image_path` (Storage path), `created_at`, `updated_at`.
+Items don't have their own pages (they link to an article, a live site or a repo), so
+item tables have no slug; only `posts` does.
 
-| Table | Extra columns |
-|---|---|
-| `posts` (exists) | summary, body_md, tags, cover_image_url, youtube_url, published_at |
-| `projects` | summary, url, repo_url, stack text[], started_on |
-| `books` | author, reading_status (`reading` / `read` / `want`), started_on, finished_on, rating, note, url |
-| `releases` | release_type (`single` / `ep` / `album`), released_on, in_progress (bool), embed_url, links jsonb (spotify, soundcloud, bandcamp, youtube, apple), note |
-| `hobby_items` | category (e.g. Coffee), subtitle, note, image_style (`photo` / `cutout` / `none`), caption, url |
+Shared columns on every item table: `id`, `title`, `status` (`draft` | `published`),
+`post_id` (→ `posts.id`, unique, `on delete set null`), `image_path` (Storage path),
+`badges text[]`, `show_on_home` (bool), `card_size` (`small` | `wide`), `sort_order`,
+`created_at`, `updated_at`.
 
-- `home_feed` view (`security_invoker = true`, so RLS still applies): published items with
-  `show_on_home` from every table, as `section, slug, title, label, href, image_path,
-  image_style, caption, badges, card_size, sort_date`.
-- **Status cards come from data, not code:** "Now producing" = a release with
-  `in_progress = true`; "Reading" = books with `reading_status = 'reading'`;
-  "Learning" = a hobby item in the `Learning` category.
-- `admins` table (`user_id`) + `public.is_admin()` function. Every table gets two kinds of
-  policy: "anyone reads published rows" and "admin does everything".
-- Storage: one public-read `media` bucket, admin-only writes, folders per section
-  (`projects/`, `books/`, `music/`, `hobbies/`, `writing/`).
+| Table | Extra columns | Rules |
+|---|---|---|
+| `posts` (exists) | slug, summary, body_md, tags, cover_image_url, youtube_url, published_at | — |
+| `projects` | summary, url, repo_url, stack text[], started_on | at least one of url / repo_url / post_id |
+| `books` | author, reading_status (`to_read` / `reading` / `read`), started_on, finished_on, rating 1–5 (optional), url, isbn, open_library_key, published_year, page_count | — |
+| `tracks` | released_on, in_progress (bool), snippet_path (audio), full_track_url, links jsonb (spotify, soundcloud, bandcamp, youtube, apple) | published ⇒ `post_id` and `snippet_path` set |
+| `games` | platform, hours_played numeric, rating 1–10 (optional), play_status (`playing` / `finished` / `dropped`) | published ⇒ `post_id` set |
+| `hobby_items` | category (e.g. Coffee), subtitle, note, image_style (`photo` / `cutout` / `none`), caption, url | — |
+
+- **`home_feed` view** (`security_invoker = true`, so RLS still applies): published items
+  with `show_on_home` from every table plus recent posts, as one card shape: `section,
+  id, title, label, href, image_path, image_style, caption, badges, card_size, sort_date`.
+- **`post_items` view**: for each article, the item that links to it (if any), so the
+  article page can show its "about this" panel with one query.
+- **Status cards come from data, not code:** "Now producing" = a track with
+  `in_progress = true`; "Reading" = books with `reading_status = 'reading'`; "Learning" =
+  hobby items in the `Learning` category. The placeholders in `lib/site.ts` go away.
+- **Access:** an `admins` table (`user_id`) + `public.is_admin()` function. Every table
+  gets two kinds of policy: "anyone reads published rows" and "admin does everything".
+- **Storage:** one public-read `media` bucket, admin-only writes, folders per section
+  (`writing/`, `projects/`, `books/`, `music/` for covers and audio snippets, `games/`,
+  `hobbies/`). Allowed types: images (JPEG, PNG, WebP, AVIF) and audio (MP3, M4A);
+  size limits enforced by the bucket.
 - Migrations live in `supabase/migrations/` (Ivan runs them in the SQL editor).
 
 ## Accounts, comments, newsletter
@@ -167,13 +239,18 @@ Shared columns on every content table: `id`, `slug` (unique), `title`, `status`
     rounded corners, no heavy shadows.
   - A small muted label top-left (`Section · Name`) and a small ↗ top-right on every
     card that links anywhere.
+  - **Framed screenshots** (Projects, Games): the screenshot sits inside a thin frame with
+    a slim title bar and a soft shadow, centered in the lower half of the card, and is
+    cropped by the card's bottom edge. **Covers** (Reading, Music) sit upright with a soft
+    shadow, like an object on a shelf.
   - Content sits in the **lower half** of the card. Screenshots and images **bleed off the
     bottom edge**. Photo cards are **full-bleed** with a white caption bottom-left.
   - Titles in the serif, often large. Excerpts clamp to a few lines.
   - The grid is always full: no holes, no sparse boxes floating in empty space.
 - **Badges**: small uppercase monospace labels on soft pastel backgrounds with a slightly
   darker outline of the same hue (like chester's `NOW BREWING`). Used for status
-  (`NOW PRODUCING`, `READING`, `READ`, `LEARNING`) and for article tags. They must work in
+  (`NOW PRODUCING`, `READING`, `READ`, `TO READ`, `LEARNING`, `PLAYING`, `FINISHED`,
+  `DROPPED`) and for article tags. They must work in
   both themes (low-alpha tints with light text in dark mode).
 - **Layout rules — IMPORTANT:**
   - Cards are for the home and section grids. The article reading page and settings/admin
@@ -194,24 +271,32 @@ Shared columns on every content table: `id`, `slug` (unique), `title`, `status`
 - Do not use any Nintendo / Star Fox artwork or logos.
 
 ## Build phases (build ONE phase at a time)
-1. **Foundation** — design system, header/footer, Supabase + `posts`, chester-style Home
-   (grid with writing and status cards), **Writing** page (cards, search, tag filters),
-   **Article** page, README. Seed posts. *(Steps 1–4 done: design system, layout shell,
-   posts table, home.)*
-2. **Admin sign-in + Writing editor** — Ivan-only sign-in (magic link), `admins` table and
-   `is_admin()`, admin RLS policies on `posts`, `/admin` shell with tabs, the Writing
-   editor with image uploads, `media` bucket, cache refresh on save/publish.
-   (Admin needs sign-in, so the admin part of auth comes before reader accounts.)
-3. **Sections** — migrations for `projects`, `books`, `releases`, `hobby_items` and the
-   `home_feed` view; admin forms for each; the Projects, Reading, Music and Hobbies pages;
-   home grid mixes all sections; status cards from data. One step per section.
+1. **Foundation** — *done.* Design system, header/footer, Supabase + `posts`, home grid,
+   Writing page, article page, link previews, 404s, README.
+2. **Admin + content model** — everything Ivan needs to *enter* content for every section.
+   1. Admin sign-in: magic link for Ivan only, `admins` + `is_admin()`, cookie-aware
+      Supabase client, `/admin` protected on the server (and by RLS).
+   2. Content schema: migrations for `projects`, `books`, `tracks`, `games`,
+      `hobby_items`, the `home_feed` and `post_items` views, admin policies on every
+      table including `posts`, and the `media` bucket with its policies.
+   3. `/admin` shell (one tab per section) and the **Writing editor**: markdown with live
+      preview, image paste/drag upload, drafts, publish, cache refresh.
+   4. **Section forms** sharing one set of fields (image upload with in-browser resizing,
+      badges, linked-article picker, show on home, card size, "Save and add another"),
+      plus list views with one-click status changes and drag-to-reorder; one step per
+      section. Books get Open Library autofill; Music gets the in-browser snippet cutter.
+   Everything in `/admin` must work well on a phone.
+3. **Section pages** — showing that content, one step per section: Projects, Reading,
+   Music (including the custom audio player and the "about this" panel on song
+   articles), Games, Hobbies; then the home grid from `home_feed` and status cards from
+   data.
 4. **Accounts + Settings** — reader sign-in (Google + email), profiles, profile pictures,
    Settings tabs, delete account.
 5. **Comments** — comments and replies on articles, moderation.
 6. **Newsletter** — subscribe (with or without account), double opt-in, send on publish, unsubscribe.
 7. **Ranks** — see rules below; show rank badges next to usernames and on profiles.
 8. **YouTube + polish** — live YouTube video cards on home, ⌘K search, page transitions,
-   SEO, RSS feed, sitemap, OG images.
+   SEO, RSS feed, sitemap.
 
 ## Rank rules (draft — Ivan to confirm)
 Track *active days* and *articles read* (one read per article per user), not raw page views.
@@ -233,7 +318,7 @@ Track *active days* and *articles read* (one read per article per user), not raw
 - Run `npm run build` and fix errors before saying a step is done.
 
 ## Where we left off (updated 2026-09-30)
-### Done — Phase 1, steps 1–6 (all on `main`, pushed)
+### Done — Phase 1, complete (all on `main`, pushed)
 1. Design system: warm light/dark tokens via `light-dark()`, UQ purple, Newsreader + Inter,
    paper grain, `prose` styles, flash-free theme script (Next 16 inline-script pattern).
 2. Layout shell: header tab bar, footer, theme toggle.
@@ -249,10 +334,11 @@ Track *active days* and *articles read* (one read per article per user), not raw
    metadata, canonical URLs, generated link-preview images (`lib/og.tsx`); friendly
    404s (`app/not-found.tsx`, `app/writing/[slug]/not-found.tsx`). `WRITING.md` lists
    every markdown feature.
+7. README with screenshots (`docs/screenshots/`), architecture notes and setup steps.
 
-### Next — Step 7: README
-What the project is, stack, architecture notes (caching, RLS, search), how to run it
-locally, env vars, screenshots. Then plan Phase 2 (admin sign-in + Writing editor).
+### Next — Phase 2 (Admin + content model)
+Step 2.1 (admin sign-in) plan proposed 2026-09-30; wait for Ivan's approval before coding. Read the
+Next 16 Proxy docs and Supabase's `@supabase/ssr` guide before writing auth code.
 
 ### Still open
 - **Placeholders for Ivan** (all marked `TODO(Ivan)`): home intro (`app/page.tsx`),
@@ -263,9 +349,9 @@ locally, env vars, screenshots. Then plan Phase 2 (admin sign-in + Writing edito
 - **Vercel** (Ivan to confirm it's done): Production Branch = `main`; env vars
   `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (the publishable
   key, NOT `..._ANON_KEY` as first suggested); check the latest deploy succeeded.
-- **Known dead links** until later steps: Projects / Reading / Music / Hobbies tabs show
-  the 404 page (it says they're still being built) until Phase 3; the newsletter line is
-  plain text until Phase 6.
+- **Known dead links** until later steps: Projects / Reading / Music / Games / Hobbies tabs
+  show the 404 page (it says they're still being built) until Phase 3; the newsletter
+  line is plain text until Phase 6.
 - UQ palette beyond purple is still a TODO (see Colors).
 
 ### Notes for the next session

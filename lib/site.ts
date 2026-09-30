@@ -18,6 +18,7 @@ export const site = {
     { label: "Writing", href: "/writing" },
     { label: "Reading", href: "/reading" },
     { label: "Music", href: "/music" },
+    { label: "Games", href: "/games" },
     { label: "Hobbies", href: "/hobbies" },
   ],
 

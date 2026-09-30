@@ -16,7 +16,7 @@ export function SiteHeader() {
       {/* On narrow phones the tab bar scrolls sideways instead of wrapping. */}
       <nav
         aria-label="Main"
-        className="flex min-w-0 items-center gap-3 overflow-x-auto rounded-lg border border-rule bg-bg px-3 py-1.5 whitespace-nowrap shadow-[0_1px_3px_rgb(0_0_0/0.06)] [scrollbar-width:none] sm:gap-4 sm:px-3.5"
+        className="relative flex min-w-0 items-center gap-3 overflow-x-auto rounded-lg border border-rule bg-bg px-3 py-1.5 whitespace-nowrap shadow-[0_1px_3px_rgb(0_0_0/0.06)] [scrollbar-width:none] sm:gap-4 sm:px-3.5"
       >
         {site.nav.map((item) => (
           <NavLink key={item.href} href={item.href}>
