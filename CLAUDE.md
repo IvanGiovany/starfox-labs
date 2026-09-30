@@ -15,7 +15,9 @@ code quality, clear structure, and a good README matter.
 - ALL content (articles, projects, books, songs, games, hobbies) lives in the database and
   is managed through `/admin` on the site (NOT files in the repo), so Ivan can add things
   without touching code.
-- Resend: newsletter + account emails
+- Resend: **custom SMTP for Supabase Auth emails** (sign-in codes and links), set up
+  2026-09-30 on `starfoxlabs.org`; later also the newsletter. The Resend API key lives only
+  in Supabase's SMTP settings, never in this repo or `.env.local`.
 - YouTube Data API: latest videos on the home page
 - Motion (framer-motion) for page transitions
 - Hosting: Vercel (auto-deploys from `main`)
@@ -294,6 +296,9 @@ Shared columns on every item table: `id`, `title`, `status` (`draft` | `publishe
    Settings tabs, delete account.
 5. **Comments** — comments and replies on articles, moderation.
 6. **Newsletter** — subscribe (with or without account), double opt-in, send on publish, unsubscribe.
+   **Before it goes live:** two-factor sign-in (authenticator app, Supabase MFA/TOTP) for
+   the admin account, since it can publish and email every subscriber. `requireAdmin()` and
+   the admin RLS policies then require a two-factor session (`aal2`).
 7. **Ranks** — see rules below; show rank badges next to usernames and on profiles.
 8. **YouTube + polish** — live YouTube video cards on home, ⌘K search, page transitions,
    SEO, RSS feed, sitemap.
@@ -336,8 +341,11 @@ Track *active days* and *articles read* (one read per article per user), not raw
    every markdown feature.
 7. README with screenshots (`docs/screenshots/`), architecture notes and setup steps.
 
-### Next — Phase 2 (Admin + content model)
-Step 2.1 (admin sign-in) plan proposed 2026-09-30; wait for Ivan's approval before coding. Read the
+### Now — Phase 2 (Admin + content model)
+Step 2.1 (admin sign-in) is **built** (`proxy.ts`, `lib/auth.ts`, `lib/supabase/server.ts`,
+`/login`, `/auth/confirm`, `/admin`, migration `20260930000000_admins.sql`). Waiting on Ivan:
+Resend as Supabase SMTP, the sign-in email template, his admin user + `admins` row, then a
+real sign-in test on laptop and phone. Next: plan step 2.2 (content schema). Read the
 Next 16 Proxy docs and Supabase's `@supabase/ssr` guide before writing auth code.
 
 ### Still open
@@ -353,12 +361,17 @@ Next 16 Proxy docs and Supabase's `@supabase/ssr` guide before writing auth code
   show the 404 page (it says they're still being built) until Phase 3; the newsletter
   line is plain text until Phase 6.
 - UQ palette beyond purple is still a TODO (see Colors).
+- **Two-factor sign-in for the admin** before the newsletter goes live (see Phase 6).
 
 ### Notes for the next session
 - Next.js 16: read `node_modules/next/dist/docs/` before using an API (see AGENTS.md).
   Cache Components is on: anything using the clock, cookies or URL data must be
   cached (`"use cache"`) or wrapped in `<Suspense>`, or the build fails.
-  Middleware is called **Proxy** in this version.
+  Middleware is called **Proxy** in this version. `proxy.ts` only runs on `/admin`, `/login`
+  and `/auth` (see its `matcher`), so public pages stay static; keep it that way.
+- Auth: sign-in is email code + link (`signInWithOtp` with `shouldCreateUser: false` on the
+  admin form only; sign-ups stay enabled project-wide for Phase 4 readers). The email
+  template links to `/auth/confirm?token_hash=…`, which works in any browser.
 - Known Next 16 behaviour: `notFound()` for a slug that wasn't prerendered returns a
   proper 404 with noindex, but the HTML body is empty and the 404 page is drawn by
   JavaScript. Wrapping the page in `<Suspense>` doesn't fix it (and turns the status
