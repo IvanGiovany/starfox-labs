@@ -232,8 +232,8 @@ Track *active days* and *articles read* (one read per article per user), not raw
 - Use Supabase Row Level Security on every table.
 - Run `npm run build` and fix errors before saying a step is done.
 
-## Where we left off (updated 2026-09-27)
-### Done — Phase 1, steps 1–5 (all on `main`, pushed)
+## Where we left off (updated 2026-09-30)
+### Done — Phase 1, steps 1–6 (all on `main`, pushed)
 1. Design system: warm light/dark tokens via `light-dark()`, UQ purple, Newsreader + Inter,
    paper grain, `prose` styles, flash-free theme script (Next 16 inline-script pattern).
 2. Layout shell: header tab bar, footer, theme toggle.
@@ -243,12 +243,16 @@ Track *active days* and *articles read* (one read per article per user), not raw
 4. Home: chester-style 4-column grid, badges, status cards; page widened to 1460px.
 5. Writing page (`/writing`): section header, card grid, search, tag filters, load more,
    lazily loaded body search index.
+6. Article page (`/writing/[slug]`): reading layout, markdown via `lib/markdown.tsx`
+   (Shiki code blocks with copy button, highlighted lines/words, line numbers, footnotes),
+   click-to-play YouTube, older/newer links, comments placeholder, one fade-in; page
+   metadata, canonical URLs, generated link-preview images (`lib/og.tsx`); friendly
+   404s (`app/not-found.tsx`, `app/writing/[slug]/not-found.tsx`). `WRITING.md` lists
+   every markdown feature.
 
-### Next — Step 6: the article page (`/writing/[slug]`)
-Clean reading layout (not cards): title, date, reading time, tag badges, optional cover,
-markdown body in `prose` (~68ch), optional YouTube embed, per-article metadata, and a
-proper 404 for unknown slugs or drafts. Plan it first, then build. Then step 7 (README),
-then plan Phase 2 (admin sign-in + Writing editor).
+### Next — Step 7: README
+What the project is, stack, architecture notes (caching, RLS, search), how to run it
+locally, env vars, screenshots. Then plan Phase 2 (admin sign-in + Writing editor).
 
 ### Still open
 - **Placeholders for Ivan** (all marked `TODO(Ivan)`): home intro (`app/page.tsx`),
@@ -259,9 +263,9 @@ then plan Phase 2 (admin sign-in + Writing editor).
 - **Vercel** (Ivan to confirm it's done): Production Branch = `main`; env vars
   `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (the publishable
   key, NOT `..._ANON_KEY` as first suggested); check the latest deploy succeeded.
-- **Known dead links** until later steps: article cards → "page not found" until step 6;
-  Projects / Reading / Music / Hobbies tabs until Phase 3; the newsletter line is plain
-  text until Phase 6.
+- **Known dead links** until later steps: Projects / Reading / Music / Hobbies tabs show
+  the 404 page (it says they're still being built) until Phase 3; the newsletter line is
+  plain text until Phase 6.
 - UQ palette beyond purple is still a TODO (see Colors).
 
 ### Notes for the next session
@@ -269,6 +273,12 @@ then plan Phase 2 (admin sign-in + Writing editor).
   Cache Components is on: anything using the clock, cookies or URL data must be
   cached (`"use cache"`) or wrapped in `<Suspense>`, or the build fails.
   Middleware is called **Proxy** in this version.
+- Known Next 16 behaviour: `notFound()` for a slug that wasn't prerendered returns a
+  proper 404 with noindex, but the HTML body is empty and the 404 page is drawn by
+  JavaScript. Wrapping the page in `<Suspense>` doesn't fix it (and turns the status
+  into 200), so we keep the real 404. Browsers show the friendly page normally.
+- Anything that reads files or the clock (Shiki, `next/og` fonts) must sit inside a
+  `"use cache"` function, or the route silently becomes request-time / `no-store`.
 - chester.how blocks automated fetches; use the screenshots in `design-refs/`.
 - Visual checks were done with headless Edge + `puppeteer-core` installed in a temp
   folder (not a project dependency) at 1280 / 1440 / 1920 px, dark mode, and 390 px mobile.

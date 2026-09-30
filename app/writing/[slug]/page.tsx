@@ -22,7 +22,7 @@ export const generateStaticParams = articleStaticParams;
 export async function generateMetadata({ params }: PageProps<"/writing/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const post = await getPostBySlug(slug);
-  if (!post) return { title: "Not found" };
+  if (!post) return { title: "Page not found" };
 
   const url = `/writing/${post.slug}`;
   return {
