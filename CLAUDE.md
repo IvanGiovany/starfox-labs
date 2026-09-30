@@ -375,8 +375,7 @@ Track *active days* and *articles read* (one read per article per user), not raw
   - Then 3c (live preview via the real renderer, full-page draft preview) and 3d (image
     helper: in-browser resize/compress, cover upload, paste/drag into the body).
 - Step 2.4 note: **Open Library covers must be downloaded into our own `media` bucket**
-  (`books/`) when a book is picked, never hotlinked from covers.openlibrary.org. Read the
-Next 16 Proxy docs and Supabase's `@supabase/ssr` guide before writing auth code.
+  (`books/`) when a book is picked, never hotlinked from covers.openlibrary.org.
 
 ### Still open
 - **Placeholders for Ivan** (all marked `TODO(Ivan)`): home intro (`app/page.tsx`),
