@@ -167,7 +167,10 @@ footer, emails).
   article exists. Games need their review article before publishing, too.
 - Writing form: title, slug (auto from title), summary, tags, optional cover image,
   optional YouTube link, markdown body with side-by-side live preview, images pasted or
-  dragged into the body. Publishing optionally sends the newsletter.
+  dragged into the body. The body is a plain text area with a small toolbar (heading,
+  bold, italic, link, inline code, code block, list, quote, image) and a **"?" button
+  that opens the WRITING.md cheat sheet in a panel**. Publishing optionally sends the
+  newsletter (checkbox added in Phase 6, not before).
 - Saving or publishing refreshes the cached pages (`revalidateTag`) so changes show at once.
 - Moderation: delete any comment.
 
@@ -337,7 +340,7 @@ Track *active days* and *articles read* (one read per article per user), not raw
 - Use Supabase Row Level Security on every table.
 - Run `npm run build` and fix errors before saying a step is done.
 
-## Where we left off (updated 2026-09-30)
+## Where we left off (updated 2026-10-01)
 ### Done — Phase 1, complete (all on `main`, pushed)
 1. Design system: warm light/dark tokens via `light-dark()`, UQ purple, Newsreader + Inter,
    paper grain, `prose` styles, flash-free theme script (Next 16 inline-script pattern).
@@ -360,7 +363,19 @@ Track *active days* and *articles read* (one read per article per user), not raw
 - Step 2.1 (admin sign-in): **done** and tested on laptop (email code via Resend SMTP).
 - Step 2.2 (content schema): **done** — tables, rules, RLS, views, `media` bucket, sample
   section data, generated types. Visitor-side checks pass with the publishable key.
-- Next: plan step 2.3 (`/admin` shell + Writing editor). Read the
+- Step 2.3 (`/admin` shell + Writing editor), in four parts:
+  - **3a done:** admin tabs, Writing list (search, All/Drafts/Published, one-tap Publish /
+    Unpublish / Delete with plain-language errors), placeholders for the other tabs.
+  - **3b next — the editor form** (`/admin/writing/new`, `/admin/writing/[id]`, currently
+    placeholders): title, slug (auto, warn when changing a published slug), summary,
+    tags (Enter/comma, suggestions, lowercase), YouTube link, body text area + toolbar +
+    "?" cheat-sheet panel; Save draft / Publish (Update) / Unpublish / Save and add
+    another; shared `zod` validation (client + server); local backup of unsaved text and a
+    leave-page warning. Plan it first, then build.
+  - Then 3c (live preview via the real renderer, full-page draft preview) and 3d (image
+    helper: in-browser resize/compress, cover upload, paste/drag into the body).
+- Step 2.4 note: **Open Library covers must be downloaded into our own `media` bucket**
+  (`books/`) when a book is picked, never hotlinked from covers.openlibrary.org. Read the
 Next 16 Proxy docs and Supabase's `@supabase/ssr` guide before writing auth code.
 
 ### Still open
@@ -377,6 +392,10 @@ Next 16 Proxy docs and Supabase's `@supabase/ssr` guide before writing auth code
   line is plain text until Phase 6.
 - UQ palette beyond purple is still a TODO (see Colors).
 - **Two-factor sign-in for the admin** before the newsletter goes live (see Phase 6).
+- **Scheduled publishing** (to-do, after the Writing editor): pick a future date and time
+  and the article goes live then, so Ivan can write several daily posts in advance. Needs
+  public queries to require `published_at <= now()`, and something to refresh the cache
+  at that moment (e.g. a Vercel Cron job calling a route that runs `revalidateTag`).
 
 ### Notes for the next session
 - Next.js 16: read `node_modules/next/dist/docs/` before using an API (see AGENTS.md).
@@ -393,6 +412,11 @@ Next 16 Proxy docs and Supabase's `@supabase/ssr` guide before writing auth code
   into 200), so we keep the real 404. Browsers show the friendly page normally.
 - Anything that reads files or the clock (Shiki, `next/og` fonts) must sit inside a
   `"use cache"` function, or the route silently becomes request-time / `no-store`.
+- Any Client Component that calls `usePathname()` must sit inside `<Suspense>` (with a
+  non-highlighted fallback), or pages with unknown URLs like `/admin/writing/<id>` fail
+  the build. The header nav and admin tabs already do this.
+- Server actions: call `requireAdmin()` first, then `updateTag("posts")` (public pages)
+  and `refresh()` (current admin page) after a successful change.
 - chester.how blocks automated fetches; use the screenshots in `design-refs/`.
 - Visual checks were done with headless Edge + `puppeteer-core` installed in a temp
   folder (not a project dependency) at 1280 / 1440 / 1920 px, dark mode, and 390 px mobile.
