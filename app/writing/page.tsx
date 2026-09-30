@@ -3,10 +3,15 @@ import { Suspense } from "react";
 import { SectionHeader } from "@/components/section-header";
 import { WritingBrowser, WritingBrowserFallback } from "@/components/writing-browser";
 import { countTags, getPublishedPosts } from "@/lib/posts";
+import { openGraphDefaults } from "@/lib/site";
+
+const description = "Articles about software, and a few other things.";
 
 export const metadata: Metadata = {
   title: "Writing",
-  description: "Articles about software, and a few other things.",
+  description,
+  alternates: { canonical: "/writing" },
+  openGraph: { ...openGraphDefaults, url: "/writing", title: "Writing", description },
 };
 
 export default async function WritingPage() {

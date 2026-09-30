@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Newsreader } from "next/font/google";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { openGraphDefaults, site } from "@/lib/site";
 import "./globals.css";
 
 // Clean sans for UI and metadata.
@@ -19,12 +20,19 @@ const newsreader = Newsreader({
   axes: ["opsz"],
 });
 
+// Site-wide defaults. Each page sets its own canonical URL and preview
+// details (a canonical here would be inherited by every page and point them
+// all at the home page). Preview images come from opengraph-image.tsx files.
+// metadataBase turns relative URLs into the absolute ones previews require.
 export const metadata: Metadata = {
+  metadataBase: new URL(site.url),
   title: {
-    default: "Starfox Labs",
-    template: "%s · Starfox Labs",
+    default: site.name,
+    template: `%s · ${site.name}`,
   },
-  description: "Ivan's notes on software, and a few other things.",
+  description: "Ivan's notes on software, projects, and music as Spektral.",
+  openGraph: openGraphDefaults,
+  twitter: { card: "summary_large_image" },
 };
 
 // Runs during HTML parsing, before first paint, so a saved theme never

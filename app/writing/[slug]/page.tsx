@@ -6,26 +6,41 @@ import { Badge } from "@/components/badge";
 import { YouTubeEmbed } from "@/components/youtube-embed";
 import { formatDate } from "@/lib/format";
 import { renderMarkdown } from "@/lib/markdown";
-import { getPostBySlug, getPublishedPosts, readingTime, type PostSummary } from "@/lib/posts";
+import { articleStaticParams, getPostBySlug, getPublishedPosts, readingTime, type PostSummary } from "@/lib/posts";
+import { openGraphDefaults, site } from "@/lib/site";
 import { youtubeId } from "@/lib/youtube";
 
 // One article: a simple reading column, text-first (no cards), styled after
 // chester.how's blog: big serif title, a quiet italic date line, a short rule.
 
-// Every published article is prerendered at build time. Articles published
-// later are rendered on their first visit and then cached. With Cache
-// Components this list must not be empty, so with no posts we return a slug
-// that simply renders the 404.
-export async function generateStaticParams() {
-  const posts = await getPublishedPosts();
-  return posts.length > 0 ? posts.map((post) => ({ slug: post.slug })) : [{ slug: "no-posts-yet" }];
-}
+// Every published article is prerendered at build time; articles published
+// later are rendered on their first visit and then cached.
+export const generateStaticParams = articleStaticParams;
 
+// Title, description and link-preview tags. The preview image itself comes
+// from opengraph-image.tsx in this folder; Next.js adds its tags automatically.
 export async function generateMetadata({ params }: PageProps<"/writing/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const post = await getPostBySlug(slug);
   if (!post) return { title: "Not found" };
-  return { title: post.title, description: post.summary };
+
+  const url = `/writing/${post.slug}`;
+  return {
+    title: post.title,
+    description: post.summary,
+    alternates: { canonical: url },
+    openGraph: {
+      ...openGraphDefaults,
+      type: "article",
+      url,
+      title: post.title,
+      description: post.summary,
+      publishedTime: post.publishedAt,
+      authors: [site.author],
+      tags: post.tags,
+    },
+    twitter: { card: "summary_large_image", title: post.title, description: post.summary },
+  };
 }
 
 export default async function ArticlePage({ params }: PageProps<"/writing/[slug]">) {

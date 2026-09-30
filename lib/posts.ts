@@ -102,6 +102,16 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
   return { ...toSummary(data), bodyMd: data.body_md ?? "" };
 }
 
+/**
+ * `generateStaticParams` for article routes: every published slug, so they are
+ * all prerendered at build time. With Cache Components the list must not be
+ * empty, so with no posts it returns a slug that simply renders the 404.
+ */
+export async function articleStaticParams(): Promise<{ slug: string }[]> {
+  const posts = await getPublishedPosts();
+  return posts.length > 0 ? posts.map((post) => ({ slug: post.slug })) : [{ slug: "no-posts-yet" }];
+}
+
 /** Tags with how many published posts use each, most used first. */
 export function countTags(posts: PostSummary[]): TagCount[] {
   const counts = new Map<string, number>();

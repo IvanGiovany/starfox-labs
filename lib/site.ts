@@ -38,3 +38,14 @@ export const site = {
     },
   },
 } as const;
+
+/**
+ * Link-preview defaults to spread into every page's `openGraph`. Next.js
+ * replaces a parent's openGraph object instead of merging it, so a page that
+ * sets its own would otherwise lose the site name.
+ */
+export const openGraphDefaults = {
+  siteName: site.name,
+  locale: "en_AU",
+  type: "website",
+} as const;

@@ -1,15 +1,21 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Badge, Badges } from "@/components/badge";
 import { Card } from "@/components/card";
 import { CurrentlyLearningCard, NowProducingCard } from "@/components/status-cards";
 import { PostDate, WritingCard } from "@/components/writing-card";
 import { countTags, getPublishedPosts, type PostSummary, type TagCount } from "@/lib/posts";
-import { site } from "@/lib/site";
+import { openGraphDefaults, site } from "@/lib/site";
 
 // Home: a chester.how-style "digital garden". The intro sits in the top-left
 // of one dense card grid that mixes every section. For now the grid holds
 // writing and status cards; projects, books, music and hobbies join in the
 // Sections phase.
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+  openGraph: { ...openGraphDefaults, url: "/" },
+};
 
 export default async function Home() {
   const posts = await getPublishedPosts();
