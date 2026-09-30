@@ -249,6 +249,15 @@ body::before {
   & li + li {
     margin-top: 0.35em;
   }
+  /* - [x] task lists: the checkbox replaces the bullet. */
+  & .contains-task-list {
+    list-style: none;
+    padding-left: 0;
+  }
+  & .task-list-item input {
+    margin-right: 0.5em;
+    accent-color: var(--accent);
+  }
   & li::marker {
     color: var(--fg-muted);
   }
@@ -283,6 +292,112 @@ body::before {
     border-radius: 6px;
     overflow-x: auto;
   }
+
+  /* Highlighted code blocks (rehype-pretty-code, see lib/markdown.tsx). */
+  & .code-block {
+    margin-block: 1.75em;
+    border-radius: 10px;
+    background: var(--bg-raised);
+    overflow: hidden;
+  }
+  & .code-block-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.45rem 0.6rem 0.45rem 1.1rem;
+    border-bottom: 1px solid var(--rule);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--fg-muted);
+  }
+  & .code-block-title {
+    font-family: var(--font-mono);
+    color: var(--fg);
+  }
+  & .code-block pre {
+    margin: 0;
+    padding: 0.9rem 0;
+    border-radius: 0;
+    background: transparent;
+    font-size: 0.875rem;
+    line-height: 1.7;
+    tab-size: 2;
+  }
+  /* Phones: run code blocks edge to edge for a little more room. */
+  @media (width < 40rem) {
+    & .code-block {
+      margin-inline: calc(-1 * var(--page-pad));
+      border-radius: 0;
+    }
+  }
+  & .code-block code {
+    display: grid; /* one row per line, so highlighted lines span the full width */
+    min-width: fit-content;
+  }
+  & .code-block [data-line] {
+    padding-inline: 1.1rem;
+    border-left: 2px solid transparent;
+  }
+  /* Shiki writes both themes' colors on every token; pick one per theme. */
+  & .code-block span {
+    color: light-dark(var(--shiki-light), var(--shiki-dark));
+    /* light-dark() only takes colors; both Rosé Pine themes use the same italics. */
+    font-style: var(--shiki-light-font-style, inherit);
+  }
+  /* ```ts {2-4} */
+  & .code-block [data-highlighted-line] {
+    background: var(--accent-soft);
+    border-left-color: var(--accent);
+  }
+  /* ```ts showLineNumbers */
+  & .code-block code[data-line-numbers] {
+    counter-reset: line;
+  }
+  & .code-block code[data-line-numbers] > [data-line]::before {
+    counter-increment: line;
+    content: counter(line);
+    display: inline-block;
+    width: 1.75rem;
+    margin-right: 1rem;
+    text-align: right;
+    color: var(--fg-muted);
+    opacity: 0.6;
+  }
+
+  /* "#" link after each heading, shown on hover or keyboard focus. */
+  & .heading-anchor {
+    margin-left: 0.35em;
+    color: var(--fg-muted);
+    text-decoration: none;
+    opacity: 0;
+    transition: opacity 150ms ease;
+  }
+  & :is(h2, h3, h4):hover .heading-anchor,
+  & .heading-anchor:focus-visible {
+    opacity: 1;
+  }
+  & :is(h2, h3, h4) {
+    scroll-margin-top: 1.5rem;
+  }
+
+  & .article-image {
+    display: block;
+    margin-block: 1.75em;
+  }
+  & .article-image img {
+    width: 100%;
+    border-radius: 10px;
+  }
+  & .article-image-caption {
+    display: block;
+    margin-top: 0.6em;
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    color: var(--fg-muted);
+    text-align: center;
+  }
+
   & table {
     width: 100%;
     font-family: var(--font-sans);
