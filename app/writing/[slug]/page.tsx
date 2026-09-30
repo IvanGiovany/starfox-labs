@@ -3,9 +3,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/badge";
+import { YouTubeEmbed } from "@/components/youtube-embed";
 import { formatDate } from "@/lib/format";
 import { renderMarkdown } from "@/lib/markdown";
-import { getPostBySlug, getPublishedPosts, readingTime } from "@/lib/posts";
+import { getPostBySlug, getPublishedPosts, readingTime, type PostSummary } from "@/lib/posts";
+import { youtubeId } from "@/lib/youtube";
 
 // One article: a simple reading column, text-first (no cards), styled after
 // chester.how's blog: big serif title, a quiet italic date line, a short rule.
@@ -31,8 +33,9 @@ export default async function ArticlePage({ params }: PageProps<"/writing/[slug]
   const post = await getPostBySlug(slug);
   if (!post) notFound();
 
-  const body = await renderMarkdown(post.bodyMd);
+  const [body, { older, newer }] = await Promise.all([renderMarkdown(post.bodyMd), neighbours(slug)]);
   const minutes = readingTime(post.bodyMd);
+  const videoId = post.youtubeUrl ? youtubeId(post.youtubeUrl) : null;
 
   return (
     <article className="mx-auto max-w-[42rem] pt-6 pb-8 sm:pt-10">
@@ -40,7 +43,7 @@ export default async function ArticlePage({ params }: PageProps<"/writing/[slug]
         ← writing.
       </Link>
 
-      <header className="mt-8 sm:mt-10">
+      <header className="reveal mt-8 sm:mt-10">
         <h1 className="font-serif text-[clamp(2.4rem,5.5vw,3.75rem)] leading-[1.05] font-semibold tracking-[-0.02em] text-balance">
           {post.title}
         </h1>
@@ -63,9 +66,12 @@ export default async function ArticlePage({ params }: PageProps<"/writing/[slug]
         <hr className="mt-8 w-24 border-rule" />
       </header>
 
+      {/* Cover and video are slightly wider than the text on large screens. */}
       {post.coverImageUrl && (
-        // Slightly wider than the text on large screens, so it doesn't feel boxed in.
-        <div className="relative mt-10 aspect-[16/9] overflow-hidden rounded-xl bg-bg-raised lg:-mx-16">
+        <div
+          className="reveal relative mt-10 aspect-[16/9] overflow-hidden rounded-xl bg-bg-raised lg:-mx-16"
+          style={{ "--reveal-delay": "60ms" } as React.CSSProperties}
+        >
           <Image
             src={post.coverImageUrl}
             alt=""
@@ -77,7 +83,63 @@ export default async function ArticlePage({ params }: PageProps<"/writing/[slug]
         </div>
       )}
 
-      <div className="prose mt-10 max-w-none">{body}</div>
+      {videoId && (
+        <div className="reveal mt-10 lg:-mx-16" style={{ "--reveal-delay": "60ms" } as React.CSSProperties}>
+          <YouTubeEmbed id={videoId} title={post.title} />
+        </div>
+      )}
+
+      <div className="reveal prose mt-10 max-w-none" style={{ "--reveal-delay": "120ms" } as React.CSSProperties}>
+        {body}
+      </div>
+
+      <OlderNewer older={older} newer={newer} />
+
+      {/*
+        TODO(Phase 5 — Comments): comments and replies go here. Signed-in
+        readers can post; everyone can read. Keep the #comments id so links
+        like /writing/slug#comments keep working.
+      */}
+      <section id="comments" aria-labelledby="comments-heading" className="mt-16 border-t border-rule pt-8">
+        <h2 id="comments-heading" className="font-serif text-2xl font-semibold">
+          Comments
+        </h2>
+        <p className="mt-3 text-fg-muted">
+          Comments aren&apos;t open yet. Soon you&apos;ll be able to sign in and reply here.
+        </p>
+      </section>
     </article>
+  );
+}
+
+/** The articles published just before and after this one (from the cached list). */
+async function neighbours(slug: string): Promise<{ older?: PostSummary; newer?: PostSummary }> {
+  const posts = await getPublishedPosts(); // newest first
+  const index = posts.findIndex((post) => post.slug === slug);
+  if (index === -1) return {};
+  return { newer: posts[index - 1], older: posts[index + 1] };
+}
+
+function OlderNewer({ older, newer }: { older?: PostSummary; newer?: PostSummary }) {
+  if (!older && !newer) return null;
+  return (
+    <nav aria-label="More writing" className="mt-16 grid gap-6 border-t border-rule pt-8 sm:grid-cols-2">
+      {older && (
+        <Link href={`/writing/${older.slug}`} className="group no-underline">
+          <span className="text-sm text-fg-muted">← Older</span>
+          <span className="mt-1 block font-serif text-xl leading-snug text-fg group-hover:text-accent">
+            {older.title}
+          </span>
+        </Link>
+      )}
+      {newer && (
+        <Link href={`/writing/${newer.slug}`} className="group no-underline sm:col-start-2 sm:text-right">
+          <span className="text-sm text-fg-muted">Newer →</span>
+          <span className="mt-1 block font-serif text-xl leading-snug text-fg group-hover:text-accent">
+            {newer.title}
+          </span>
+        </Link>
+      )}
+    </nav>
   );
 }

@@ -186,6 +186,23 @@ body::before {
   --tone-fg: light-dark(#86294f, #f1b9cd);
 }
 
+/*
+ * Article entrance: the one orchestrated motion on a reading page. Parts of
+ * the article rise 8px and fade in, each a little after the previous one
+ * (set --reveal-delay). The reduced-motion rule at the end of this file
+ * turns it into an instant appearance.
+ */
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@utility reveal {
+  animation: reveal 380ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: var(--reveal-delay, 0ms);
+}
+
 /* Accent glow: a soft light behind links or marks that should feel "lit". */
 @utility glow {
   text-shadow: 0 0 18px var(--accent-glow);
@@ -350,6 +367,16 @@ body::before {
     background: var(--accent-soft);
     border-left-color: var(--accent);
   }
+  /* ```ts /word/ */
+  & .code-block [data-highlighted-chars] {
+    border-radius: 3px;
+    background: var(--accent-soft);
+    box-shadow: 0 0 0 2px var(--accent-soft);
+  }
+  /* `code{:ts}`: highlighted inline code keeps the inline code look. */
+  & :not(pre) > code[data-language] span {
+    color: light-dark(var(--shiki-light), var(--shiki-dark));
+  }
   /* ```ts showLineNumbers */
   & .code-block code[data-line-numbers] {
     counter-reset: line;
@@ -379,6 +406,34 @@ body::before {
   }
   & :is(h2, h3, h4) {
     scroll-margin-top: 1.5rem;
+  }
+
+  /* Footnotes ([^1]): small superscript links, notes collected at the end. */
+  & sup:has([data-footnote-ref]) {
+    font-family: var(--font-sans);
+    font-size: 0.65em;
+    line-height: 0;
+  }
+  & [data-footnote-ref] {
+    margin-left: 0.1em;
+    text-decoration: none;
+  }
+  & [data-footnote-ref]::before {
+    content: "[";
+  }
+  & [data-footnote-ref]::after {
+    content: "]";
+  }
+  & [data-footnotes] {
+    margin-top: 3em;
+    padding-top: 1.5em;
+    border-top: 1px solid var(--rule);
+    font-size: 0.85em;
+    color: var(--fg-muted);
+  }
+  & [data-footnote-backref] {
+    margin-left: 0.25em;
+    text-decoration: none;
   }
 
   & .article-image {
