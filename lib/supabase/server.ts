@@ -1,6 +1,7 @@
 import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import type { Database } from "../database.types";
 import { supabasePublishableKey, supabaseUrl } from "./config";
 
 // A Supabase client that acts as the signed-in visitor, using their session
@@ -11,7 +12,8 @@ import { supabasePublishableKey, supabaseUrl } from "./config";
 export async function createSupabaseServerClient() {
   const cookieStore = await cookies();
 
-  return createServerClient(supabaseUrl, supabasePublishableKey, {
+  // <Database>: queries are typed from lib/database.types.ts (npm run db:types).
+  return createServerClient<Database>(supabaseUrl, supabasePublishableKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();

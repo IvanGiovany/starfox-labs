@@ -241,6 +241,25 @@ body::before {
   }
 }
 
+/* Small text buttons in admin list rows (Edit, Publish, Delete…): 44px tall
+   so they're easy to tap, quiet until hovered. */
+@utility row-action {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  border-radius: 0.5rem;
+  color: var(--fg-muted);
+  cursor: pointer;
+  &:hover {
+    background: var(--bg-raised);
+    color: var(--fg);
+  }
+  &:disabled {
+    cursor: wait;
+  }
+}
+
 /* Accent glow: a soft light behind links or marks that should feel "lit". */
 @utility glow {
   text-shadow: 0 0 18px var(--accent-glow);

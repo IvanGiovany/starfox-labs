@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { signOut } from "@/app/login/actions";
+import { AdminTabs } from "@/components/admin/admin-tabs";
 import { requireAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = {
@@ -34,7 +35,8 @@ async function AdminGate({ children }: { children: React.ReactNode }) {
           </button>
         </form>
       </div>
-      {children}
+      <AdminTabs />
+      <div className="mt-6">{children}</div>
     </div>
   );
 }
