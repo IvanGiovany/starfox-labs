@@ -183,21 +183,31 @@ item tables have no slug; only `posts` does.
 
 Shared columns on every item table: `id`, `title`, `status` (`draft` | `published`),
 `post_id` (→ `posts.id`, unique, `on delete set null`), `image_path` (Storage path),
-`badges text[]`, `show_on_home` (bool), `card_size` (`small` | `wide`), `sort_order`,
-`created_at`, `updated_at`.
+`image_alt`, `badges text[]`, `show_on_home` (bool), `card_size` (`small` | `wide`),
+`sort_order` (int, set by drag-to-reorder), `created_at`, `updated_at`.
+Built in migrations `20260930100000`–`20260930140000`; `lib/database.types.ts` is generated
+from the live schema (`npm run db:types`) — regenerate it after every migration.
 
 | Table | Extra columns | Rules |
 |---|---|---|
 | `posts` (exists) | slug, summary, body_md, tags, cover_image_url, youtube_url, published_at | — |
 | `projects` | summary, url, repo_url, stack text[], started_on | at least one of url / repo_url / post_id |
 | `books` | author, reading_status (`to_read` / `reading` / `read`), started_on, finished_on, rating 1–5 (optional), url, isbn, open_library_key, published_year, page_count | — |
-| `tracks` | released_on, in_progress (bool), snippet_path (audio), full_track_url, links jsonb (spotify, soundcloud, bandcamp, youtube, apple) | published ⇒ `post_id` and `snippet_path` set |
-| `games` | platform, hours_played numeric, rating 1–10 (optional), play_status (`playing` / `finished` / `dropped`) | published ⇒ `post_id` set |
-| `hobby_items` | category (e.g. Coffee), subtitle, note, image_style (`photo` / `cutout` / `none`), caption, url | — |
+| `tracks` | released_on, in_progress (bool), snippet_path (audio), full_track_url, links jsonb (spotify, soundcloud, bandcamp, youtube, apple), note | published ⇒ `post_id` and `snippet_path` set, **unless `in_progress`** (so "Now producing" can show before the article exists; the Music page lists only finished songs) |
+| `games` | platform, hours_played numeric, rating 1–10 (optional), play_status (`playing` / `finished` / `dropped`, default playing), finished_on | published ⇒ `post_id` set |
+| `hobby_items` | category (e.g. Coffee), subtitle, note, image_style (`photo` / `cutout` / `none`), caption, url | published ⇒ `category` set |
 
+- Other database rules: posts need a body to publish and get `published_at` automatically;
+  an article can be linked from only one item across all tables (trigger); deleting an
+  article that a published song/game needs is refused until the item is unpublished;
+  books: rating 1–5, ISBN 10/13 digits, finished ≥ started; URLs must be `http(s)://`.
 - **`home_feed` view** (`security_invoker = true`, so RLS still applies): published items
-  with `show_on_home` from every table plus recent posts, as one card shape: `section,
-  id, title, label, href, image_path, image_style, caption, badges, card_size, sort_date`.
+  with `show_on_home` from every table (not posts — the home page queries those itself),
+  as one card shape: `section, id, title, label, href, image_path, image_alt, image_style,
+  caption, state, badges, card_size, sort_order, sort_date`. Links to an article only once
+  it's published; songs/games appear only when their article is live.
+- **`reorder_items(section, ids)`**: saves a section's drag-and-drop order in one call
+  (admin only, runs with the caller's rights).
 - **`post_items` view**: for each article, the item that links to it (if any), so the
   article page can show its "about this" panel with one query.
 - **Status cards come from data, not code:** "Now producing" = a track with
@@ -209,7 +219,12 @@ Shared columns on every item table: `id`, `title`, `status` (`draft` | `publishe
   (`writing/`, `projects/`, `books/`, `music/` for covers and audio snippets, `games/`,
   `hobbies/`). Allowed types: images (JPEG, PNG, WebP, AVIF) and audio (MP3, M4A);
   size limits enforced by the bucket.
-- Migrations live in `supabase/migrations/` (Ivan runs them in the SQL editor).
+- **Workflow:** migrations live in `supabase/migrations/` and are applied with the Supabase
+  CLI (project linked; `npx supabase db push`, preview with `--dry-run`). Then run
+  `npm run db:types`. Sample content: `supabase/seed.sql` (articles) and
+  `supabase/seed-sections.sql` (section items; ids start `00000000-0000-4000-8000-`),
+  both listed in `supabase/config.toml`. `supabase/tests/rls-check.sql` is a rolled-back
+  security/rules check to paste into the SQL editor after schema changes.
 
 ## Accounts, comments, newsletter
 - Accounts are **optional**. Anyone can read articles and comments.
@@ -342,18 +357,18 @@ Track *active days* and *articles read* (one read per article per user), not raw
 7. README with screenshots (`docs/screenshots/`), architecture notes and setup steps.
 
 ### Now — Phase 2 (Admin + content model)
-Step 2.1 (admin sign-in) is **built** (`proxy.ts`, `lib/auth.ts`, `lib/supabase/server.ts`,
-`/login`, `/auth/confirm`, `/admin`, migration `20260930000000_admins.sql`). Waiting on Ivan:
-Resend as Supabase SMTP, the sign-in email template, his admin user + `admins` row, then a
-real sign-in test on laptop and phone. Next: plan step 2.2 (content schema). Read the
+- Step 2.1 (admin sign-in): **done** and tested on laptop (email code via Resend SMTP).
+- Step 2.2 (content schema): **done** — tables, rules, RLS, views, `media` bucket, sample
+  section data, generated types. Visitor-side checks pass with the publishable key.
+- Next: plan step 2.3 (`/admin` shell + Writing editor). Read the
 Next 16 Proxy docs and Supabase's `@supabase/ssr` guide before writing auth code.
 
 ### Still open
 - **Placeholders for Ivan** (all marked `TODO(Ivan)`): home intro (`app/page.tsx`),
   Writing intro (`app/writing/page.tsx`), "Now producing" and "Learning" cards
   (`lib/site.ts`).
-- **Sample posts**: delete before launch with
-  `delete from public.posts where slug like 'sample-%';`
+- **Sample content**: delete before launch — section items first (the statements at the top
+  of `supabase/seed-sections.sql`), then `delete from public.posts where slug like 'sample-%';`
 - **Vercel** (Ivan to confirm it's done): Production Branch = `main`; env vars
   `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (the publishable
   key, NOT `..._ANON_KEY` as first suggested); check the latest deploy succeeded.

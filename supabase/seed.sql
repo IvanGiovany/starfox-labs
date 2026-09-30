@@ -1,10 +1,16 @@
 -- SAMPLE CONTENT for local development and design work.
--- These are placeholder articles, not real ones. Delete them before launch:
+-- These are placeholder articles, not real ones. Delete them before launch,
+-- after the sample section items (see seed-sections.sql), since published
+-- sample songs and games depend on their sample articles:
 --   delete from public.posts where slug like 'sample-%';
 --
--- Safe to re-run: existing sample posts are replaced.
+-- Safe to re-run: existing sample posts are replaced. The sample articles that
+-- seed-sections.sql links items to (fixed ids 00000000-0000-4000-8000-…) are
+-- left alone here.
 
-delete from public.posts where slug like 'sample-%';
+delete from public.posts
+where slug like 'sample-%'
+  and id::text not like '00000000-0000-4000-8000-%';
 
 insert into public.posts (slug, title, summary, tags, status, published_at, body_md) values
 

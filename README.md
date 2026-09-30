@@ -110,9 +110,13 @@ You'll need Node.js 20.9 or newer and a free [Supabase](https://supabase.com) pr
    ```
 2. Copy `.env.example` to `.env.local` and fill in your Supabase URL and **publishable**
    key (Supabase → Project Settings → API Keys). Never use the secret key here.
-3. In the Supabase SQL editor, run
-   [`supabase/migrations/20260926000000_create_posts.sql`](supabase/migrations/20260926000000_create_posts.sql),
-   then [`supabase/seed.sql`](supabase/seed.sql) for sample articles.
+3. Create the database schema and sample content with the Supabase CLI (installed as a dev
+   dependency):
+   ```bash
+   npx supabase login
+   npx supabase link --project-ref <your-project-ref>
+   npx supabase db push --include-seed
+   ```
 4. Start the dev server and open http://localhost:3000:
    ```bash
    npm run dev
@@ -124,6 +128,7 @@ You'll need Node.js 20.9 or newer and a free [Supabase](https://supabase.com) pr
 | `npm run build` | Production build (must pass before pushing) |
 | `npm run start` | Serve the production build |
 | `npm run lint` | ESLint |
+| `npm run db:types` | Regenerate `lib/database.types.ts` from the linked database |
 
 ### Environment variables
 
