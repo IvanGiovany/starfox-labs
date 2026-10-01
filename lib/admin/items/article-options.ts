@@ -20,7 +20,9 @@ export async function getArticleOptions(): Promise<ArticleOption[]> {
   const sections = Object.values(ITEM_SECTIONS);
 
   const [posts, ...links] = await Promise.all([
-    supabase.from("posts").select("id, title, status").order("updated_at", { ascending: false }),
+    // id breaks ties: rows saved in the same moment would otherwise come back in any
+    // order, and two renders could then disagree (a hydration mismatch in the picker).
+    supabase.from("posts").select("id, title, status").order("updated_at", { ascending: false }).order("id"),
     // One small query per table; supabase-js can't type a table chosen at runtime (see save-item.ts).
     ...sections.map((s) => supabase.from(s.table as "projects").select("id, title, post_id").not("post_id", "is", null)),
   ]);

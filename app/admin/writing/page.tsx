@@ -43,7 +43,8 @@ async function Articles() {
   const { data, error } = await supabase
     .from("posts")
     .select("id, slug, title, status, tags, published_at, updated_at")
-    .order("updated_at", { ascending: false });
+    .order("updated_at", { ascending: false })
+    .order("id"); // a fully determined order, even when two articles were saved together
 
   if (error) throw new Error(`Failed to load articles: ${error.message}`);
   const posts: AdminPost[] = data;

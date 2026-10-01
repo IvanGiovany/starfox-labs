@@ -28,7 +28,8 @@ async function Projects() {
     .from("projects")
     .select("id, title, status, image_path, badges, show_on_home, card_size, stack")
     .order("sort_order")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .order("id"); // a fully determined order, even when the other columns tie
   if (error) throw new Error(`Failed to load projects: ${error.message}`);
 
   const rows: ItemListRow[] = data.map((p) => ({

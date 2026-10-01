@@ -11,13 +11,14 @@ export const READING_STATUS_LABELS: Record<ReadingStatus, string> = {
   read: "READ",
 };
 
-type Sortable = { readingStatus: ReadingStatus; finishedOn: string | null; createdAt: string };
+type Sortable = { id: string; readingStatus: ReadingStatus; finishedOn: string | null; createdAt: string };
 
 const RANK: Record<ReadingStatus, number> = { reading: 0, read: 1, to_read: 2 };
 
 /**
  * Currently reading first, then read (newest finished first; books without a
- * finish date after those), then to read. Within a group, newest added first.
+ * finish date after those), then to read. Within a group, newest added first,
+ * and the id settles any remaining tie, so the order is always the same.
  * Dates are ISO strings, so comparing them as text compares them in time.
  */
 export function compareBooks(a: Sortable, b: Sortable): number {
@@ -27,5 +28,5 @@ export function compareBooks(a: Sortable, b: Sortable): number {
     if (!b.finishedOn) return -1;
     return b.finishedOn.localeCompare(a.finishedOn);
   }
-  return b.createdAt.localeCompare(a.createdAt);
+  return b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id);
 }
