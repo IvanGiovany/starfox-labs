@@ -18,6 +18,7 @@ import { useEffect, useId, useMemo, useState, useTransition } from "react";
 import { Badge } from "@/components/badge";
 import { deleteItem, reorderItems, setItemStatus, type ListActionResult } from "@/lib/admin/items/list-actions";
 import type { ItemSectionKey } from "@/lib/admin/items/sections";
+import { localToday } from "@/lib/format";
 import { matchesAll, normalize, toTerms } from "@/lib/search";
 
 // A section's items in the admin: search, a status filter, one-tap Publish /
@@ -35,7 +36,14 @@ export type ItemListRow = {
   badges: string[];
   showOnHome: boolean;
   cardSize: "small" | "wide";
+  /** The section's own status, e.g. "READING" or "PLAYING". */
+  stateBadge?: string;
+  /** A one-tap next step, e.g. { label: "Mark as read", value: "read" }. */
+  quickStep?: { label: string; value: string } | null;
 };
+
+/** Runs a row's quick step: a server action passed in by the section's page. */
+export type QuickAction = (id: string, value: string, today: string) => Promise<ListActionResult>;
 
 type Filter = "all" | "draft" | "published";
 
@@ -44,11 +52,13 @@ export function ItemList({
   singular,
   rows,
   order,
+  quickAction,
 }: {
   sectionKey: ItemSectionKey;
   singular: string;
   rows: ItemListRow[];
   order: "manual" | "automatic";
+  quickAction?: QuickAction;
 }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
@@ -181,6 +191,7 @@ export function ItemList({
                   isFirst={index === 0}
                   isLast={index === visible.length - 1}
                   onMove={(by) => move(row.id, by)}
+                  quickAction={quickAction}
                 />
               ))}
             </ul>
@@ -198,6 +209,7 @@ function ItemRow({
   isFirst,
   isLast,
   onMove,
+  quickAction,
 }: {
   row: ItemListRow;
   sectionKey: ItemSectionKey;
@@ -205,6 +217,7 @@ function ItemRow({
   isFirst: boolean;
   isLast: boolean;
   onMove: (by: -1 | 1) => void;
+  quickAction?: QuickAction;
 }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -264,6 +277,7 @@ function ItemRow({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <Badge toneKey={published ? "read" : "learning"}>{published ? "Published" : "Draft"}</Badge>
+            {row.stateBadge && <Badge>{row.stateBadge}</Badge>}
             <Link href={editHref} className="font-serif text-lg leading-snug text-fg no-underline hover:text-accent">
               {row.title}
             </Link>
@@ -291,6 +305,16 @@ function ItemRow({
               ↓
             </button>
           </>
+        )}
+        {row.quickStep && quickAction && (
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => run(() => quickAction(row.id, row.quickStep!.value, localToday()))}
+            className="row-action border border-rule"
+          >
+            {row.quickStep.label}
+          </button>
         )}
         <Link href={editHref} className="row-action no-underline">
           Edit

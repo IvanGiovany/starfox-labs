@@ -9,6 +9,7 @@ const STATUS_TONES: Record<string, Tone> = {
   "now producing": "tone-peach",
   reading: "tone-yellow",
   read: "tone-green",
+  "to read": "tone-blue",
   learning: "tone-lavender",
 };
 

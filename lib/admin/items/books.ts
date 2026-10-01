@@ -122,12 +122,6 @@ export function withReadingStatus<T extends { readingStatus: ReadingStatus; star
   };
 }
 
-/** The admin's local date as "YYYY-MM-DD". */
-export function localToday(now = new Date()): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-}
-
 export function bookToRow(data: z.output<typeof bookSchema>): Omit<TablesInsert<"books">, "status"> {
   return {
     ...baseToRow(data),

@@ -3,7 +3,7 @@
 export const adminSections = [
   { key: "writing", label: "Writing", ready: true },
   { key: "projects", label: "Projects", ready: true },
-  { key: "reading", label: "Reading", ready: false },
+  { key: "reading", label: "Reading", ready: true },
   { key: "music", label: "Music", ready: false },
   { key: "games", label: "Games", ready: false },
   { key: "hobbies", label: "Hobbies", ready: false },
