@@ -363,7 +363,7 @@ Track *active days* and *articles read* (one read per article per user), not raw
 - Step 2.1 (admin sign-in): **done** and tested on laptop (email code via Resend SMTP).
 - Step 2.2 (content schema): **done** — tables, rules, RLS, views, `media` bucket, sample
   section data, generated types. Visitor-side checks pass with the publishable key.
-- Step 2.3 (`/admin` shell + Writing editor), in four parts:
+- Step 2.3 (`/admin` shell + Writing editor): **done** (all four parts tested by Ivan).
   - **3a done:** admin tabs, Writing list (search, All/Drafts/Published, one-tap Publish /
     Unpublish / Delete with plain-language errors), placeholders for the other tabs.
   - **3b done** (tested by Ivan): the editor form at `/admin/writing/new` and
@@ -399,11 +399,32 @@ Track *active days* and *articles read* (one read per article per user), not raw
       cancels superseded requests). **A route handler, not a server action**, because Next
       runs a page's server actions one at a time and previews would hold up Save (verified:
       saves start while previews are pending).
-  - **3d next — image helper**: in-browser resize/compress (longest edge 2400 px, covers
-    1200 px; WebP, or JPEG where WebP encoding isn't available; EXIF orientation applied,
-    location data dropped), cover image upload, and images pasted or dragged into the
-    body, stored in the `media` bucket (`writing/`). The cover then shows in the preview
-    too (`ArticleView` already takes `coverImageUrl`). Plan it first, then build.
+  - **3d done**: images.
+    - Shared rules in `lib/admin/image-rules.ts`: 2400 px body, 1200 px cover, WebP at
+      85% (JPEG where WebP can't be encoded), JPEG/PNG/WebP/AVIF in (GIF and SVG refused),
+      5 MB bucket limit. Stored as `media/writing/YYYY/MM/<random>.webp`.
+    - Files (paste, drop, pick) are prepared in the browser (`lib/admin/prepare-image.ts`:
+      EXIF orientation, step-down scaling, re-encode, so no metadata) and uploaded straight
+      to Storage (`lib/admin/upload-image.ts`, `lib/supabase/browser.ts`).
+    - Image URLs (Unsplash, Pexels, game art…) are imported by the server:
+      `POST /admin/media/import` → `lib/admin/fetch-remote-image.ts` (admin + same-origin
+      only; http(s) on standard ports; public addresses only, checked inside the
+      connection's own DNS lookup and on every redirect; 15 s / 25 MB caps) →
+      `lib/admin/prepare-image-server.ts` (`sharp`, same rules) → our own copy in Storage.
+      A route handler because imports take seconds and server actions run one at a time.
+    - Cover: `components/admin/cover-image-field.tsx`; the schema only accepts our own
+      `media` URLs (browser and server). Covers are decorative (`alt=""`) by Ivan's choice.
+    - Body: `components/admin/use-body-images.ts` + `body-image-panel.tsx` (toolbar Image
+      button). Placeholders at the cursor become `![alt](url#WxH)`; saving waits for uploads.
+      `lib/image-size.ts` carries the size in the URL fragment, and the renderer
+      (`lib/markdown-react.tsx`) turns it into `width`/`height`.
+    - Random ids use `crypto.getRandomValues` (`randomId()`), not `crypto.randomUUID`,
+      which browsers only offer on https/localhost.
+- **Step 2.4 next — section forms** (Projects, Reading, Music, Games, Hobbies; one step
+  per section). Reuse from the Writing editor: tag input (badges), image helpers
+  (`lib/admin/add-image.ts`, with a folder per section), save bar, local backup, the
+  `updated_at` conflict check, and the per-page `<Suspense>` + `requireAdmin()` rule.
+  Plan it first, then build.
 - Step 2.4 note: **Open Library covers must be downloaded into our own `media` bucket**
   (`books/`) when a book is picked, never hotlinked from covers.openlibrary.org.
 
@@ -425,6 +446,10 @@ Track *active days* and *articles read* (one read per article per user), not raw
   and the article goes live then, so Ivan can write several daily posts in advance. Needs
   public queries to require `published_at <= now()`, and something to refresh the cache
   at that moment (e.g. a Vercel Cron job calling a route that runs `revalidateTag`).
+- **Unused media** (to-do, later): images removed from an article body, and replaced or
+  removed covers, stay in the `media` bucket. Deleting automatically is risky (a file may
+  be used elsewhere, or the change undone), so build an admin view that lists files no
+  article or item references, to delete by hand.
 - **Redirects for changed slugs** (to-do, later): the editor allows changing a published
   article's slug with a warning, but old links then 404. Fix: a `post_redirects` table
   (`old_slug` → `post_id`) filled when a published slug changes, checked by the article
