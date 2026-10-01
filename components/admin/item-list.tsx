@@ -298,10 +298,10 @@ function ItemRow({
       <div className="flex flex-wrap items-center gap-1 text-sm sm:shrink-0">
         {reorderable && (
           <>
-            <button type="button" onClick={() => onMove(-1)} disabled={isFirst} aria-label={`Move ${row.title} up`} className="row-action disabled:opacity-30">
+            <button type="button" autoComplete="off" onClick={() => onMove(-1)} disabled={isFirst} aria-label={`Move ${row.title} up`} className="row-action disabled:opacity-30">
               ↑
             </button>
-            <button type="button" onClick={() => onMove(1)} disabled={isLast} aria-label={`Move ${row.title} down`} className="row-action disabled:opacity-30">
+            <button type="button" autoComplete="off" onClick={() => onMove(1)} disabled={isLast} aria-label={`Move ${row.title} down`} className="row-action disabled:opacity-30">
               ↓
             </button>
           </>
@@ -309,6 +309,7 @@ function ItemRow({
         {row.quickStep && quickAction && (
           <button
             type="button"
+            autoComplete="off"
             disabled={pending}
             onClick={() => run(() => quickAction(row.id, row.quickStep!.value, localToday()))}
             className="row-action border border-rule"
@@ -321,6 +322,7 @@ function ItemRow({
         </Link>
         <button
           type="button"
+          autoComplete="off"
           disabled={pending}
           onClick={() => run(() => setItemStatus(sectionKey, row.id, published ? "draft" : "published"))}
           className="row-action"
@@ -328,11 +330,11 @@ function ItemRow({
           {published ? "Unpublish" : "Publish"}
         </button>
         {confirmingDelete ? (
-          <button type="button" disabled={pending} onClick={() => run(() => deleteItem(sectionKey, row.id))} className="row-action text-danger">
+          <button type="button" autoComplete="off" disabled={pending} onClick={() => run(() => deleteItem(sectionKey, row.id))} className="row-action text-danger">
             Confirm delete
           </button>
         ) : (
-          <button type="button" disabled={pending} onClick={() => setConfirmingDelete(true)} className="row-action">
+          <button type="button" autoComplete="off" disabled={pending} onClick={() => setConfirmingDelete(true)} className="row-action">
             Delete
           </button>
         )}

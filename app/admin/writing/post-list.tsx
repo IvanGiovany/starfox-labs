@@ -142,6 +142,7 @@ function PostRow({ post }: { post: AdminPost }) {
         )}
         <button
           type="button"
+          autoComplete="off"
           disabled={pending}
           onClick={() => run(() => setPostStatus(post.id, published ? "draft" : "published"))}
           className="row-action"
@@ -149,11 +150,11 @@ function PostRow({ post }: { post: AdminPost }) {
           {published ? "Unpublish" : "Publish"}
         </button>
         {confirmingDelete ? (
-          <button type="button" disabled={pending} onClick={() => run(() => deletePost(post.id))} className="row-action text-danger">
+          <button type="button" autoComplete="off" disabled={pending} onClick={() => run(() => deletePost(post.id))} className="row-action text-danger">
             Confirm delete
           </button>
         ) : (
-          <button type="button" disabled={pending} onClick={() => setConfirmingDelete(true)} className="row-action">
+          <button type="button" autoComplete="off" disabled={pending} onClick={() => setConfirmingDelete(true)} className="row-action">
             Delete
           </button>
         )}

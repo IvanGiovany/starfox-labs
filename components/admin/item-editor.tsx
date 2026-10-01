@@ -238,7 +238,10 @@ export function ItemEditor<F extends BaseItemFields, D>({
   const fieldError = (key: keyof BaseItemFields & keyof F & string) => ({ error: errors[key], errorId: `item-${key}-error` });
 
   return (
-    <form noValidate onSubmit={(e) => e.preventDefault()} className="mx-auto max-w-3xl">
+    // autoComplete="off": Firefox would otherwise carry controls' state (e.g. a button enabled
+    // again after saving) over a reload onto whatever control is in that place in the new
+    // HTML, removing a `disabled` the server rendered. See types/react-button-autocomplete.d.ts.
+    <form noValidate autoComplete="off" onSubmit={(e) => e.preventDefault()} className="mx-auto max-w-3xl">
       <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
         <Link href={`/admin/${section.key}`} className="row-action -ml-3 no-underline">
           ← All {section.label.toLowerCase()}

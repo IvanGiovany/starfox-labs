@@ -31,7 +31,7 @@ export function LoginForm({ next }: { next: string }) {
             />
           </label>
           <ErrorMessage message={state.error} />
-          <button type="submit" disabled={pending} className="button-primary">
+          <button type="submit" autoComplete="off" disabled={pending} className="button-primary">
             {pending ? "Signing in…" : "Sign in"}
           </button>
         </form>
@@ -57,7 +57,7 @@ export function LoginForm({ next }: { next: string }) {
         <input name="email" type="email" inputMode="email" autoComplete="email" required autoFocus className="field" />
       </label>
       <ErrorMessage message={state.error} />
-      <button type="submit" disabled={pending} className="button-primary">
+      <button type="submit" autoComplete="off" disabled={pending} className="button-primary">
         {pending ? "Sending…" : "Email me a sign-in code"}
       </button>
     </form>

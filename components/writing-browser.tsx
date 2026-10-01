@@ -187,6 +187,7 @@ function WritingView({
               value={query}
               onChange={(e) => onQueryChange?.(e.target.value)}
               disabled={!onQueryChange}
+              autoComplete="off"
               placeholder="Search titles, tags and text…"
               className="w-full bg-transparent text-sm text-fg outline-none placeholder:text-fg-muted/80 disabled:cursor-wait"
             />
@@ -234,6 +235,7 @@ function WritingView({
             type="button"
             onClick={onLoadMore}
             disabled={!onLoadMore}
+            autoComplete="off"
             className="cursor-pointer rounded-lg border border-rule bg-bg px-4 py-2 text-sm shadow-[0_1px_3px_rgb(0_0_0/0.06)] transition-colors hover:border-accent hover:text-accent disabled:cursor-wait"
           >
             Load more

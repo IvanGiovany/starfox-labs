@@ -271,7 +271,8 @@ export function PostEditor({
   });
 
   return (
-    <form noValidate onSubmit={(e) => e.preventDefault()} className={mode === "split" ? "" : "mx-auto max-w-3xl"}>
+    // autoComplete="off": no Firefox form-state restore over reloads (see item-editor.tsx).
+    <form noValidate autoComplete="off" onSubmit={(e) => e.preventDefault()} className={mode === "split" ? "" : "mx-auto max-w-3xl"}>
       <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
         <Link href="/admin/writing" className="row-action -ml-3 no-underline">
           ← All articles
