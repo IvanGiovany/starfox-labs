@@ -46,7 +46,8 @@ export function ArticlePicker({
     return (
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-rule px-4 py-3">
         <Badge toneKey={linked?.status === "published" ? "read" : "learning"}>{linked?.status === "published" ? "Published" : "Draft"}</Badge>
-        <span className="min-w-0 flex-1 font-serif text-lg leading-snug">{linked?.title ?? "An article that no longer exists"}</span>
+        {/* basis-48: on a phone the buttons wrap below the title instead of squeezing it. */}
+        <span className="min-w-0 flex-1 basis-48 font-serif text-lg leading-snug">{linked?.title ?? "An article that no longer exists"}</span>
         <div className="flex flex-wrap gap-1 text-sm">
           {linked && (
             <Link href={`/admin/writing/${linked.id}`} className="row-action no-underline">
