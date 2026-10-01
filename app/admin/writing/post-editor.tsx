@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore, useTransition, type ReactNode } from "react";
 import { Badge } from "@/components/badge";
 import { CheatSheetPanel } from "@/components/admin/cheat-sheet-panel";
+import { BodyImagePanel } from "@/components/admin/body-image-panel";
 import { CoverImageField } from "@/components/admin/cover-image-field";
 import { handleMarkdownShortcut, MarkdownToolbar } from "@/components/admin/markdown-toolbar";
 import { TagInput } from "@/components/admin/tag-input";
 import { useMediaQuery } from "@/components/admin/use-media-query";
+import { useBodyImages } from "@/components/admin/use-body-images";
 import { removeBackup, useLocalBackup } from "@/components/admin/use-local-backup";
 import {
   firstSentence,
@@ -106,6 +108,12 @@ export function PostEditor({
   const [savingIntent, setSavingIntent] = useState<SaveIntent | null>(null);
   const [pending, startTransition] = useTransition();
   const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const [imagePanelOpen, setImagePanelOpen] = useState(false);
+  const bodyImages = useBodyImages({
+    textareaRef: bodyRef,
+    updateBody: (change) => setFields((current) => ({ ...current, bodyMd: change(current.bodyMd) })),
+    onError: (message) => setNotice({ tone: "error", text: message }),
+  });
 
   const wide = useMediaQuery("(min-width: 80rem)"); // room for the form and the preview side by side
   const storedLayout = useSyncExternalStore(subscribeLayout, readLayout, () => null);
@@ -162,6 +170,11 @@ export function PostEditor({
 
   function save(intent: SaveIntent, addAnother = false) {
     if (pending) return;
+    if (bodyImages.pending > 0) {
+      // Saving now would store the "⏳ Uploading…" placeholders as article text.
+      setNotice({ tone: "error", text: "Wait for the images to finish uploading, then save." });
+      return;
+    }
     const status = statusAfter(intent, saved.status);
     const checked = validatePost(fields, status);
     if (!checked.ok) {
@@ -399,9 +412,16 @@ export function PostEditor({
           <Field label="Article" htmlFor="post-bodyMd" error={errors.bodyMd} errorId="post-bodyMd-error">
             {/* The toolbar stays in view while scrolling a long article. */}
             <div className="sticky top-0 z-10 -mx-1 mb-1.5 bg-bg/95 px-1 py-1 backdrop-blur">
-              <MarkdownToolbar textareaRef={bodyRef}>
+              <MarkdownToolbar textareaRef={bodyRef} onImage={() => setImagePanelOpen((open) => !open)} imageOpen={imagePanelOpen}>
                 <CheatSheetPanel>{cheatSheet}</CheatSheetPanel>
               </MarkdownToolbar>
+              {imagePanelOpen && (
+                <BodyImagePanel
+                  onFiles={bodyImages.addFiles}
+                  onUrl={bodyImages.addUrl}
+                  onClose={() => setImagePanelOpen(false)}
+                />
+              )}
             </div>
             <textarea
               {...fieldProps("bodyMd")}
@@ -409,6 +429,8 @@ export function PostEditor({
               value={fields.bodyMd}
               onChange={(e) => update("bodyMd", e.target.value)}
               onKeyDown={handleMarkdownShortcut}
+            onPaste={bodyImages.onPaste}
+            onDrop={bodyImages.onDrop}
               placeholder="Write in markdown…"
               className="field field-sizing-content min-h-[60vh] resize-y font-mono text-[0.9375rem] leading-relaxed"
             />
@@ -430,7 +452,14 @@ export function PostEditor({
           role={notice?.tone === "error" ? "alert" : "status"}
           className={`mb-2 min-h-5 text-sm ${notice?.tone === "error" ? "text-danger" : "text-fg-muted"}`}
         >
-          {notice?.text ?? (dirty ? "Unsaved changes" : saved.id ? "All changes saved" : "")}
+          {notice?.text ??
+            (bodyImages.pending > 0
+              ? `Uploading ${bodyImages.pending} image${bodyImages.pending === 1 ? "" : "s"}…`
+              : dirty
+                ? "Unsaved changes"
+                : saved.id
+                  ? "All changes saved"
+                  : "")}
         </p>
         <div className="flex flex-wrap items-center gap-2">
           {published ? (

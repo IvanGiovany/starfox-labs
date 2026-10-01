@@ -14,7 +14,7 @@ type Textarea = HTMLTextAreaElement;
  * textarea that keeps Ctrl+Z working and fires React's onChange. If a browser
  * ever drops it, setRangeText still makes the edit (without undo).
  */
-function replace(ta: Textarea, from: number, to: number, text: string, selectFrom: number, selectTo = selectFrom) {
+export function replaceRange(ta: Textarea, from: number, to: number, text: string, selectFrom: number, selectTo = selectFrom) {
   ta.focus();
   ta.setSelectionRange(from, to);
   if (!document.execCommand("insertText", false, text)) {
@@ -29,7 +29,7 @@ function wrap(ta: Textarea, before: string, after: string, placeholder: string) 
   const { selectionStart: start, selectionEnd: end, value } = ta;
   const inner = value.slice(start, end) || placeholder;
   const innerStart = start + before.length;
-  replace(ta, start, end, before + inner + after, innerStart, innerStart + inner.length);
+  replaceRange(ta, start, end, before + inner + after, innerStart, innerStart + inner.length);
 }
 
 /** "## ", "- ", "> " on every selected line; removes it if all lines already have it. */
@@ -45,9 +45,9 @@ function prefixLines(ta: Textarea, prefix: string) {
 
   if (start === end) {
     const cursor = Math.max(lineStart, start + (remove ? -prefix.length : prefix.length));
-    replace(ta, lineStart, lineEnd, next, cursor);
+    replaceRange(ta, lineStart, lineEnd, next, cursor);
   } else {
-    replace(ta, lineStart, lineEnd, next, lineStart, lineStart + next.length);
+    replaceRange(ta, lineStart, lineEnd, next, lineStart, lineStart + next.length);
   }
 }
 
@@ -58,7 +58,7 @@ function codeBlock(ta: Textarea) {
   const open = `${start > 0 && value[start - 1] !== "\n" ? "\n" : ""}\`\`\`\n`;
   const close = `\n\`\`\`${end < value.length && value[end] !== "\n" ? "\n" : ""}`;
   const innerStart = start + open.length;
-  replace(ta, start, end, open + inner + close, innerStart, innerStart + inner.length);
+  replaceRange(ta, start, end, open + inner + close, innerStart, innerStart + inner.length);
 }
 
 /** [text](url): with text selected, selects the URL to type next; otherwise selects "text". */
@@ -71,9 +71,9 @@ function link(ta: Textarea, image = false) {
   const text = `${open}${label}](${url})`;
   if (selected) {
     const urlStart = start + open.length + label.length + 2;
-    replace(ta, start, end, text, urlStart, urlStart + url.length);
+    replaceRange(ta, start, end, text, urlStart, urlStart + url.length);
   } else {
-    replace(ta, start, end, text, start + open.length, start + open.length + label.length);
+    replaceRange(ta, start, end, text, start + open.length, start + open.length + label.length);
   }
 }
 
@@ -98,7 +98,18 @@ export function handleMarkdownShortcut(event: KeyboardEvent<Textarea>) {
   action.run(event.currentTarget);
 }
 
-export function MarkdownToolbar({ textareaRef, children }: { textareaRef: RefObject<Textarea | null>; children?: React.ReactNode }) {
+export function MarkdownToolbar({
+  textareaRef,
+  onImage,
+  imageOpen,
+  children,
+}: {
+  textareaRef: RefObject<Textarea | null>;
+  /** Replaces the Image button's markdown template, e.g. with an upload panel. */
+  onImage?: () => void;
+  imageOpen?: boolean;
+  children?: React.ReactNode;
+}) {
   return (
     <div role="toolbar" aria-label="Formatting" className="flex items-center gap-0.5 overflow-x-auto text-sm">
       {ACTIONS.map((action) => (
@@ -109,7 +120,11 @@ export function MarkdownToolbar({ textareaRef, children }: { textareaRef: RefObj
           title={action.shortcut ? `${action.name} (Ctrl+${action.shortcut.toUpperCase()})` : action.name}
           // Keep the focus (and the phone keyboard) in the textarea.
           onMouseDown={(e) => e.preventDefault()}
-          onClick={() => textareaRef.current && action.run(textareaRef.current)}
+          onClick={() => {
+            if (action.name === "Image" && onImage) return onImage();
+            if (textareaRef.current) action.run(textareaRef.current);
+          }}
+          aria-expanded={action.name === "Image" && onImage ? Boolean(imageOpen) : undefined}
           className={`row-action min-w-11 shrink-0 justify-center px-2.5 ${action.className ?? ""}`}
         >
           {action.label}

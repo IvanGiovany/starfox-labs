@@ -3,6 +3,7 @@ import { toJsxRuntime, type Components } from "hast-util-to-jsx-runtime";
 import { Children, isValidElement, type ReactElement, type ReactNode } from "react";
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import { CopyButton } from "@/components/copy-button";
+import { readSize } from "@/lib/image-size";
 
 // The second half of the markdown renderer: an HTML tree (hast) → React,
 // with our own components for code blocks and images. It has no server-only
@@ -46,11 +47,14 @@ const components: Partial<Components> = {
 
   // Images: lazy-loaded, with the markdown title as a caption:
   // ![alt text](url "Caption shown under the image")
+  // Images added in the editor carry their size in the URL (…/abc.webp#2400x1600),
+  // which becomes width/height so the page keeps their space while they load.
   img({ src, alt, title }) {
+    const { src: url, width, height } = typeof src === "string" ? readSize(src) : { src: undefined };
     return (
       <span className="article-image">
-        {/* eslint-disable-next-line @next/next/no-img-element -- sizes are unknown for images inside markdown */}
-        <img src={typeof src === "string" ? src : undefined} alt={alt ?? ""} loading="lazy" decoding="async" />
+        {/* eslint-disable-next-line @next/next/no-img-element -- markdown images can come from anywhere; next/image needs known hosts */}
+        <img src={url} width={width} height={height} alt={alt ?? ""} loading="lazy" decoding="async" />
         {title && <span className="article-image-caption">{title}</span>}
       </span>
     );

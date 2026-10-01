@@ -36,11 +36,20 @@ export function fitWithin(width: number, height: number, use: ImageUse): { width
 }
 
 /**
+ * A random hex id. crypto.getRandomValues works everywhere, unlike
+ * crypto.randomUUID, which browsers only offer on https:// or localhost (so it
+ * would fail on the dev server opened from a phone at http://192.168.…).
+ */
+export function randomId(bytes = 16): string {
+  return Array.from(crypto.getRandomValues(new Uint8Array(bytes)), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/**
  * Where an article image is stored in the media bucket: by month, with a
  * random name, so it works before a new article is first saved and two
  * uploads can never overwrite each other.
  */
 export function mediaPath(extension: "webp" | "jpg", now = new Date()): string {
   const month = String(now.getUTCMonth() + 1).padStart(2, "0");
-  return `writing/${now.getUTCFullYear()}/${month}/${crypto.randomUUID()}.${extension}`;
+  return `writing/${now.getUTCFullYear()}/${month}/${randomId()}.${extension}`;
 }

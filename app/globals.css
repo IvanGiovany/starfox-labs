@@ -505,6 +505,7 @@ body::before {
   }
   & .article-image img {
     width: 100%;
+    height: auto; /* keeps the shape given by width/height attributes */
     border-radius: 10px;
   }
   & .article-image-caption {
