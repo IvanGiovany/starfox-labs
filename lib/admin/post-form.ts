@@ -77,6 +77,16 @@ export type PostFieldErrors = Partial<Record<keyof PostFields, string>>;
 
 export type PostStatus = "draft" | "published";
 
+/** The editor's buttons: Save draft / Update keep the status, the others change it. */
+export type SaveIntent = "save" | "publish" | "unpublish";
+
+export function statusAfter(intent: SaveIntent, current: PostStatus): PostStatus {
+  return intent === "publish" ? "published" : intent === "unpublish" ? "draft" : current;
+}
+
+/** An existing article as the editor loads it. */
+export type EditablePost = { id: string; updatedAt: string; status: PostStatus; fields: PostFields };
+
 /**
  * Validates the form for the status the post will have after saving.
  * Drafts need only a title; published articles also need a body.

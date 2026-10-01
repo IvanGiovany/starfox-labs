@@ -1,7 +1,16 @@
 "use server";
 
 import { refresh, updateTag } from "next/cache";
-import { firstSentence, slugify, validatePost, type PostFieldErrors, type PostFields, type PostStatus } from "@/lib/admin/post-form";
+import {
+  firstSentence,
+  slugify,
+  statusAfter,
+  validatePost,
+  type PostFieldErrors,
+  type PostFields,
+  type PostStatus,
+  type SaveIntent,
+} from "@/lib/admin/post-form";
 import { requireAdmin } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -69,7 +78,7 @@ export type SavePostInput = {
   updatedAt: string | null;
   /** The status the editor shows now; "save" keeps it. */
   status: PostStatus;
-  intent: "save" | "publish" | "unpublish";
+  intent: SaveIntent;
   fields: PostFields;
 };
 
@@ -81,8 +90,7 @@ export type SavePostResult =
 export async function savePost(input: SavePostInput): Promise<SavePostResult> {
   await requireAdmin();
 
-  const status: PostStatus =
-    input.intent === "publish" ? "published" : input.intent === "unpublish" ? "draft" : input.status;
+  const status = statusAfter(input.intent, input.status);
   const checked = validatePost(input.fields, status);
   if (!checked.ok) return { ok: false, error: "Check the highlighted fields.", fieldErrors: checked.fieldErrors };
 
@@ -122,8 +130,9 @@ export async function savePost(input: SavePostInput): Promise<SavePostResult> {
     };
   }
 
+  // No refresh() here: it would re-render the editor while Ivan types. The
+  // admin list isn't cached on the client, so it's fresh when he goes back.
   updateTag("posts");
-  refresh();
   return {
     ok: true,
     id: data.id,
