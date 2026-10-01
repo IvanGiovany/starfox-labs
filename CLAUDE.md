@@ -448,14 +448,34 @@ Track *active days* and *articles read* (one read per article per user), not raw
       the article's first save links it back (only if the item has no article yet).
     - Saving an item refreshes the cache tags for its section, `home` and `posts`
       (Phase 3 pages will use them).
-  - **4b next — Reading**: author, reading status (`TO READ → READING → READ` one-tap in
-    the list; READ fills `finished_on` with today, READING fills `started_on` if empty),
-    dates, rating 1–5, note, link, ISBN, year, page count, **Open Library autofill**
-    through a small server route (our User-Agent, as Open Library asks), and the cover
-    copied into `media/books/` with the existing import pipeline, never hotlinked from
-    covers.openlibrary.org. Automatic order (no drag). Plan it first, then build.
-  - Then 4c Music (form + manual snippet upload, then the in-browser snippet cutter),
-    4d Games, 4e Hobbies.
+  - **4b done** (tested by Ivan): Reading.
+    - `lib/reading.ts` (public, also for the Phase 3 page): statuses, badge labels and
+      `compareBooks` (reading, then read newest finished first, then to read newest
+      added first; id breaks ties). `lib/admin/items/books.ts`: the definition, ISBN
+      cleaning + check-digit validation, `withReadingStatus` (status changes fill the
+      start/finish date from the admin's **local** day, never overwriting; going back to
+      TO READ keeps dates, by Ivan's choice).
+    - List (`app/admin/reading/`): automatic order, status badges, stars, one-tap
+      "Start reading" / "Mark as read" (`setReadingStatus`; the browser sends its local
+      date, accepted only if `isPlausibleToday`). The shared list gained optional
+      `stateBadge` + `quickStep` (a server action passed from the page), for Games too.
+    - Form: author, status toggle, dates, `StarRating` (reusable, max 10 for Games),
+      note, link, ISBN, year, pages; covers 1200 px, shown whole. The item editor gained
+      `patch()` and a `header` slot.
+    - Open Library: `lib/admin/open-library.ts` (fixed host, User-Agent
+      `StarfoxLabs/1.0 (+https://starfoxlabs.org)` — site only, by Ivan's choice; no
+      email) behind `GET /admin/reading/open-library` (`?q=` search, `?covers=<work>`
+      edition covers). `open-library-autofill.tsx`: pick fills details and copies the
+      cover into `media/books/`; "Choose a different cover" shows other editions'
+      covers; no cover → clear message, image left empty. Values the autofill filled are
+      replaced/cleared by the next pick, never values Ivan typed or uploaded.
+  - **4c next — Music**, in two parts: (1) the form (released on, in progress, full-track
+    link, links for Spotify/SoundCloud/Bandcamp/YouTube/Apple, note) with a manual
+    snippet upload (MP3/M4A, max 30 s / 2 MB, into `media/music/`); an in-progress song
+    can be published before its article and snippet exist; (2) the in-browser snippet
+    cutter (waveform, pick the 30 s, preview, fades, MP3 encoding in the browser; the
+    encoder library is loaded only when the cutter opens). Plan it first, then build.
+  - Then 4d Games, 4e Hobbies.
 
 ### Still open
 - **Placeholders for Ivan** (all marked `TODO(Ivan)`): home intro (`app/page.tsx`),
@@ -475,6 +495,13 @@ Track *active days* and *articles read* (one read per article per user), not raw
   and the article goes live then, so Ivan can write several daily posts in advance. Needs
   public queries to require `published_at <= now()`, and something to refresh the cache
   at that moment (e.g. a Vercel Cron job calling a route that runs `revalidateTag`).
+- **Hydration mismatch report (unconfirmed)**: once, editing a book, the browser reported
+  an `ArticlePicker` option rendered `disabled` in the browser but not on the server.
+  Not reproduced: server-render + hydrate with identical props (with and without a
+  stored backup) and a no-login probe page on the dev server were both clean, with one
+  query per load. Likely cause: articles tied on `updated_at` (seed rows share
+  timestamps) coming back in different orders; every admin list now ends its order with
+  `id`. If it happens again, note the exact steps and browser.
 - **Unused media** (to-do, later): images removed from an article body, and replaced or
   removed covers, stay in the `media` bucket. Deleting automatically is risky (a file may
   be used elsewhere, or the change undone), so build an admin view that lists files no
