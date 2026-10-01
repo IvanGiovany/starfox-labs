@@ -21,7 +21,7 @@ export class ImageError extends Error {}
 
 export function checkInputType(type: string) {
   if ((IMAGE_RULES.inputTypes as readonly string[]).includes(type)) return;
-  const name = type.replace(/^image\//, "").toUpperCase() || "this file";
+  const name = type.replace(/^image\//, "").replace(/\+xml$/, "").toUpperCase() || "this file";
   throw new ImageError(
     type === "image/gif" || type === "image/svg+xml"
       ? `${name} images aren't supported. Use a JPEG, PNG, WebP or AVIF instead.`
