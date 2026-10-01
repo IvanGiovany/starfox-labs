@@ -122,9 +122,3 @@ export function countTags(posts: PostSummary[]): TagCount[] {
     .map(([tag, count]) => ({ tag, count }))
     .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
 }
-
-/** Estimated reading time in minutes, at ~225 words per minute. */
-export function readingTime(markdown: string): number {
-  const words = markdown.trim().split(/\s+/).filter(Boolean).length;
-  return Math.max(1, Math.round(words / 225));
-}

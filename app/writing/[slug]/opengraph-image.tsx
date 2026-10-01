@@ -1,6 +1,6 @@
-import { formatDate } from "@/lib/format";
+import { formatDate, readingTime } from "@/lib/format";
 import { ogImage, ogSize } from "@/lib/og";
-import { articleStaticParams, getPostBySlug, readingTime } from "@/lib/posts";
+import { articleStaticParams, getPostBySlug } from "@/lib/posts";
 import { site } from "@/lib/site";
 
 // Each article's link preview: its title, date and reading time.

@@ -1,8 +1,7 @@
+import "server-only";
 import type { Element, Root } from "hast";
-import { toJsxRuntime, type Components } from "hast-util-to-jsx-runtime";
 import { cacheLife } from "next/cache";
-import { Children, isValidElement, type ReactElement, type ReactNode } from "react";
-import { Fragment, jsx, jsxs } from "react/jsx-runtime";
+import type { ReactNode } from "react";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypePrettyCode from "rehype-pretty-code";
 import rehypeSlug from "rehype-slug";
@@ -11,7 +10,7 @@ import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
 import { unified } from "unified";
 import { visit } from "unist-util-visit";
-import { CopyButton } from "@/components/copy-button";
+import { hastToReact } from "./markdown-react";
 
 // Markdown → React, on the server. The browser gets finished HTML: no
 // markdown parser and no syntax highlighter in the JavaScript bundle.
@@ -22,8 +21,10 @@ import { CopyButton } from "@/components/copy-button";
 //   rehype-slug + autolink     id on every heading, plus a "#" link to it
 //   rehype-pretty-code         syntax highlighting with Shiki, in two themes
 //                              (light + dark) that follow the site theme via CSS
-//   toJsxRuntime               HTML tree → React elements, so code blocks can
-//                              include a small client component (the copy button)
+//   hastToReact                HTML tree → React elements, so code blocks can
+//                              include a small client component (the copy button).
+//                              Lives in lib/markdown-react.tsx, shared with the
+//                              editor's live preview, which runs it in the browser.
 
 /** The page title is the only <h1>; a "# Heading" in a post body becomes an <h2>. */
 function rehypeDemoteH1() {
@@ -53,6 +54,22 @@ const processor = unified()
     defaultLang: { block: "plaintext" },
   });
 
+/**
+ * Markdown → HTML tree, uncached. Used directly by the editor's live preview,
+ * which renders a new half-typed version every few hundred milliseconds:
+ * caching those would only fill the cache with drafts nobody reads again.
+ */
+export async function markdownToHast(markdown: string): Promise<Root> {
+  const tree = (await processor.run(processor.parse(markdown))) as Root;
+  // Line/column positions on every node are only for tooling; dropping them
+  // makes the preview's JSON much smaller.
+  visit(tree, (node) => {
+    delete node.position;
+  });
+  return tree;
+}
+
+/** Markdown → React, for public pages. */
 export async function renderMarkdown(markdown: string): Promise<ReactNode> {
   // Cached by its input: the same markdown always renders the same output, and
   // an edited article is new input, so nothing needs invalidating. This also
@@ -61,47 +78,5 @@ export async function renderMarkdown(markdown: string): Promise<ReactNode> {
   "use cache";
   cacheLife("max");
 
-  const hast = await processor.run(processor.parse(markdown));
-  return toJsxRuntime(hast as Root, { Fragment, jsx, jsxs, components });
+  return hastToReact(await markdownToHast(markdown));
 }
-
-type WithData = { "data-language"?: string; "data-rehype-pretty-code-figure"?: string };
-
-const components: Partial<Components> = {
-  // Code blocks: a small bar with the filename (```ts title="app/page.tsx")
-  // or the language, and a copy button.
-  figure(props) {
-    if (!("data-rehype-pretty-code-figure" in props)) return <figure {...props} />;
-
-    const parts = Children.toArray(props.children).filter(isValidElement) as ReactElement<
-      WithData & { children?: ReactNode }
-    >[];
-    const title = parts.find((part) => part.type === "figcaption");
-    const pre = parts.find((part) => part.type === "pre");
-    const language = pre?.props["data-language"];
-
-    return (
-      <figure className="code-block">
-        <div className="code-block-bar">
-          <span className={title ? "code-block-title" : undefined}>
-            {title ? title.props.children : language !== "plaintext" ? language : "text"}
-          </span>
-          <CopyButton />
-        </div>
-        {pre}
-      </figure>
-    );
-  },
-
-  // Images: lazy-loaded, with the markdown title as a caption:
-  // ![alt text](url "Caption shown under the image")
-  img({ src, alt, title }) {
-    return (
-      <span className="article-image">
-        {/* eslint-disable-next-line @next/next/no-img-element -- sizes are unknown for images inside markdown */}
-        <img src={typeof src === "string" ? src : undefined} alt={alt ?? ""} loading="lazy" decoding="async" />
-        {title && <span className="article-image-caption">{title}</span>}
-      </span>
-    );
-  },
-};

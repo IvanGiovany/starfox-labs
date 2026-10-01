@@ -1,17 +1,16 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Badge } from "@/components/badge";
-import { YouTubeEmbed } from "@/components/youtube-embed";
-import { formatDate } from "@/lib/format";
+import { ArticleView } from "@/components/article-view";
+import { readingTime } from "@/lib/format";
 import { renderMarkdown } from "@/lib/markdown";
-import { articleStaticParams, getPostBySlug, getPublishedPosts, readingTime, type PostSummary } from "@/lib/posts";
+import { articleStaticParams, getPostBySlug, getPublishedPosts, type PostSummary } from "@/lib/posts";
 import { openGraphDefaults, site } from "@/lib/site";
-import { youtubeId } from "@/lib/youtube";
 
 // One article: a simple reading column, text-first (no cards), styled after
 // chester.how's blog: big serif title, a quiet italic date line, a short rule.
+// The article itself is drawn by ArticleView, which the editor's live preview
+// shares.
 
 // Every published article is prerendered at build time; articles published
 // later are rendered on their first visit and then cached.
@@ -49,8 +48,6 @@ export default async function ArticlePage({ params }: PageProps<"/writing/[slug]
   if (!post) notFound();
 
   const [body, { older, newer }] = await Promise.all([renderMarkdown(post.bodyMd), neighbours(slug)]);
-  const minutes = readingTime(post.bodyMd);
-  const videoId = post.youtubeUrl ? youtubeId(post.youtubeUrl) : null;
 
   return (
     <article className="mx-auto max-w-[42rem] pt-6 pb-8 sm:pt-10">
@@ -58,55 +55,15 @@ export default async function ArticlePage({ params }: PageProps<"/writing/[slug]
         ← writing.
       </Link>
 
-      <header className="reveal mt-8 sm:mt-10">
-        <h1 className="font-serif text-[clamp(2.4rem,5.5vw,3.75rem)] leading-[1.05] font-semibold tracking-[-0.02em] text-balance">
-          {post.title}
-        </h1>
-        <p className="mt-5 font-serif text-lg text-fg-muted italic">
-          <time dateTime={post.publishedAt}>{formatDate(post.publishedAt)}</time>
-          <span aria-hidden="true"> · </span>
-          {minutes} min read
-        </p>
-        {post.tags.length > 0 && (
-          <ul className="mt-4 flex flex-wrap gap-1.5" aria-label="Tags">
-            {post.tags.map((tag) => (
-              <li key={tag}>
-                <Link href={`/writing?tag=${encodeURIComponent(tag)}`} className="no-underline hover:opacity-80">
-                  <Badge>{tag}</Badge>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-        <hr className="mt-8 w-24 border-rule" />
-      </header>
-
-      {/* Cover and video are slightly wider than the text on large screens. */}
-      {post.coverImageUrl && (
-        <div
-          className="reveal relative mt-10 aspect-[16/9] overflow-hidden rounded-xl bg-bg-raised lg:-mx-16"
-          style={{ "--reveal-delay": "60ms" } as React.CSSProperties}
-        >
-          <Image
-            src={post.coverImageUrl}
-            alt=""
-            fill
-            priority
-            sizes="(min-width: 1024px) 800px, 100vw"
-            className="object-cover"
-          />
-        </div>
-      )}
-
-      {videoId && (
-        <div className="reveal mt-10 lg:-mx-16" style={{ "--reveal-delay": "60ms" } as React.CSSProperties}>
-          <YouTubeEmbed id={videoId} title={post.title} />
-        </div>
-      )}
-
-      <div className="reveal prose mt-10 max-w-none" style={{ "--reveal-delay": "120ms" } as React.CSSProperties}>
-        {body}
-      </div>
+      <ArticleView
+        title={post.title}
+        publishedAt={post.publishedAt}
+        minutes={readingTime(post.bodyMd)}
+        tags={post.tags}
+        coverImageUrl={post.coverImageUrl}
+        youtubeUrl={post.youtubeUrl}
+        body={body}
+      />
 
       <OlderNewer older={older} newer={newer} />
 
