@@ -443,6 +443,12 @@ Track *active days* and *articles read* (one read per article per user), not raw
   proper 404 with noindex, but the HTML body is empty and the 404 page is drawn by
   JavaScript. Wrapping the page in `<Suspense>` doesn't fix it (and turns the status
   into 200), so we keep the real 404. Browsers show the friendly page normally.
+  `app/writing/[slug]/page.tsx` sets `export const instant = false` to tell Next's dev
+  validation this wait is intended (it only affects that check, not rendering).
+- Inline scripts (the theme script in `app/layout.tsx`) go through
+  `components/inline-script.tsx`: `text/javascript` in the server HTML, inert
+  `text/plain` when React renders in the browser (e.g. the client-drawn 404), which
+  avoids React's "Encountered a script tag" warning.
 - Anything that reads files or the clock (Shiki, `next/og` fonts) must sit inside a
   `"use cache"` function, or the route silently becomes request-time / `no-store`.
 - Any Client Component that calls `usePathname()` must sit inside `<Suspense>` (with a

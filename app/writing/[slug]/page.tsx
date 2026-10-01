@@ -16,6 +16,14 @@ import { openGraphDefaults, site } from "@/lib/site";
 // later are rendered on their first visit and then cached.
 export const generateStaticParams = articleStaticParams;
 
+// For a slug that wasn't prerendered, this page deliberately waits for the
+// article before sending anything, so a missing one gets a real 404 status.
+// (Reading params inside <Suspense>, Next's "instant" pattern, would stream the
+// page first, and a 404 decided after that can only be a 200 with noindex.)
+// `instant = false` tells Next's development check that this wait is intended.
+// It doesn't change rendering: known articles stay fully prerendered.
+export const instant = false;
+
 // Title, description and link-preview tags. The preview image itself comes
 // from opengraph-image.tsx in this folder; Next.js adds its tags automatically.
 export async function generateMetadata({ params }: PageProps<"/writing/[slug]">): Promise<Metadata> {
