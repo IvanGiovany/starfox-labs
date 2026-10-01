@@ -299,6 +299,11 @@ from the live schema (`npm run db:types`) — regenerate it after every migratio
    **Before it goes live:** two-factor sign-in (authenticator app, Supabase MFA/TOTP) for
    the admin account, since it can publish and email every subscriber. `requireAdmin()` and
    the admin RLS policies then require a two-factor session (`aal2`).
+   **Also before it goes live:** browser tests must stop publishing on the shared database,
+   because publishing will email subscribers. Either switch tests to a local Supabase
+   (Docker, `npx supabase start`) or make it impossible for a test to send emails (e.g.
+   sending refuses unless it's the production deployment, and test items can never trigger
+   it). Decide and build this before the send-on-publish code is switched on.
 7. **Ranks** — see rules below; show rank badges next to usernames and on profiles.
 8. **YouTube + polish** — live YouTube video cards on home, ⌘K search, page transitions,
    SEO, RSS feed, sitemap.
@@ -376,6 +381,8 @@ Everything built so far, with file maps, decisions and how it was tested:
   newsletter line is plain text until Phase 6.
 - UQ palette beyond purple is still a TODO (see Colors).
 - **Two-factor sign-in for the admin** before the newsletter goes live (see Phase 6).
+- **Browser tests must stop publishing on the shared database** before the newsletter goes
+  live: local Supabase for tests, or emails impossible from tests (see Phase 6).
 - **Scheduled publishing** (to-do): pick a future date and time and the article goes live
   then. Needs public queries to require `published_at <= now()`, and something to refresh
   the cache at that moment (e.g. a Vercel Cron job calling a route that runs
@@ -464,3 +471,24 @@ Everything built so far, with file maps, decisions and how it was tested:
 - chester.how blocks automated fetches; use the screenshots in `design-refs/`. Visual checks
   use headless Edge + `puppeteer-core` installed in a temp folder (not a project
   dependency) at 1280 / 1440 / 1920 px, dark mode, and 390 px mobile.
+
+**Browser testing (Playwright MCP)**: Claude runs the browser checklists itself (Ivan's
+request, 2026-10-01); Ivan only gets what truly needs him (e.g. a real phone).
+- The `playwright` MCP server (local scope, not in the repo) drives Playwright's Firefox
+  build with a persistent profile where Ivan signed in once as admin. Config:
+  `C:\Users\Ivan\AppData\Local\starfox-labs\playwright-mcp.json` (the profile folder sits
+  next to it; it holds an admin session, so it never goes in the repo). Pinned to
+  `@playwright/mcp@0.0.83`. Register from PowerShell, not Git Bash (Git Bash turns `/c`
+  into `C:/`): `claude mcp add playwright --scope local -- cmd /c npx -y
+  @playwright/mcp@0.0.83 --config <that file>`.
+- **localhost only, never the live site.** The config allows only `localhost:3000`,
+  `localhost:3124` / `127.0.0.1:3124` and the Supabase project, and blocks
+  `starfoxlabs.org`. That list is a guardrail, not a security boundary, so the rule stands
+  on its own. To test anything else, ask Ivan first.
+- **Localhost shares the live database.** Test content is titled `[test] …`, stays a draft
+  unless a check needs publishing (unpublish right after), and is deleted at the end of the
+  check, with its uploaded files. Never publish a test article (it would show on the live
+  `/writing`). This must change before the newsletter goes live (see Phase 6).
+- Playwright's Firefox is a patched build, not Ivan's Firefox: for Firefox-specific bugs,
+  also check real Firefox with `puppeteer-core` (`browser: "firefox"`, server-rendered +
+  hydrated harness; see the build log, 2.4b).
