@@ -336,10 +336,39 @@ Everything built so far, with file maps, decisions and how it was tested:
   shell + Writing editor (form, live preview, images), 2.4a shared item pieces + Projects,
   2.4b Reading (with Open Library autofill): all done, tested by Ivan, pushed.
 - **Now: 2.4c Music** (plan approved 2026-10-01), in two parts:
-  1. *Done, tested by Ivan 2026-10-01* (checklist items 1–7 in Firefox; item 8, picking a
-     snippet from Files on a phone, not yet reported):
-     the form, manual snippet upload, the server's snippet check, item forms waiting for
-     uploads, list and pages. Details: `docs/build-log.md`, 4c.
+  1. *Done, committed and pushed* (`34d788c`; the Firefox form-state fix is its own commit,
+     `af1c936`): the form, manual snippet upload, the server's snippet check, item forms
+     waiting for uploads, list and pages. Details: `docs/build-log.md`, 4c. Ivan passed
+     checklist 1–7 by hand; Claude re-ran 1–7 in the Playwright window on 2026-10-01 (all
+     pass; mouse drag untestable there, reorder passed via ↑↓ and keyboard). That run
+     found three small bugs, fixed and **uncommitted** (Ivan hasn't tested them yet):
+     - `components/admin/snippet-field.tsx`: show the decoded length, not the player's
+       (files that don't state their length showed "0:00"); read the player's state on
+       mount (on server-rendered pages "loadedmetadata"/"error" fire before React
+       listens, so stored snippets showed no length and missing files no error).
+     - `app/admin/writing/post-editor.tsx`: "Wait for the images…" now clears once uploads
+       finish (it stayed until the next save).
+     - `.gitignore`: `.playwright-mcp/` (the MCP's snapshots, logs, test files).
+     The two code fixes were verified in the browser; type check and lint pass.
+  - **Found, not fixed (needs a plan):** after the first save of a new item or article,
+    `history.replaceState` to `/<id>` makes Next's router fetch the `[id]` page and
+    remount the form about a second later ("Saved at …" becomes "All changes saved";
+    typing in that second is replaced, though the device backup offers it back). Affects
+    every item form and the article editor. Read `node_modules/next/dist/docs/` on
+    `replaceState` before fixing.
+  - **Cleanup pending:** the test rows are deleted, but the session's uploaded test files
+    (covers and snippets in `media/music/2026/10/` and `media/writing/2026/10/`, uploaded
+    after 2026-10-01 10:45 UTC) are still in Storage. List them, check nothing references
+    them, then delete (`.playwright-mcp/storage-tool.js` does both, with the admin session).
+  - **Next steps:** (1) restart Claude Code if the Playwright tools are missing, check the
+    Playwright window is still signed in (it was on 2026-10-01); (2) delete the test files
+    above; (3) Ivan tests the three fixes (or Claude does, with test items), then commit
+    them; (4) Ivan's phone test (checklist 8) and listening to a real snippet; (5) part 2,
+    the snippet cutter (plan first; consider high effort).
+  - Playwright note: real mouse clicks in the MCP's Firefox stopped working mid-session
+    (after a "Leave page?" dialog); page-level `element.click()`, `setInputFiles` and
+    keyboard events kept working. Wait for `networkidle` before setting files, or the
+    change event fires before hydration and is lost.
   2. The in-browser snippet cutter (waveform, pick 20–30 s, preview, 0.5 s / 2 s fades,
      **MP3 at 320 kbps** stereo in a Web Worker with `@breezystack/lamejs`; the encoder
      loads only when the cutter opens).
