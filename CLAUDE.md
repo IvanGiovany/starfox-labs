@@ -366,14 +366,29 @@ Track *active days* and *articles read* (one read per article per user), not raw
 - Step 2.3 (`/admin` shell + Writing editor), in four parts:
   - **3a done:** admin tabs, Writing list (search, All/Drafts/Published, one-tap Publish /
     Unpublish / Delete with plain-language errors), placeholders for the other tabs.
-  - **3b next — the editor form** (`/admin/writing/new`, `/admin/writing/[id]`, currently
-    placeholders): title, slug (auto, warn when changing a published slug), summary,
-    tags (Enter/comma, suggestions, lowercase), YouTube link, body text area + toolbar +
-    "?" cheat-sheet panel; Save draft / Publish (Update) / Unpublish / Save and add
-    another; shared `zod` validation (client + server); local backup of unsaved text and a
-    leave-page warning. Plan it first, then build.
-  - Then 3c (live preview via the real renderer, full-page draft preview) and 3d (image
-    helper: in-browser resize/compress, cover upload, paste/drag into the body).
+  - **3b done** (tested by Ivan): the editor form at `/admin/writing/new` and
+    `/admin/writing/[id]` (`app/admin/writing/post-editor.tsx`).
+    - Rules shared by client and server live in `lib/admin/post-form.ts` (zod schema,
+      `slugify`, `normalizeTag`, `firstSentence`, `statusAfter`). The `savePost` action is
+      in `app/admin/writing/actions.ts`.
+    - Slug: follows the title until edited or published; a warning shows when a live slug
+      changes.
+    - Summary: if left empty, the first sentence is saved as the summary.
+    - Tags: chip input with suggestions (`components/admin/tag-input.tsx`, reusable for
+      item badges).
+    - Body: markdown toolbar and shortcuts (`components/admin/markdown-toolbar.tsx`).
+      The "?" button opens WRITING.md in a dialog (`lib/admin/cheat-sheet.ts`, traced via
+      `outputFileTracingIncludes`).
+    - Save bar: Save draft / Publish / Update / Unpublish / Save and add another.
+    - Safety: an `updated_at` check refuses to overwrite newer saves; unsaved text is
+      backed up in localStorage with Restore / Discard (`components/admin/use-local-backup.ts`);
+      a `beforeunload` warning covers closing the tab.
+  - **3c next — live preview**: the body rendered by the real renderer (`lib/markdown.tsx`,
+    server-only and `"use cache"`) beside the text area on wide screens (the editor is
+    `max-w-3xl` today), a Write / Preview toggle on phones, and a full-page draft preview.
+    Plan it first, then build.
+  - Then 3d (image helper: in-browser resize/compress, cover upload, paste/drag into
+    the body).
 - Step 2.4 note: **Open Library covers must be downloaded into our own `media` bucket**
   (`books/`) when a book is picked, never hotlinked from covers.openlibrary.org.
 
