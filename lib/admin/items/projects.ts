@@ -22,7 +22,7 @@ import { ITEM_SECTIONS } from "./sections";
 const section = ITEM_SECTIONS.projects;
 
 /** "next.js" stays "next.js": stack entries are names, not slugs. */
-const normalizeStackEntry = (text: string) => text.replace(/\s+/g, " ").trim().slice(0, 30);
+export const normalizeStackEntry = (text: string) => text.replace(/\s+/g, " ").trim().slice(0, 30);
 
 export const projectSchema = z.object({
   ...baseItemShape(section),

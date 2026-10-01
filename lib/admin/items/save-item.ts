@@ -3,27 +3,21 @@ import { updateTag } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import type { TablesInsert, TablesUpdate } from "@/lib/database.types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { statusAfter, type PostStatus, type SaveIntent } from "../post-form";
+import { statusAfter, type PostStatus } from "../post-form";
 import { explainItemError } from "./item-errors";
-import { validateItem, type BaseItemFields, type FieldErrors, type ItemDefinition } from "./item-form";
+import {
+  validateItem,
+  type BaseItemFields,
+  type FieldErrors,
+  type ItemDefinition,
+  type SaveItemInput,
+  type SaveItemResult,
+} from "./item-form";
+
+export type { SaveItemInput, SaveItemResult };
 
 // Saving an item, for every section: Save draft / Publish / Update / Unpublish.
 // Each section's server action is a one-liner around this.
-
-export type SaveItemInput<F> = {
-  /** null for a new item. */
-  id: string | null;
-  /** The `updated_at` the form loaded, so a newer save elsewhere is never overwritten. */
-  updatedAt: string | null;
-  /** The status the form shows now; "save" keeps it. */
-  status: PostStatus;
-  intent: SaveIntent;
-  fields: F;
-};
-
-export type SaveItemResult<F> =
-  | { ok: true; id: string; status: PostStatus; updatedAt: string }
-  | { ok: false; error: string; fieldErrors?: FieldErrors<F> };
 
 export async function saveItem<F extends BaseItemFields, D>(
   definition: ItemDefinition<F, D>,

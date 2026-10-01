@@ -1,0 +1,305 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useEffectEvent, useState, useTransition, type ReactNode } from "react";
+import { Badge } from "@/components/badge";
+import { Field } from "@/components/admin/form-field";
+import { ImageField } from "@/components/admin/image-field";
+import { SaveBar } from "@/components/admin/save-bar";
+import { TagInput } from "@/components/admin/tag-input";
+import { removeBackup, useLocalBackup } from "@/components/admin/use-local-backup";
+import {
+  ITEM_LIMITS,
+  normalizeBadge,
+  validateItem,
+  type BaseItemFields,
+  type EditableItem,
+  type FieldErrors,
+  type ItemDefinition,
+  type SaveItemInput,
+  type SaveItemResult,
+} from "@/lib/admin/items/item-form";
+import { statusAfter, type PostStatus, type SaveIntent } from "@/lib/admin/post-form";
+import { mediaUrl } from "@/lib/media";
+
+// The form for one item, in any section. It owns everything the sections
+// share: title, image, badges, "show on home", card size, the save bar, the
+// local backup of unsaved changes, the leave-page warning and Ctrl+S. Each
+// section passes its own fields in as `children`.
+
+type Saved<F> = { id: string | null; updatedAt: string | null; status: PostStatus; fields: F };
+
+/** What a section's own fields need from the form. */
+export type ItemFormApi<F> = {
+  fields: F;
+  update: <K extends keyof F>(key: K, value: F[K]) => void;
+  errors: FieldErrors<F>;
+  /** id, aria-invalid and aria-describedby for a field's input. */
+  fieldProps: (key: keyof F & string) => { id: string; "aria-invalid"?: true; "aria-describedby"?: string };
+};
+
+function sameFields<F>(a: F, b: F): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+function timeNow(): string {
+  return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+export function ItemEditor<F extends BaseItemFields, D>({
+  definition,
+  item,
+  action,
+  badgeSuggestions,
+  imageFrame = "aspect-[16/10]",
+  imageFit = "cover",
+  children,
+}: {
+  definition: ItemDefinition<F, D>;
+  /** null on the "new" page. */
+  item: EditableItem<F> | null;
+  action: (input: SaveItemInput<F>) => Promise<SaveItemResult<F>>;
+  badgeSuggestions: string[];
+  /** The image preview's shape and fit (book covers are tall and shown whole). */
+  imageFrame?: string;
+  imageFit?: "cover" | "contain";
+  children: (form: ItemFormApi<F>) => ReactNode;
+}) {
+  const { section } = definition;
+  const router = useRouter();
+  const blank: Saved<F> = { id: null, updatedAt: null, status: "draft", fields: definition.empty };
+  const [saved, setSaved] = useState<Saved<F>>(item ?? blank);
+  const [fields, setFields] = useState<F>(item?.fields ?? definition.empty);
+  const [errors, setErrors] = useState<FieldErrors<F>>({});
+  const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+  const [savingIntent, setSavingIntent] = useState<SaveIntent | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  const published = saved.status === "published";
+  const dirty = !sameFields(fields, saved.fields);
+  const backupKey = (id: string | null) => `starfox:item-backup:${section.key}:${id ?? "new"}`;
+  const backup = useLocalBackup(backupKey(saved.id), fields, dirty, (value) => sameFields(value, saved.fields));
+
+  // Closing the tab, reloading or leaving the site with unsaved changes asks first.
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+
+  function update<K extends keyof F>(key: K, value: F[K]) {
+    setFields((current) => ({ ...current, [key]: value }));
+    if (errors[key as keyof F & string]) setErrors((current) => ({ ...current, [key]: undefined }));
+    // "Saved at 14:32" is out of date once something changes; errors stay until dealt with.
+    if (notice?.tone === "ok") setNotice(null);
+  }
+
+  function restoreBackup() {
+    const backedUp = backup.restore();
+    if (!backedUp) return;
+    setFields({ ...definition.empty, ...backedUp }); // backups from before a field existed lack it
+    setNotice({ tone: "ok", text: "Restored. Save to keep it." });
+  }
+
+  function save(intent: SaveIntent, addAnother = false) {
+    if (pending) return;
+    const checked = validateItem(definition.schema, definition.publishRules, fields, statusAfter(intent, saved.status));
+    if (!checked.ok) {
+      setErrors(checked.fieldErrors);
+      setNotice({ tone: "error", text: "Check the highlighted fields." });
+      const first = Object.keys(checked.fieldErrors)[0];
+      document.getElementById(`item-${first}`)?.focus();
+      return;
+    }
+
+    const submitted = fields;
+    setErrors({});
+    setNotice(null);
+    setSavingIntent(intent);
+    startTransition(async () => {
+      const result = await action({ id: saved.id, updatedAt: saved.updatedAt, status: saved.status, intent, fields: submitted });
+      setSavingIntent(null);
+      if (!result.ok) {
+        setErrors(result.fieldErrors ?? {});
+        setNotice({ tone: "error", text: result.error });
+        return;
+      }
+
+      const newHref = `/admin/${section.key}/new`;
+      if (addAnother) {
+        removeBackup(backupKey(null));
+        if (item === null) {
+          // Already on the "new" page: just clear the form.
+          setSaved(blank);
+          setFields(definition.empty);
+          setNotice({ tone: "ok", text: `Saved “${submitted.title.trim()}”. Start the next one.` });
+          window.history.replaceState(null, "", newHref);
+          window.scrollTo({ top: 0 });
+        } else {
+          router.push(newHref);
+        }
+        return;
+      }
+
+      // The cleaned-up values (trimmed, tidied chips) have the same shape as the form's.
+      const cleaned = checked.data as unknown as F;
+      setSaved({ id: result.id, updatedAt: result.updatedAt, status: result.status, fields: cleaned });
+      setFields((current) => (current === submitted ? cleaned : current)); // keep anything typed while saving
+      const verb = intent === "publish" ? "Published" : intent === "unpublish" ? "Unpublished" : "Saved";
+      setNotice({ tone: "ok", text: `${verb} at ${timeNow()}.` });
+      if (saved.id === null) {
+        removeBackup(backupKey(null)); // from now on it's backed up under its own id
+        window.history.replaceState(null, "", `/admin/${section.key}/${result.id}`);
+      }
+    });
+  }
+
+  // Ctrl/⌘+S saves from anywhere on the page.
+  const onKeyDown = useEffectEvent((event: KeyboardEvent) => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+      event.preventDefault();
+      save("save");
+    }
+  });
+  useEffect(() => {
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  const fieldProps = (key: keyof F & string) => ({
+    id: `item-${key}`,
+    "aria-invalid": errors[key] ? (true as const) : undefined,
+    "aria-describedby": errors[key] ? `item-${key}-error` : undefined,
+  });
+  const fieldError = (key: keyof BaseItemFields & keyof F & string) => ({ error: errors[key], errorId: `item-${key}-error` });
+
+  return (
+    <form noValidate onSubmit={(e) => e.preventDefault()} className="mx-auto max-w-3xl">
+      <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+        <Link href={`/admin/${section.key}`} className="row-action -ml-3 no-underline">
+          ← All {section.label.toLowerCase()}
+        </Link>
+        <Badge toneKey={published ? "read" : "learning"}>{published ? "Published" : "Draft"}</Badge>
+      </div>
+
+      {backup.offer && (
+        <div role="alert" className="mb-6 rounded-xl bg-bg-raised px-4 py-3 text-sm">
+          <p>
+            Unsaved changes from {new Date(backup.offer.savedAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })} were
+            found on this device.
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button type="button" onClick={restoreBackup} className="button-primary">
+              Restore them
+            </button>
+            <button type="button" onClick={backup.discard} className="row-action border border-rule">
+              Discard
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-6">
+        <Field label="Title" htmlFor="item-title" {...fieldError("title")}>
+          <input
+            {...fieldProps("title")}
+            value={fields.title}
+            onChange={(e) => update("title", e.target.value as F["title"])}
+            maxLength={ITEM_LIMITS.title}
+            autoFocus={item === null}
+            className="field font-serif text-2xl leading-tight"
+          />
+        </Field>
+
+        <Field label="Image" optional htmlFor="item-imagePath" {...fieldError("imagePath")}>
+          <ImageField
+            id="item-imagePath"
+            imageUrl={fields.imagePath ? mediaUrl(fields.imagePath) : ""}
+            onAdded={(image) => update("imagePath", image.path as F["imagePath"])}
+            onRemove={() => update("imagePath", "" as F["imagePath"])}
+            use={section.imageUse}
+            folder={section.folder}
+            frameClassName={imageFrame}
+            fit={imageFit}
+            describedBy={errors.imagePath ? "item-imagePath-error" : undefined}
+          />
+        </Field>
+
+        {fields.imagePath && (
+          <Field
+            label="Image description"
+            optional
+            htmlFor="item-imageAlt"
+            {...fieldError("imageAlt")}
+            hint="What the image shows, for people who can't see it. Leave empty if it's only decoration."
+          >
+            <input
+              {...fieldProps("imageAlt")}
+              value={fields.imageAlt}
+              onChange={(e) => update("imageAlt", e.target.value as F["imageAlt"])}
+              maxLength={ITEM_LIMITS.imageAlt}
+              className="field"
+            />
+          </Field>
+        )}
+
+        {children({ fields, update, errors, fieldProps })}
+
+        <Field label="Badges" optional htmlFor="item-badges" {...fieldError("badges")} hint="Short labels on the card, like SOLO PROJECT.">
+          <TagInput
+            id="item-badges"
+            tags={fields.badges}
+            onChange={(badges) => update("badges", badges as F["badges"])}
+            suggestions={badgeSuggestions}
+            normalize={normalizeBadge}
+            max={ITEM_LIMITS.badges}
+            invalid={Boolean(errors.badges)}
+            describedBy={errors.badges ? "item-badges-error" : undefined}
+          />
+        </Field>
+
+        <fieldset className="flex flex-wrap items-center gap-x-8 gap-y-4">
+          <legend className="sr-only">Home page and card</legend>
+          <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm font-medium">
+            <input
+              type="checkbox"
+              checked={fields.showOnHome}
+              onChange={(e) => update("showOnHome", e.target.checked as F["showOnHome"])}
+              className="size-5 accent-accent"
+            />
+            Show on home
+          </label>
+          <div className="flex items-center gap-3 text-sm">
+            <span id="item-cardSize-label" className="font-medium">
+              Card size
+            </span>
+            <div role="group" aria-labelledby="item-cardSize-label" className="flex gap-1 rounded-lg bg-bg-raised p-1">
+              {(["small", "wide"] as const).map((size) => (
+                <button
+                  key={size}
+                  type="button"
+                  aria-pressed={fields.cardSize === size}
+                  onClick={() => update("cardSize", size as F["cardSize"])}
+                  className="min-h-9 cursor-pointer rounded-md px-3 text-fg-muted hover:text-fg aria-pressed:bg-bg aria-pressed:text-fg aria-pressed:shadow-sm"
+                >
+                  {size === "small" ? "Small" : "Wide"}
+                </button>
+              ))}
+            </div>
+          </div>
+        </fieldset>
+      </div>
+
+      <SaveBar
+        status={notice?.text ?? (dirty ? "Unsaved changes" : saved.id ? "All changes saved" : "")}
+        isError={notice?.tone === "error"}
+        published={published}
+        pending={pending}
+        savingIntent={savingIntent}
+        onSave={save}
+      />
+    </form>
+  );
+}

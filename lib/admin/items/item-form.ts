@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { isMediaPath } from "@/lib/media";
-import type { PostStatus } from "../post-form";
+import type { PostStatus, SaveIntent } from "../post-form";
 import type { ItemSection } from "./sections";
 
 // The fields every item has, whatever its section: title, image, badges, the
@@ -126,6 +126,24 @@ export function baseFromRow(row: BaseRow): BaseItemFields {
 }
 
 export type FieldErrors<F> = Partial<Record<keyof F & string, string>>;
+
+export type SaveItemInput<F> = {
+  /** null for a new item. */
+  id: string | null;
+  /** The `updated_at` the form loaded, so a newer save elsewhere is never overwritten. */
+  updatedAt: string | null;
+  /** The status the form shows now; "save" keeps it. */
+  status: PostStatus;
+  intent: SaveIntent;
+  fields: F;
+};
+
+export type SaveItemResult<F> =
+  | { ok: true; id: string; status: PostStatus; updatedAt: string }
+  | { ok: false; error: string; fieldErrors?: FieldErrors<F> };
+
+/** An existing item as its form loads it. */
+export type EditableItem<F> = { id: string; updatedAt: string; status: PostStatus; fields: F };
 
 /**
  * Everything the shared list, form and save helper need to know about one

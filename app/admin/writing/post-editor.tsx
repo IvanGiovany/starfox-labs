@@ -6,8 +6,10 @@ import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore, useT
 import { Badge } from "@/components/badge";
 import { CheatSheetPanel } from "@/components/admin/cheat-sheet-panel";
 import { BodyImagePanel } from "@/components/admin/body-image-panel";
-import { CoverImageField } from "@/components/admin/cover-image-field";
+import { Field } from "@/components/admin/form-field";
+import { ImageField } from "@/components/admin/image-field";
 import { handleMarkdownShortcut, MarkdownToolbar } from "@/components/admin/markdown-toolbar";
+import { SaveBar } from "@/components/admin/save-bar";
 import { TagInput } from "@/components/admin/tag-input";
 import { useMediaQuery } from "@/components/admin/use-media-query";
 import { useBodyImages } from "@/components/admin/use-body-images";
@@ -166,6 +168,8 @@ export function PostEditor({
       ...(key === "title" && slugLinked ? { slug: slugify(value as string) } : {}),
     }));
     if (errors[key]) setErrors((current) => ({ ...current, [key]: undefined })); // fixed once edited
+    // "Saved at 14:32" is out of date once something changes; errors stay until dealt with.
+    if (notice?.tone === "ok") setNotice(null);
   }
 
   function save(intent: SaveIntent, addAnother = false) {
@@ -246,7 +250,6 @@ export function PostEditor({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const busy = (intent: SaveIntent) => pending && savingIntent === intent;
   const fieldProps = (key: keyof PostFields) => ({
     id: `post-${key}`,
     "aria-invalid": errors[key] ? true : undefined,
@@ -401,10 +404,14 @@ export function PostEditor({
             errorId="post-coverImageUrl-error"
             hint={fields.coverImageUrl ? null : "Shown above the article. Resized to 1200 px wide and saved as our own copy."}
           >
-            <CoverImageField
+            <ImageField
               id="post-coverImageUrl"
-              value={fields.coverImageUrl}
-              onChange={(url) => update("coverImageUrl", url)}
+              imageUrl={fields.coverImageUrl}
+              // The cover box has a fixed shape, so the URL is kept without its size hint.
+              onAdded={(image) => update("coverImageUrl", image.url.split("#")[0])}
+              onRemove={() => update("coverImageUrl", "")}
+              use="cover"
+              folder="writing"
               describedBy={errors.coverImageUrl ? "post-coverImageUrl-error" : undefined}
             />
           </Field>
@@ -446,47 +453,23 @@ export function PostEditor({
         />
       </div>
 
-      {/* Sticky save bar: always within thumb reach on a phone. */}
-      <div className="sticky bottom-0 z-20 -mx-4 mt-6 border-t border-rule bg-bg/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:mx-0 sm:px-0">
-        <p
-          role={notice?.tone === "error" ? "alert" : "status"}
-          className={`mb-2 min-h-5 text-sm ${notice?.tone === "error" ? "text-danger" : "text-fg-muted"}`}
-        >
-          {notice?.text ??
-            (bodyImages.pending > 0
-              ? `Uploading ${bodyImages.pending} image${bodyImages.pending === 1 ? "" : "s"}…`
-              : dirty
-                ? "Unsaved changes"
-                : saved.id
-                  ? "All changes saved"
-                  : "")}
-        </p>
-        <div className="flex flex-wrap items-center gap-2">
-          {published ? (
-            <>
-              <button type="button" disabled={pending} onClick={() => save("save")} className="button-primary flex-1 sm:flex-none">
-                {busy("save") ? "Updating…" : "Update"}
-              </button>
-              <button type="button" disabled={pending} onClick={() => save("unpublish")} className="row-action border border-rule">
-                {busy("unpublish") ? "Unpublishing…" : "Unpublish"}
-              </button>
-            </>
-          ) : (
-            <>
-              <button type="button" disabled={pending} onClick={() => save("save")} className="row-action border border-rule">
-                {busy("save") ? "Saving…" : "Save draft"}
-              </button>
-              <button type="button" disabled={pending} onClick={() => save("publish")} className="button-primary flex-1 sm:flex-none">
-                {busy("publish") ? "Publishing…" : "Publish"}
-              </button>
-            </>
-          )}
-          <button type="button" disabled={pending} onClick={() => save("save", true)} className="row-action sm:ml-auto">
-            <span className="sm:hidden">Save + new</span>
-            <span className="hidden sm:inline">Save and add another</span>
-          </button>
-        </div>
-      </div>
+      <SaveBar
+        status={
+          notice?.text ??
+          (bodyImages.pending > 0
+            ? `Uploading ${bodyImages.pending} image${bodyImages.pending === 1 ? "" : "s"}…`
+            : dirty
+              ? "Unsaved changes"
+              : saved.id
+                ? "All changes saved"
+                : "")
+        }
+        isError={notice?.tone === "error"}
+        published={published}
+        pending={pending}
+        savingIntent={savingIntent}
+        onSave={save}
+      />
     </form>
   );
 }
@@ -501,39 +484,5 @@ function ModeButton({ pressed, onClick, children }: { pressed: boolean; onClick:
     >
       {children}
     </button>
-  );
-}
-
-function Field({
-  label,
-  htmlFor,
-  optional,
-  hint,
-  error,
-  errorId,
-  children,
-}: {
-  label: string;
-  htmlFor: string;
-  optional?: boolean;
-  hint?: React.ReactNode;
-  error?: string;
-  errorId: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <label htmlFor={htmlFor} className="mb-1.5 block text-sm font-medium">
-        {label} {optional && <span className="font-normal text-fg-muted">(optional)</span>}
-      </label>
-      {children}
-      {error ? (
-        <p id={errorId} className="mt-1.5 text-sm text-danger">
-          {error}
-        </p>
-      ) : (
-        hint && <p className="mt-1.5 text-sm text-fg-muted">{hint}</p>
-      )}
-    </div>
   );
 }

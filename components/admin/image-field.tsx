@@ -9,23 +9,39 @@ import {
   looksLikeImageLink,
   type AddedImage,
 } from "@/lib/admin/add-image";
+import type { ImageUse } from "@/lib/admin/image-rules";
+import type { MediaFolder } from "@/lib/media";
 
-// The article's cover image. Four ways in, all ending as our own copy in the
-// media bucket: drop a file, paste (an image or a link) while the box has
-// focus, choose a file, or paste an image URL for the server to import.
+// One image field: an article's cover, or an item's picture. Four ways in, all
+// ending as our own copy in the given media folder: drop a file, paste (an
+// image or a link) while the box has focus, choose a file, or paste an image
+// URL for the server to import.
 
 type Busy = "preparing" | "importing" | null;
 
-export function CoverImageField({
+export function ImageField({
   id,
-  value,
-  onChange,
+  imageUrl: value,
+  onAdded,
+  onRemove,
+  use,
+  folder,
+  frameClassName = "aspect-[16/9]",
+  fit = "cover",
   describedBy,
 }: {
   id: string;
-  /** Our copy's URL, or "" for no cover. */
-  value: string;
-  onChange: (url: string) => void;
+  /** The current image's URL, or "" for none. */
+  imageUrl: string;
+  /** A new image is ready (our own copy: its path and URL). */
+  onAdded: (image: AddedImage) => void;
+  onRemove: () => void;
+  use: ImageUse;
+  folder: MediaFolder;
+  /** The preview frame's shape, e.g. 16:9 for an article cover. */
+  frameClassName?: string;
+  /** "cover" fills the frame (cropping); "contain" shows the whole image (book covers, cut-outs). */
+  fit?: "cover" | "contain";
   /** The field's error message, if any. */
   describedBy?: string;
 }) {
@@ -45,7 +61,7 @@ export function CoverImageField({
     try {
       const image = await work();
       if (attempt !== latest.current) return;
-      onChange(image.url.split("#")[0]); // the cover box has a fixed shape, so no size hint
+      onAdded(image);
       setReplacing(false);
       setUrlOpen(false);
       setLink("");
@@ -56,8 +72,8 @@ export function CoverImageField({
     }
   }
 
-  const addFile = (file: File) => add("preparing", () => addImageFile(file, "cover", "writing"));
-  const addLink = (url: string) => add("importing", () => addImageFromUrl(url.trim(), "cover", "writing"));
+  const addFile = (file: File) => add("preparing", () => addImageFile(file, use, folder));
+  const addLink = (url: string) => add("importing", () => addImageFromUrl(url.trim(), use, folder));
 
   function onPaste(event: ClipboardEvent) {
     const [file] = imageFilesFrom(event.clipboardData);
@@ -88,9 +104,9 @@ export function CoverImageField({
   return (
     <div>
       {value && (
-        <div className="relative aspect-[16/9] overflow-hidden rounded-xl bg-bg-raised">
-          {/* eslint-disable-next-line @next/next/no-img-element -- a small admin thumbnail of our own file */}
-          <img src={value} alt="Current cover" className="size-full object-cover" />
+        <div className={`relative overflow-hidden rounded-xl bg-bg-raised ${frameClassName}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- a small admin preview of our own file */}
+          <img src={value} alt="Current image" className={`size-full ${fit === "contain" ? "object-contain" : "object-cover"}`} />
         </div>
       )}
 
@@ -99,7 +115,7 @@ export function CoverImageField({
           <button type="button" onClick={() => setReplacing(true)} className="row-action border border-rule">
             Replace
           </button>
-          <button type="button" onClick={() => onChange("")} className="row-action">
+          <button type="button" onClick={onRemove} className="row-action">
             Remove
           </button>
         </div>
@@ -110,7 +126,7 @@ export function CoverImageField({
           id={id}
           tabIndex={0}
           role="group"
-          aria-label="Cover image: drop or paste an image, or use the buttons"
+          aria-label="Image: drop or paste an image, or use the buttons"
           aria-describedby={describedBy}
           aria-busy={busy !== null}
           onPaste={onPaste}

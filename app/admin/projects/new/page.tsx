@@ -1,4 +1,19 @@
-// Placeholder until part 3 of step 2.4a adds the Projects form.
+import { Suspense } from "react";
+import { getProjectSuggestions } from "@/lib/admin/items/load-projects";
+import { requireAdmin } from "@/lib/auth";
+import { ProjectForm } from "../project-form";
+
+// Request-time work sits behind this page's own <Suspense> (see CLAUDE.md, "Admin pages").
 export default function NewProject() {
-  return <p className="text-fg-muted">The project form arrives in the next part of this step.</p>;
+  return (
+    <Suspense fallback={<p className="py-6 text-fg-muted">Loading form…</p>}>
+      <NewProjectForm />
+    </Suspense>
+  );
+}
+
+async function NewProjectForm() {
+  await requireAdmin("/admin/projects/new");
+  const suggestions = await getProjectSuggestions();
+  return <ProjectForm project={null} badgeSuggestions={suggestions.badges} stackSuggestions={suggestions.stack} />;
 }
