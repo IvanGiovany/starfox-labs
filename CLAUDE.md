@@ -418,6 +418,11 @@ Track *active days* and *articles read* (one read per article per user), not raw
 - Any Client Component that calls `usePathname()` must sit inside `<Suspense>` (with a
   non-highlighted fallback), or pages with unknown URLs like `/admin/writing/<id>` fail
   the build. The header nav and admin tabs already do this.
+- **Admin pages:** a client navigation inside `/admin` only re-renders below
+  `app/admin/layout.tsx`, so the layout's `<Suspense>` and its `requireAdmin()` don't run
+  again. Every admin page puts its request-time work (params, session, database) in a
+  component behind its **own** `<Suspense>`, and that component calls `requireAdmin()`.
+  Otherwise `next dev` reports "uncached data … outside of `<Suspense>`".
 - Server actions: call `requireAdmin()` first, then `updateTag("posts")` (public pages)
   and `refresh()` (current admin page) after a successful change.
 - chester.how blocks automated fetches; use the screenshots in `design-refs/`.
