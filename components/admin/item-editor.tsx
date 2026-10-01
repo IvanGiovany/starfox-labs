@@ -36,6 +36,8 @@ type Saved<F> = { id: string | null; updatedAt: string | null; status: PostStatu
 export type ItemFormApi<F> = {
   fields: F;
   update: <K extends keyof F>(key: K, value: F[K]) => void;
+  /** Changes several fields at once (e.g. a book's status and its dates). */
+  patch: (changes: Partial<F>) => void;
   errors: FieldErrors<F>;
   /** id, aria-invalid and aria-describedby for a field's input. */
   fieldProps: (key: keyof F & string) => { id: string; "aria-invalid"?: true; "aria-describedby"?: string };
@@ -99,6 +101,15 @@ export function ItemEditor<F extends BaseItemFields, D>({
     setFields((current) => ({ ...current, [key]: value }));
     if (errors[key as keyof F & string]) setErrors((current) => ({ ...current, [key]: undefined }));
     // "Saved at 14:32" is out of date once something changes; errors stay until dealt with.
+    if (notice?.tone === "ok") setNotice(null);
+  }
+
+  function patch(changes: Partial<F>) {
+    setFields((current) => ({ ...current, ...changes }));
+    const touched = Object.keys(changes) as (keyof F & string)[];
+    if (touched.some((key) => errors[key])) {
+      setErrors((current) => ({ ...current, ...Object.fromEntries(touched.map((key) => [key, undefined])) }));
+    }
     if (notice?.tone === "ok") setNotice(null);
   }
 
@@ -266,7 +277,7 @@ export function ItemEditor<F extends BaseItemFields, D>({
           </Field>
         )}
 
-        {children({ fields, update, errors, fieldProps })}
+        {children({ fields, update, patch, errors, fieldProps })}
 
         <Field
           label="Linked article"

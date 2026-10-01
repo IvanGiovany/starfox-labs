@@ -1,10 +1,12 @@
 "use server";
 
 import { refresh, updateTag } from "next/cache";
-import { withReadingStatus } from "@/lib/admin/items/books";
+import { bookDefinition, withReadingStatus, type BookFields } from "@/lib/admin/items/books";
 import { explainItemError } from "@/lib/admin/items/item-errors";
+import type { SaveItemInput } from "@/lib/admin/items/item-form";
 import type { ListActionResult } from "@/lib/admin/items/list-actions";
 import { ITEM_SECTIONS } from "@/lib/admin/items/sections";
+import { saveItem } from "@/lib/admin/items/save-item";
 import { requireAdmin } from "@/lib/auth";
 import { isPlausibleToday } from "@/lib/format";
 import { READING_STATUSES, type ReadingStatus } from "@/lib/reading";
@@ -45,4 +47,9 @@ export async function setReadingStatus(id: string, status: string, today: string
   updateTag("posts");
   refresh();
   return { ok: true };
+}
+
+/** The Reading form's Save draft / Publish / Update / Unpublish (see saveItem). */
+export async function saveBook(input: SaveItemInput<BookFields>) {
+  return saveItem(bookDefinition, input);
 }
