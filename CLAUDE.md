@@ -383,12 +383,27 @@ Track *active days* and *articles read* (one read per article per user), not raw
     - Safety: an `updated_at` check refuses to overwrite newer saves; unsaved text is
       backed up in localStorage with Restore / Discard (`components/admin/use-local-backup.ts`);
       a `beforeunload` warning covers closing the tab.
-  - **3c next — live preview**: the body rendered by the real renderer (`lib/markdown.tsx`,
-    server-only and `"use cache"`) beside the text area on wide screens (the editor is
-    `max-w-3xl` today), a Write / Preview toggle on phones, and a full-page draft preview.
-    Plan it first, then build.
-  - Then 3d (image helper: in-browser resize/compress, cover upload, paste/drag into
-    the body).
+  - **3c done** (tested by Ivan): live preview in the editor.
+    - Write / Split / Preview switch at the top right of the editor. Split (form + preview
+      side by side) only on screens >= 1280 px; Write/Split is remembered per device.
+      Full Preview shows the article at reading width and hides the admin bar and tabs
+      (`data-admin-chrome` in `app/admin/layout.tsx`, rule in `globals.css`); Esc leaves it.
+    - `components/article-view.tsx` draws the article for both the public page and the
+      preview, so they can't drift.
+    - The renderer is split at the HTML-tree stage: `lib/markdown.tsx` (server-only, Shiki;
+      uncached `markdownToHast` and cached `renderMarkdown`) and `lib/markdown-react.tsx`
+      (`hastToReact`, runs on server or browser).
+    - `POST /admin/writing/preview` (`app/admin/writing/preview/route.ts`) returns the tree
+      as JSON, admin only, uncached, max `LIMITS.preview` characters; the browser side is
+      `lib/admin/fetch-preview.ts` and `app/admin/writing/live-preview.tsx` (0.3 s debounce,
+      cancels superseded requests). **A route handler, not a server action**, because Next
+      runs a page's server actions one at a time and previews would hold up Save (verified:
+      saves start while previews are pending).
+  - **3d next — image helper**: in-browser resize/compress (longest edge 2400 px, covers
+    1200 px; WebP, or JPEG where WebP encoding isn't available; EXIF orientation applied,
+    location data dropped), cover image upload, and images pasted or dragged into the
+    body, stored in the `media` bucket (`writing/`). The cover then shows in the preview
+    too (`ArticleView` already takes `coverImageUrl`). Plan it first, then build.
 - Step 2.4 note: **Open Library covers must be downloaded into our own `media` bucket**
   (`books/`) when a book is picked, never hotlinked from covers.openlibrary.org.
 
@@ -439,7 +454,10 @@ Track *active days* and *articles read* (one read per article per user), not raw
   component behind its **own** `<Suspense>`, and that component calls `requireAdmin()`.
   Otherwise `next dev` reports "uncached data … outside of `<Suspense>`".
 - Server actions: call `requireAdmin()` first, then `updateTag("posts")` (public pages)
-  and `refresh()` (current admin page) after a successful change.
+  and `refresh()` (current admin page) after a successful change. Exception: the editor's
+  `savePost` skips `refresh()`, which would re-render the form while Ivan types.
+- Server actions run **one at a time** per browser tab. Anything frequent that doesn't
+  change data (like the live preview) goes through a route handler instead.
 - chester.how blocks automated fetches; use the screenshots in `design-refs/`.
 - Visual checks were done with headless Edge + `puppeteer-core` installed in a temp
   folder (not a project dependency) at 1280 / 1440 / 1920 px, dark mode, and 390 px mobile.
