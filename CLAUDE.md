@@ -331,13 +331,10 @@ Everything built so far, with file maps, decisions and how it was tested:
   shell + Writing editor (form, live preview, images), 2.4a shared item pieces + Projects,
   2.4b Reading (with Open Library autofill): all done, tested by Ivan, pushed.
 - **Now: 2.4c Music** (plan approved 2026-10-01), in two parts:
-  1. The form (released on, in progress, full-track link, links for Spotify / SoundCloud /
-     Bandcamp / YouTube / Apple, note) with a manual snippet upload (MP3/M4A, max 30 s /
-     2 MB, into `media/music/`). An in-progress song can be published before its article
-     and snippet exist. Steps: definition (`lib/admin/items/tracks.ts`) → snippet field →
-     server check of the uploaded file (Storage `.info()`, only when the path changes) →
-     item forms wait for uploads before saving → form, list (`NOW PRODUCING` badge,
-     detail line shows a missing snippet/article) and pages.
+  1. *Done, tested by Ivan 2026-10-01* (checklist items 1–7 in Firefox; item 8, picking a
+     snippet from Files on a phone, not yet reported):
+     the form, manual snippet upload, the server's snippet check, item forms waiting for
+     uploads, list and pages. Details: `docs/build-log.md`, 4c.
   2. The in-browser snippet cutter (waveform, pick 20–30 s, preview, 0.5 s / 2 s fades,
      **MP3 at 320 kbps** stereo in a Web Worker with `@breezystack/lamejs`; the encoder
      loads only when the cutter opens).
@@ -390,10 +387,6 @@ Everything built so far, with file maps, decisions and how it was tested:
 - **Redirects for changed slugs** (to-do): changing a published article's slug breaks old
   links. Fix: a `post_redirects` table (`old_slug` → `post_id`) filled when a published
   slug changes, checked by the article page before `notFound()` (permanent redirect).
-- **Hydration mismatch report (unconfirmed)**: once, an `ArticlePicker` option was
-  `disabled` in the browser but not on the server. Not reproduced; the likely cause (ties
-  in ordering) is fixed. If it happens again, note the exact steps and browser. Details
-  in the build log, 2.4b.
 
 ### Notes for the next session (gotchas — keep these)
 **Next.js 16**
@@ -441,6 +434,16 @@ Everything built so far, with file maps, decisions and how it was tested:
   browser's local date (`localToday` in `lib/format.ts`); the server runs on UTC.
 - Use `crypto.getRandomValues` (`randomId()`), not `crypto.randomUUID`: browsers only offer
   the latter on https/localhost, not on the dev server opened from a phone.
+- **Firefox form-state restore** (Ivan uses Firefox): after a reload or Back, Firefox gives
+  a control that was disabled and then enabled again during the visit (e.g. Save while
+  saving) its "enabled" state back, matched by its position in the *original* HTML, even
+  when the reloaded HTML differs. That removes a `disabled` the server rendered (React:
+  hydration mismatch, "won't be patched up", so the button stays clickable). It only
+  restores *enabled*, and not for `no-store` pages (`next dev` sends `no-cache`). Rule:
+  every control whose `disabled` changes sits inside the item/article editor forms
+  (`autoComplete="off"` on the `<form>`) or has `autoComplete="off"` itself (allowed on
+  buttons by `types/react-button-autocomplete.d.ts`). Edge doesn't do this, so test
+  hydration in Firefox. Repro method: build log, 2.4b.
 - Auth: sign-in is email code + link (`signInWithOtp` with `shouldCreateUser: false` on the
   admin form only; sign-ups stay enabled project-wide for Phase 4 readers). The email
   template links to `/auth/confirm?token_hash=…`, which works in any browser.

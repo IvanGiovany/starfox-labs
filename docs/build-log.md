@@ -158,13 +158,87 @@ ordered automatically** (no drag handles); every other section is drag-to-reorde
   first); no cover → a clear message and an empty image. Values the autofill filled are
   replaced or cleared by the next pick, never values Ivan typed or uploaded (a bug found
   in testing: a coverless book kept the previous pick's cover, year and pages).
-- **Hydration mismatch report (unconfirmed):** once, editing a book, an `ArticlePicker`
-  option was `disabled` in the browser but not on the server. Not reproduced:
-  server-render + hydrate with identical props (with and without a stored backup) and a
-  temporary no-login probe page on the dev server were both clean, with one article query
-  per load. Likely cause: posts tied on `updated_at` (10 published sample posts share 4
-  timestamps) coming back in different orders. Every admin list now ends its order with
-  `id` (commit "Give admin lists a fully determined order").
+- **Hydration mismatch (solved 2026-10-01, after 4c part 1):** an `ArticlePicker` option
+  `disabled={true}` on the client, no `disabled` in the "server" HTML. Seen twice by Ivan
+  (editing a book, then on `/admin/reading/new`). First guess, ties in ordering, was wrong
+  (the `id` tie-breakers stay: they're right anyway). Ivan suspected Firefox's form state
+  restoration; confirmed and fixed:
+  - Rules, tested in Firefox 157 with plain HTML: after a reload, Firefox restores only the
+    *enabled* state of a control whose `disabled` changed during the visit, keyed by its
+    position in the **original** HTML, onto whatever control has that position in the
+    reloaded HTML. It doesn't restore for `no-store` pages; `next dev` sends `no-cache`.
+    `autocomplete="off"` on the control or its form stops it. React's diff shows the live
+    DOM as "server", and attribute mismatches "won't be patched up": the button stayed
+    clickable.
+  - Reproduced with the real `ItemEditor`, server-rendered with `react-dom/server`
+    (development build) and hydrated: "Write the article" disabled while saving, enabled
+    after a failed save; reload; meanwhile the article list changed (a new post, and an
+    article linked from a game), so a disabled option took that position. Firefox: the
+    option came back enabled, with the exact warning (`+ disabled={true}` /
+    `- disabled={null}`). Edge: clean. The HTML differs between loads whenever articles
+    change, or after the first save (the URL becomes `/<id>` via `replaceState`, so a
+    reload brings the edit page while Firefox applies the `/new` page's state).
+  - Harness lessons: a toggle inside one click handler is batched (the DOM never changes),
+    so make the save fail asynchronously; accept the "Leave page?" prompt on reload.
+  - Fix: `autoComplete="off"` on the item and article editor `<form>`s (covers picker, save
+    bar, image/snippet fields, tags, Open Library), and on toggled controls outside forms:
+    item list (↑ ↓, publish, delete), article list, login buttons (the inputs keep their
+    autofill), the Writing page's search box and Load more. Buttons need
+    `types/react-button-autocomplete.d.ts` (React renders the attribute; its types only
+    allowed it on inputs and forms). After the fix: Firefox clean, option stays disabled.
+  - Side effect, intended: Firefox no longer refills typed text in the editors after a
+    reload (React state never had it anyway); the local backup's Restore covers that.
+
+#### 4c — Music, part 1 (done, tested by Ivan: checklist 1–7 in Firefox; 8, phone, open)
+Decisions (Ivan): several songs can be in progress ("Now producing" = the top one in the
+Music order); cut snippets (part 2) are MP3 at 320 kbps.
+- `lib/admin/items/tracks.ts`: the definition. Platform links are separate form fields
+  (`spotifyUrl` …) stored together in `links` jsonb (only filled ones; unknown keys
+  ignored when loading). Each must be on its service's domain (subdomains and short
+  links like `spotify.link`, `youtu.be` count) except Bandcamp (custom domains). Publish
+  rule = the database's, one message per missing field (snippet, article); a song in
+  progress needs neither.
+- `lib/admin/snippet-rules.ts`: one set of numbers (2 MB, 30 s + 0.3 s encoder slack,
+  MP3 → `audio/mpeg`, M4A → `audio/mp4`), file checks (name first, then type: systems
+  report M4A as `audio/x-m4a`, `audio/mp4` or nothing), `storedSnippetProblem` for the
+  server.
+- `lib/admin/add-snippet.ts` + `components/admin/snippet-field.tsx`: choose or drop;
+  length read by decoding with Web Audio (also proves the browser can play it); upload
+  to `media/music/YYYY/MM/<random>.mp3|m4a`; the browser's own `<audio>` as preview (the
+  styled player is Phase 3); Replace / Remove; newest pick wins.
+- `lib/admin/upload-media.ts`: the Storage upload, now shared by images and snippets.
+  `mediaPath()` and `randomId()` moved to `lib/media.ts`.
+- `lib/admin/items/check-snippet.ts` + `app/admin/music/actions.ts`: before saving, the
+  server asks Storage (`.info()`) about a **new or changed** snippet (exists, audio type
+  matches the name, ≤ 2 MB). Unchanged paths aren't checked, which keeps the sample songs
+  (whose files don't exist) editable. A missing file arrives as HTTP 400 with Storage
+  code `404` / `NoSuchKey` (checked against the live project). Length isn't re-checked
+  on the server (would need decoding).
+- Item forms wait for uploads: `ImageField` / `SnippetField` report `onBusyChange`; the
+  item editor keeps the fields uploading, shows "Uploading the image…" / "Uploading 2
+  files…", and refuses Save / Publish / Ctrl+S / "Write the article" with "Wait for the
+  upload to finish, then save." Starting an upload clears "Saved at …" (it hid the
+  upload status, found in testing). The article editor's **cover** got the same guard
+  (body images already had it).
+- `ArticlePicker`: on a phone the linked article's buttons now wrap below its title
+  (`basis-48`); before, the title was squeezed to one word per line.
+- Pages: `app/admin/music/` (list with drag to reorder, `NOW PRODUCING` badge, detail line
+  "Sep 30, 2026 · Snippet · No article"; `new`; `[id]`; `track-form.tsx`). Music tab on.
+- Tested: tsx (definition 8, snippet rules 5, server check 6 incl. the live "missing"
+  case); headless Edge with real MP3s (made with lamejs) and an M4A recorded by the
+  browser: snippet field 13, upload waiting 6, Music form 7 (incl. 390 / 1280 px layout,
+  light and dark).
+- **Ivan's browser checklist** (laptop, then phone):
+  1. Music tab → New song: add a cover, upload a real snippet (MP3 and M4A), play it.
+  2. Publish without snippet/article → both fields flagged. Tick "Still in progress" →
+     publishes with just a title; the list shows `NOW PRODUCING`.
+  3. Finish it: snippet + "Write the article" (or pick one) → untick → Update.
+  4. Paste a SoundCloud link into the Spotify box → "That isn't a Spotify link."
+  5. Tap Publish while a snippet or image is still uploading → asked to wait; then save.
+  6. Article editor: tap Save while a new cover is uploading → asked to wait.
+  7. Edit the sample song "Night Drive" and save (its snippet file doesn't exist; saving
+     other changes must still work). Drag songs to reorder.
+  8. Phone: pick a snippet from Files (iPhone: Voice Memos / GarageBand exports are M4A).
 
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
@@ -180,5 +254,15 @@ admin code is tested in pieces, then by Ivan in the browser:
   replaced by fakes, then driven in headless Edge (`puppeteer-core`, not a project
   dependency). Serve the harness over http (so `history.replaceState` works) with
   `<meta charset="utf-8">` (or "←" breaks hydration checks).
+  - Fakes are swapped in with an esbuild `onResolve` plugin (e.g. `@/lib/media`,
+    `upload-media`, a form's `./actions`). Bare imports in a scratchpad test resolve
+    from the scratchpad, so load project packages with `createRequire(<project>/package.json)`
+    and set esbuild's `nodePaths` to the project's `node_modules` (one React copy).
+  - Styles: compile `app/globals.css` with the project's `postcss` + `@tailwindcss/postcss`
+    (`base` = the project) so screenshots look like the admin. Set `data-theme` for each
+    screenshot: headless Edge follows the OS dark setting otherwise.
+  - Audio: there's no ffmpeg; test MP3s are made with `@breezystack/lamejs` (sine waves of
+    known length and bitrate), an M4A with the browser's own `MediaRecorder`.
+  - Answer `/favicon.ico` in the test server, or its 404 counts as a console error.
 - **Public pages:** production build on another port (3124), screenshots and rendered
   HTML before/after, and per-element layout when screenshots flicker by a pixel.
