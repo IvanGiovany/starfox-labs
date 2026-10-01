@@ -25,17 +25,20 @@ async function AdminGate({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="pb-8">
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-rule pb-3 text-sm text-fg-muted">
-        <span>
-          Signed in as <span className="text-fg">{admin.email}</span>
-        </span>
-        <form action={signOut}>
-          <button type="submit" className="min-h-11 cursor-pointer underline underline-offset-4 hover:text-fg">
-            Sign out
-          </button>
-        </form>
+      {/* data-admin-chrome: hidden while the editor shows a full-page preview (see globals.css). */}
+      <div data-admin-chrome>
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-rule pb-3 text-sm text-fg-muted">
+          <span>
+            Signed in as <span className="text-fg">{admin.email}</span>
+          </span>
+          <form action={signOut}>
+            <button type="submit" className="min-h-11 cursor-pointer underline underline-offset-4 hover:text-fg">
+              Sign out
+            </button>
+          </form>
+        </div>
+        <AdminTabs />
       </div>
-      <AdminTabs />
       <div className="mt-6">{children}</div>
     </div>
   );

@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useEffectEvent, useRef, useState, useTransition, type ReactNode } from "react";
+import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore, useTransition, type ReactNode } from "react";
 import { Badge } from "@/components/badge";
 import { CheatSheetPanel } from "@/components/admin/cheat-sheet-panel";
 import { handleMarkdownShortcut, MarkdownToolbar } from "@/components/admin/markdown-toolbar";
 import { TagInput } from "@/components/admin/tag-input";
+import { useMediaQuery } from "@/components/admin/use-media-query";
 import { removeBackup, useLocalBackup } from "@/components/admin/use-local-backup";
 import {
   firstSentence,
@@ -22,13 +23,14 @@ import {
   type SaveIntent,
 } from "@/lib/admin/post-form";
 import { savePost } from "./actions";
+import { LivePreview } from "./live-preview";
 
 const EMPTY: PostFields = { title: "", slug: "", summary: "", tags: [], youtubeUrl: "", bodyMd: "" };
 
 /** What the database holds, as far as the editor knows. */
-type Saved = { id: string | null; updatedAt: string | null; status: PostStatus; fields: PostFields };
+type Saved = { id: string | null; updatedAt: string | null; status: PostStatus; publishedAt: string | null; fields: PostFields };
 
-const BLANK: Saved = { id: null, updatedAt: null, status: "draft", fields: EMPTY };
+const BLANK: Saved = { id: null, updatedAt: null, status: "draft", publishedAt: null, fields: EMPTY };
 
 // Field order, so the first invalid one gets the focus.
 const FIELD_ORDER: (keyof PostFields)[] = ["title", "slug", "summary", "tags", "youtubeUrl", "bodyMd"];
@@ -45,6 +47,34 @@ function backupKey(id: string | null): string {
 /** The slug follows the title until Ivan edits it, and never once the article has been published. */
 function slugFollowsTitle(status: PostStatus, fields: PostFields): boolean {
   return status === "draft" && fields.slug === slugify(fields.title);
+}
+
+// Layout: Write (the form), Split (form + live preview, wide screens only) or
+// Preview (the article alone, like the public page). Write/Split is remembered
+// per device; Preview is a moment, not a preference, so it isn't.
+type Layout = "write" | "split";
+const LAYOUT_KEY = "starfox:editor-layout";
+const layoutListeners = new Set<() => void>();
+
+function readLayout(): Layout | null {
+  try {
+    const value = localStorage.getItem(LAYOUT_KEY);
+    return value === "write" || value === "split" ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function storeLayout(layout: Layout) {
+  try {
+    localStorage.setItem(LAYOUT_KEY, layout);
+  } catch {} // blocked storage: the choice just isn't remembered
+  layoutListeners.forEach((listener) => listener());
+}
+
+function subscribeLayout(listener: () => void) {
+  layoutListeners.add(listener);
+  return () => layoutListeners.delete(listener);
 }
 
 function timeNow(): string {
@@ -75,6 +105,27 @@ export function PostEditor({
   const [savingIntent, setSavingIntent] = useState<SaveIntent | null>(null);
   const [pending, startTransition] = useTransition();
   const bodyRef = useRef<HTMLTextAreaElement>(null);
+
+  const wide = useMediaQuery("(min-width: 80rem)"); // room for the form and the preview side by side
+  const storedLayout = useSyncExternalStore(subscribeLayout, readLayout, () => null);
+  const [previewing, setPreviewing] = useState(false);
+  const layout: Layout = wide ? (storedLayout ?? "split") : "write";
+  const mode = previewing ? "preview" : layout;
+
+  function showMode(next: Layout | "preview") {
+    setPreviewing(next === "preview");
+    if (next !== "preview" && wide) storeLayout(next);
+  }
+
+  // Full preview: hide the admin bar and tabs (see globals.css) and start at the top.
+  useEffect(() => {
+    if (mode !== "preview") return;
+    document.documentElement.dataset.editorPreview = "";
+    window.scrollTo({ top: 0 });
+    return () => {
+      delete document.documentElement.dataset.editorPreview;
+    };
+  }, [mode]);
 
   const published = saved.status === "published";
   const dirty = !sameFields(fields, saved.fields);
@@ -151,7 +202,7 @@ export function PostEditor({
 
       // The server may have filled in the slug and summary, and trimmed things.
       const cleaned: PostFields = { ...checked.data, slug: result.slug, summary: result.summary };
-      setSaved({ id: result.id, updatedAt: result.updatedAt, status: result.status, fields: cleaned });
+      setSaved({ id: result.id, updatedAt: result.updatedAt, status: result.status, publishedAt: result.publishedAt, fields: cleaned });
       // Keep anything typed while saving; otherwise show the cleaned-up values.
       setFields((current) => (current === submitted ? cleaned : current));
       if (result.status === "published") setSlugLinked(false);
@@ -166,10 +217,13 @@ export function PostEditor({
   }
 
   // Ctrl/⌘+S saves from anywhere on the page instead of saving the HTML file.
+  // Escape leaves the full preview (unless it's closing the cheat sheet).
   const onKeyDown = useEffectEvent((event: KeyboardEvent) => {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
       event.preventDefault();
       save("save");
+    } else if (event.key === "Escape" && previewing && !document.querySelector("dialog[open]")) {
+      setPreviewing(false);
     }
   });
   useEffect(() => {
@@ -185,7 +239,7 @@ export function PostEditor({
   });
 
   return (
-    <form noValidate onSubmit={(e) => e.preventDefault()} className="mx-auto max-w-3xl">
+    <form noValidate onSubmit={(e) => e.preventDefault()} className={mode === "split" ? "" : "mx-auto max-w-3xl"}>
       <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
         <Link href="/admin/writing" className="row-action -ml-3 no-underline">
           ← All articles
@@ -196,6 +250,19 @@ export function PostEditor({
             View ↗
           </a>
         )}
+        <div role="group" aria-label="View" className="ml-auto flex gap-1 rounded-lg bg-bg-raised p-1">
+          <ModeButton pressed={mode === "write"} onClick={() => showMode("write")}>
+            Write
+          </ModeButton>
+          {wide && (
+            <ModeButton pressed={mode === "split"} onClick={() => showMode("split")}>
+              Split
+            </ModeButton>
+          )}
+          <ModeButton pressed={mode === "preview"} onClick={() => showMode("preview")}>
+            Preview
+          </ModeButton>
+        </div>
       </div>
 
       {backup.offer && (
@@ -216,116 +283,127 @@ export function PostEditor({
         </div>
       )}
 
-      <div className="flex flex-col gap-6">
-        <Field label="Title" htmlFor="post-title" error={errors.title} errorId="post-title-error">
-          <input
-            {...fieldProps("title")}
-            value={fields.title}
-            onChange={(e) => update("title", e.target.value)}
-            maxLength={LIMITS.title}
-            placeholder="What's it about?"
-            autoFocus={post === null}
-            className="field font-serif text-2xl leading-tight"
-          />
-        </Field>
-
-        <Field
-          label="Address"
-          htmlFor="post-slug"
-          error={errors.slug}
-          errorId="post-slug-error"
-          hint={
-            liveSlug && fields.slug !== liveSlug ? (
-              <span className="text-danger">
-                This article is live at /writing/{liveSlug}. Changing the address breaks links to the old one.
-              </span>
-            ) : slugLinked ? (
-              "Follows the title until you edit it."
-            ) : null
-          }
-        >
-          <div className="flex items-center gap-1">
-            <span className="shrink-0 text-fg-muted">/writing/</span>
+      <div className={mode === "split" ? "grid grid-cols-2 items-start gap-10" : ""}>
+        {/* Hidden, not removed, in full preview: the text area keeps its undo history. */}
+        <div className={`flex flex-col gap-6 ${mode === "preview" ? "hidden" : ""}`}>
+          <Field label="Title" htmlFor="post-title" error={errors.title} errorId="post-title-error">
             <input
-              {...fieldProps("slug")}
-              value={fields.slug}
-              onChange={(e) => {
-                setSlugLinked(false);
-                update("slug", e.target.value.toLowerCase());
-              }}
-              maxLength={LIMITS.slug}
+              {...fieldProps("title")}
+              value={fields.title}
+              onChange={(e) => update("title", e.target.value)}
+              maxLength={LIMITS.title}
+              placeholder="What's it about?"
+              autoFocus={post === null}
+              className="field font-serif text-2xl leading-tight"
+            />
+          </Field>
+
+          <Field
+            label="Address"
+            htmlFor="post-slug"
+            error={errors.slug}
+            errorId="post-slug-error"
+            hint={
+              liveSlug && fields.slug !== liveSlug ? (
+                <span className="text-danger">
+                  This article is live at /writing/{liveSlug}. Changing the address breaks links to the old one.
+                </span>
+              ) : slugLinked ? (
+                "Follows the title until you edit it."
+              ) : null
+            }
+          >
+            <div className="flex items-center gap-1">
+              <span className="shrink-0 text-fg-muted">/writing/</span>
+              <input
+                {...fieldProps("slug")}
+                value={fields.slug}
+                onChange={(e) => {
+                  setSlugLinked(false);
+                  update("slug", e.target.value.toLowerCase());
+                }}
+                maxLength={LIMITS.slug}
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                className="field font-mono text-[0.9375rem]"
+              />
+            </div>
+          </Field>
+
+          <Field
+            label="Summary"
+            optional
+            htmlFor="post-summary"
+            error={errors.summary}
+            errorId="post-summary-error"
+            hint={fields.summary.trim() ? null : "Left empty, the first sentence of the article is used."}
+          >
+            <textarea
+              {...fieldProps("summary")}
+              value={fields.summary}
+              onChange={(e) => update("summary", e.target.value)}
+              maxLength={LIMITS.summary}
+              rows={2}
+              placeholder={firstSentence(fields.bodyMd) || "One or two sentences for cards and link previews."}
+              className="field field-sizing-content min-h-20 resize-y"
+            />
+          </Field>
+
+          <Field label="Tags" optional htmlFor="post-tags" error={errors.tags} errorId="post-tags-error">
+            <TagInput
+              id="post-tags"
+              tags={fields.tags}
+              onChange={(tags) => update("tags", tags)}
+              suggestions={tagSuggestions}
+              normalize={normalizeTag}
+              max={LIMITS.tags}
+              invalid={Boolean(errors.tags)}
+              describedBy={errors.tags ? "post-tags-error" : undefined}
+            />
+          </Field>
+
+          <Field label="YouTube video" optional htmlFor="post-youtubeUrl" error={errors.youtubeUrl} errorId="post-youtubeUrl-error">
+            <input
+              {...fieldProps("youtubeUrl")}
+              type="url"
+              inputMode="url"
+              value={fields.youtubeUrl}
+              onChange={(e) => update("youtubeUrl", e.target.value)}
+              placeholder="https://youtu.be/…"
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
-              className="field font-mono text-[0.9375rem]"
+              className="field"
             />
-          </div>
-        </Field>
+          </Field>
 
-        <Field
-          label="Summary"
-          optional
-          htmlFor="post-summary"
-          error={errors.summary}
-          errorId="post-summary-error"
-          hint={fields.summary.trim() ? null : "Left empty, the first sentence of the article is used."}
-        >
-          <textarea
-            {...fieldProps("summary")}
-            value={fields.summary}
-            onChange={(e) => update("summary", e.target.value)}
-            maxLength={LIMITS.summary}
-            rows={2}
-            placeholder={firstSentence(fields.bodyMd) || "One or two sentences for cards and link previews."}
-            className="field field-sizing-content min-h-20 resize-y"
-          />
-        </Field>
+          <Field label="Article" htmlFor="post-bodyMd" error={errors.bodyMd} errorId="post-bodyMd-error">
+            {/* The toolbar stays in view while scrolling a long article. */}
+            <div className="sticky top-0 z-10 -mx-1 mb-1.5 bg-bg/95 px-1 py-1 backdrop-blur">
+              <MarkdownToolbar textareaRef={bodyRef}>
+                <CheatSheetPanel>{cheatSheet}</CheatSheetPanel>
+              </MarkdownToolbar>
+            </div>
+            <textarea
+              {...fieldProps("bodyMd")}
+              ref={bodyRef}
+              value={fields.bodyMd}
+              onChange={(e) => update("bodyMd", e.target.value)}
+              onKeyDown={handleMarkdownShortcut}
+              placeholder="Write in markdown…"
+              className="field field-sizing-content min-h-[60vh] resize-y font-mono text-[0.9375rem] leading-relaxed"
+            />
+          </Field>
+        </div>
 
-        <Field label="Tags" optional htmlFor="post-tags" error={errors.tags} errorId="post-tags-error">
-          <TagInput
-            id="post-tags"
-            tags={fields.tags}
-            onChange={(tags) => update("tags", tags)}
-            suggestions={tagSuggestions}
-            normalize={normalizeTag}
-            max={LIMITS.tags}
-            invalid={Boolean(errors.tags)}
-            describedBy={errors.tags ? "post-tags-error" : undefined}
-          />
-        </Field>
-
-        <Field label="YouTube video" optional htmlFor="post-youtubeUrl" error={errors.youtubeUrl} errorId="post-youtubeUrl-error">
-          <input
-            {...fieldProps("youtubeUrl")}
-            type="url"
-            inputMode="url"
-            value={fields.youtubeUrl}
-            onChange={(e) => update("youtubeUrl", e.target.value)}
-            placeholder="https://youtu.be/…"
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            className="field"
-          />
-        </Field>
-
-        <Field label="Article" htmlFor="post-bodyMd" error={errors.bodyMd} errorId="post-bodyMd-error">
-          {/* The toolbar stays in view while scrolling a long article. */}
-          <div className="sticky top-0 z-10 -mx-1 mb-1.5 bg-bg/95 px-1 py-1 backdrop-blur">
-            <MarkdownToolbar textareaRef={bodyRef}>
-              <CheatSheetPanel>{cheatSheet}</CheatSheetPanel>
-            </MarkdownToolbar>
-          </div>
-          <textarea
-            {...fieldProps("bodyMd")}
-            ref={bodyRef}
-            value={fields.bodyMd}
-            onChange={(e) => update("bodyMd", e.target.value)}
-            onKeyDown={handleMarkdownShortcut}
-            placeholder="Write in markdown…"
-            className="field field-sizing-content min-h-[60vh] resize-y font-mono text-[0.9375rem] leading-relaxed"
-          />
-        </Field>
+        <LivePreview
+          fields={fields}
+          publishedAt={published ? saved.publishedAt : null}
+          active={mode !== "write"}
+          hidden={mode === "write"}
+          framed={mode === "split"}
+        />
       </div>
 
       {/* Sticky save bar: always within thumb reach on a phone. */}
@@ -363,6 +441,19 @@ export function PostEditor({
         </div>
       </div>
     </form>
+  );
+}
+
+function ModeButton({ pressed, onClick, children }: { pressed: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={pressed}
+      onClick={onClick}
+      className="min-h-9 cursor-pointer rounded-md px-3 text-fg-muted hover:text-fg aria-pressed:bg-bg aria-pressed:text-fg aria-pressed:shadow-sm"
+    >
+      {children}
+    </button>
   );
 }
 

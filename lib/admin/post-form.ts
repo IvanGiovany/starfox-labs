@@ -86,7 +86,14 @@ export function statusAfter(intent: SaveIntent, current: PostStatus): PostStatus
 }
 
 /** An existing article as the editor loads it. */
-export type EditablePost = { id: string; updatedAt: string; status: PostStatus; fields: PostFields };
+export type EditablePost = {
+  id: string;
+  updatedAt: string;
+  status: PostStatus;
+  /** Kept when unpublished, so re-publishing keeps the original date. */
+  publishedAt: string | null;
+  fields: PostFields;
+};
 
 /**
  * Validates the form for the status the post will have after saving.

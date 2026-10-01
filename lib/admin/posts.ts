@@ -14,7 +14,7 @@ export async function getEditablePost(id: string): Promise<EditablePost | null> 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("posts")
-    .select("id, title, slug, summary, tags, youtube_url, body_md, status, updated_at")
+    .select("id, title, slug, summary, tags, youtube_url, body_md, status, published_at, updated_at")
     .eq("id", id)
     .maybeSingle();
 
@@ -25,6 +25,7 @@ export async function getEditablePost(id: string): Promise<EditablePost | null> 
     id: data.id,
     updatedAt: data.updated_at,
     status: data.status as PostStatus,
+    publishedAt: data.published_at,
     fields: {
       title: data.title,
       slug: data.slug,

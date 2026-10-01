@@ -83,7 +83,7 @@ export type SavePostInput = {
 };
 
 export type SavePostResult =
-  | { ok: true; id: string; slug: string; summary: string; status: PostStatus; updatedAt: string }
+  | { ok: true; id: string; slug: string; summary: string; status: PostStatus; publishedAt: string | null; updatedAt: string }
   | { ok: false; error: string; fieldErrors?: PostFieldErrors };
 
 /** The editor's Save draft / Publish / Update / Unpublish buttons. */
@@ -107,7 +107,7 @@ export async function savePost(input: SavePostInput): Promise<SavePostResult> {
   };
 
   const supabase = await createSupabaseServerClient();
-  const columns = "id, slug, summary, status, updated_at";
+  const columns = "id, slug, summary, status, published_at, updated_at";
   const { data, error } =
     input.id === null
       ? await supabase.from("posts").insert(row).select(columns).single()
@@ -139,6 +139,7 @@ export async function savePost(input: SavePostInput): Promise<SavePostResult> {
     slug: data.slug,
     summary: data.summary,
     status: data.status as PostStatus,
+    publishedAt: data.published_at,
     updatedAt: data.updated_at,
   };
 }

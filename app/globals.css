@@ -260,6 +260,12 @@ body::before {
   }
 }
 
+/* The admin's "Signed in as" bar and tabs step aside while the article editor
+   shows a full-page preview, so it looks like the real article page. */
+:root[data-editor-preview] [data-admin-chrome] {
+  display: none;
+}
+
 /* Accent glow: a soft light behind links or marks that should feel "lit". */
 @utility glow {
   text-shadow: 0 0 18px var(--accent-glow);
