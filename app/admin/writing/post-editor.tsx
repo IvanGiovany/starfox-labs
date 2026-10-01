@@ -27,6 +27,7 @@ import {
   type PostStatus,
   type SaveIntent,
 } from "@/lib/admin/post-form";
+import type { LinkTarget } from "@/lib/admin/items/link-target";
 import { savePost } from "./actions";
 import { LivePreview } from "./live-preview";
 
@@ -95,8 +96,11 @@ export function PostEditor({
   post,
   tagSuggestions,
   cheatSheet,
+  linkTarget = null,
 }: {
   post: EditablePost | null;
+  /** "Write the article": the item this new article is for. */
+  linkTarget?: LinkTarget | null;
   tagSuggestions: string[];
   /** WRITING.md, rendered on the server. */
   cheatSheet: ReactNode;
@@ -109,6 +113,10 @@ export function PostEditor({
   const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [savingIntent, setSavingIntent] = useState<SaveIntent | null>(null);
   const [pending, startTransition] = useTransition();
+  // "pending": the first save links this article to linkTarget; "linked" once it has.
+  const [link, setLink] = useState<{ state: "pending" | "linked" } | { state: "failed"; error: string } | null>(
+    linkTarget && !linkTarget.hasArticle ? { state: "pending" } : null,
+  );
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const [imagePanelOpen, setImagePanelOpen] = useState(false);
   const bodyImages = useBodyImages({
@@ -194,7 +202,8 @@ export function PostEditor({
     setNotice(null);
     setSavingIntent(intent);
     startTransition(async () => {
-      const result = await savePost({ id: saved.id, updatedAt: saved.updatedAt, status: saved.status, intent, fields: submitted });
+      const linkTo = link?.state === "pending" && saved.id === null && linkTarget ? { section: linkTarget.section, itemId: linkTarget.itemId } : null;
+      const result = await savePost({ id: saved.id, updatedAt: saved.updatedAt, status: saved.status, intent, fields: submitted, linkTo });
       setSavingIntent(null);
       if (!result.ok) {
         setErrors(result.fieldErrors ?? {});
@@ -202,7 +211,10 @@ export function PostEditor({
         return;
       }
 
+      if (result.link) setLink(result.link.ok ? { state: "linked" } : { state: "failed", error: result.link.error });
+
       if (addAnother) {
+        setLink(null); // the next article isn't for that item
         const label = `Saved “${checked.data.title}”.`;
         removeBackup(backupKey(null));
         if (post === null) {
@@ -282,6 +294,8 @@ export function PostEditor({
           </ModeButton>
         </div>
       </div>
+
+      {linkTarget && <LinkBanner target={linkTarget} link={link} />}
 
       {backup.offer && (
         <div role="alert" className="mb-6 rounded-xl bg-bg-raised px-4 py-3 text-sm">
@@ -484,5 +498,37 @@ function ModeButton({ pressed, onClick, children }: { pressed: boolean; onClick:
     >
       {children}
     </button>
+  );
+}
+
+/** Shown when this article is being written for an item ("Write the article"). */
+function LinkBanner({
+  target,
+  link,
+}: {
+  target: LinkTarget;
+  link: { state: "pending" | "linked" } | { state: "failed"; error: string } | null;
+}) {
+  const name = `${target.label} · ${target.itemTitle}`;
+  const message =
+    link?.state === "linked"
+      ? `Linked to ${name}.`
+      : link?.state === "failed"
+        ? `Saved, but not linked to ${name}: ${link.error}`
+        : link?.state === "pending"
+          ? `This article is for ${name}. Saving it links it there.`
+          : `${target.itemTitle} already has an article, so this one won't be linked to it.`;
+  return (
+    <div
+      role={link?.state === "failed" ? "alert" : "status"}
+      className={`mb-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl px-4 py-3 text-sm ${
+        link?.state === "failed" ? "bg-bg-raised text-danger" : "bg-accent-soft"
+      }`}
+    >
+      <p>{message}</p>
+      <Link href={`/admin/${target.section}/${target.itemId}`} className="row-action -my-2 no-underline">
+        ← Back to {target.itemTitle}
+      </Link>
+    </div>
   );
 }

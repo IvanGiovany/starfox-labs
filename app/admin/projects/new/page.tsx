@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { getArticleOptions } from "@/lib/admin/items/article-options";
 import { getProjectSuggestions } from "@/lib/admin/items/load-projects";
 import { requireAdmin } from "@/lib/auth";
 import { ProjectForm } from "../project-form";
@@ -14,6 +15,6 @@ export default function NewProject() {
 
 async function NewProjectForm() {
   await requireAdmin("/admin/projects/new");
-  const suggestions = await getProjectSuggestions();
-  return <ProjectForm project={null} badgeSuggestions={suggestions.badges} stackSuggestions={suggestions.stack} />;
+  const [suggestions, articles] = await Promise.all([getProjectSuggestions(), getArticleOptions()]);
+  return <ProjectForm project={null} badgeSuggestions={suggestions.badges} stackSuggestions={suggestions.stack} articles={articles} />;
 }

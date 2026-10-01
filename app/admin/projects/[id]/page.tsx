@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { getArticleOptions } from "@/lib/admin/items/article-options";
 import { getEditableProject, getProjectSuggestions } from "@/lib/admin/items/load-projects";
 import { requireAdmin } from "@/lib/auth";
 import { ProjectForm } from "../project-form";
@@ -16,9 +17,17 @@ export default function EditProject({ params }: PageProps<"/admin/projects/[id]"
 async function EditProjectForm({ params }: { params: PageProps<"/admin/projects/[id]">["params"] }) {
   const { id } = await params;
   await requireAdmin(`/admin/projects/${id}`);
-  const [project, suggestions] = await Promise.all([getEditableProject(id), getProjectSuggestions()]);
+  const [project, suggestions, articles] = await Promise.all([getEditableProject(id), getProjectSuggestions(), getArticleOptions()]);
   if (!project) notFound();
 
   // key: opening another project starts a fresh form instead of reusing this one's state.
-  return <ProjectForm key={project.id} project={project} badgeSuggestions={suggestions.badges} stackSuggestions={suggestions.stack} />;
+  return (
+    <ProjectForm
+      key={project.id}
+      project={project}
+      badgeSuggestions={suggestions.badges}
+      stackSuggestions={suggestions.stack}
+      articles={articles}
+    />
+  );
 }

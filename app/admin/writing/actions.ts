@@ -11,6 +11,8 @@ import {
   type PostStatus,
   type SaveIntent,
 } from "@/lib/admin/post-form";
+import { linkArticleToItem } from "@/lib/admin/items/link-article";
+import type { LinkRequest } from "@/lib/admin/items/link-target";
 import { requireAdmin } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -80,10 +82,22 @@ export type SavePostInput = {
   status: PostStatus;
   intent: SaveIntent;
   fields: PostFields;
+  /** "Write the article": on the first save, link the new article to this item. */
+  linkTo?: LinkRequest | null;
 };
 
 export type SavePostResult =
-  | { ok: true; id: string; slug: string; summary: string; status: PostStatus; publishedAt: string | null; updatedAt: string }
+  | {
+      ok: true;
+      id: string;
+      slug: string;
+      summary: string;
+      status: PostStatus;
+      publishedAt: string | null;
+      updatedAt: string;
+      /** Only when linkTo was given: whether the item now links this article. */
+      link?: { ok: true } | { ok: false; error: string };
+    }
   | { ok: false; error: string; fieldErrors?: PostFieldErrors };
 
 /** The editor's Save draft / Publish / Update / Unpublish buttons. */
@@ -134,8 +148,11 @@ export async function savePost(input: SavePostInput): Promise<SavePostResult> {
   // No refresh() here: it would re-render the editor while Ivan types. The
   // admin list isn't cached on the client, so it's fresh when he goes back.
   updateTag("posts");
+  // A new article written for an item: link them now that the article exists.
+  const link = input.id === null && input.linkTo ? await linkArticleToItem(input.linkTo, data.id) : undefined;
   return {
     ok: true,
+    link,
     id: data.id,
     slug: data.slug,
     summary: data.summary,

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useState, useTransition, type ReactNode } from "react";
 import { Badge } from "@/components/badge";
+import { ArticlePicker } from "@/components/admin/article-picker";
 import { Field } from "@/components/admin/form-field";
 import { ImageField } from "@/components/admin/image-field";
 import { SaveBar } from "@/components/admin/save-bar";
@@ -20,6 +21,7 @@ import {
   type SaveItemInput,
   type SaveItemResult,
 } from "@/lib/admin/items/item-form";
+import type { ArticleOption } from "@/lib/admin/items/article-options";
 import { statusAfter, type PostStatus, type SaveIntent } from "@/lib/admin/post-form";
 import { mediaUrl } from "@/lib/media";
 
@@ -52,6 +54,7 @@ export function ItemEditor<F extends BaseItemFields, D>({
   item,
   action,
   badgeSuggestions,
+  articles,
   imageFrame = "aspect-[16/10]",
   imageFit = "cover",
   children,
@@ -61,6 +64,8 @@ export function ItemEditor<F extends BaseItemFields, D>({
   item: EditableItem<F> | null;
   action: (input: SaveItemInput<F>) => Promise<SaveItemResult<F>>;
   badgeSuggestions: string[];
+  /** Every article, for the "linked article" picker. */
+  articles: ArticleOption[];
   /** The image preview's shape and fit (book covers are tall and shown whole). */
   imageFrame?: string;
   imageFit?: "cover" | "contain";
@@ -75,6 +80,7 @@ export function ItemEditor<F extends BaseItemFields, D>({
   const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [savingIntent, setSavingIntent] = useState<SaveIntent | null>(null);
   const [pending, startTransition] = useTransition();
+  const [writingArticle, setWritingArticle] = useState(false);
 
   const published = saved.status === "published";
   const dirty = !sameFields(fields, saved.fields);
@@ -103,10 +109,12 @@ export function ItemEditor<F extends BaseItemFields, D>({
     setNotice({ tone: "ok", text: "Restored. Save to keep it." });
   }
 
-  function save(intent: SaveIntent, addAnother = false) {
+  /** `after` runs once the save succeeded, with the item's id (used by "Write the article"). */
+  function save(intent: SaveIntent, { addAnother = false, after }: { addAnother?: boolean; after?: (id: string) => void } = {}) {
     if (pending) return;
     const checked = validateItem(definition.schema, definition.publishRules, fields, statusAfter(intent, saved.status));
     if (!checked.ok) {
+      setWritingArticle(false);
       setErrors(checked.fieldErrors);
       setNotice({ tone: "error", text: "Check the highlighted fields." });
       const first = Object.keys(checked.fieldErrors)[0];
@@ -124,6 +132,7 @@ export function ItemEditor<F extends BaseItemFields, D>({
       if (!result.ok) {
         setErrors(result.fieldErrors ?? {});
         setNotice({ tone: "error", text: result.error });
+        setWritingArticle(false);
         return;
       }
 
@@ -153,7 +162,19 @@ export function ItemEditor<F extends BaseItemFields, D>({
         removeBackup(backupKey(null)); // from now on it's backed up under its own id
         window.history.replaceState(null, "", `/admin/${section.key}/${result.id}`);
       }
+      after?.(result.id);
     });
+  }
+
+  /**
+   * "Write the article": the new article links back to this item when it's
+   * first saved, so the item must exist (and its changes be kept) first.
+   */
+  function writeArticle() {
+    const open = (id: string) => router.push(`/admin/writing/new?for=${section.key}:${id}`);
+    setWritingArticle(true);
+    if (saved.id && !dirty) return open(saved.id);
+    save("save", { after: open });
   }
 
   // Ctrl/⌘+S saves from anywhere on the page.
@@ -247,6 +268,26 @@ export function ItemEditor<F extends BaseItemFields, D>({
 
         {children({ fields, update, errors, fieldProps })}
 
+        <Field
+          label="Linked article"
+          optional
+          htmlFor="item-postId"
+          {...fieldError("postId")}
+          hint="The review or write-up about it. The card links there once the article is published."
+        >
+          <ArticlePicker
+            id="item-postId"
+            value={fields.postId}
+            onChange={(postId) => update("postId", postId as F["postId"])}
+            options={articles}
+            section={section.key}
+            itemId={saved.id}
+            onWrite={writeArticle}
+            writing={writingArticle}
+            describedBy={errors.postId ? "item-postId-error" : undefined}
+          />
+        </Field>
+
         <Field label="Badges" optional htmlFor="item-badges" {...fieldError("badges")} hint="Short labels on the card, like SOLO PROJECT.">
           <TagInput
             id="item-badges"
@@ -298,7 +339,7 @@ export function ItemEditor<F extends BaseItemFields, D>({
         published={published}
         pending={pending}
         savingIntent={savingIntent}
-        onSave={save}
+        onSave={(intent, addAnother) => save(intent, { addAnother })}
       />
     </form>
   );

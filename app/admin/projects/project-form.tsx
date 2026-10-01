@@ -3,6 +3,7 @@
 import { Field } from "@/components/admin/form-field";
 import { ItemEditor } from "@/components/admin/item-editor";
 import { TagInput } from "@/components/admin/tag-input";
+import type { ArticleOption } from "@/lib/admin/items/article-options";
 import type { EditableItem } from "@/lib/admin/items/item-form";
 import { normalizeStackEntry, projectDefinition, type ProjectFields } from "@/lib/admin/items/projects";
 import { saveProject } from "./actions";
@@ -12,13 +13,15 @@ export function ProjectForm({
   project,
   badgeSuggestions,
   stackSuggestions,
+  articles,
 }: {
   project: EditableItem<ProjectFields> | null;
   badgeSuggestions: string[];
   stackSuggestions: string[];
+  articles: ArticleOption[];
 }) {
   return (
-    <ItemEditor definition={projectDefinition} item={project} action={saveProject} badgeSuggestions={badgeSuggestions}>
+    <ItemEditor definition={projectDefinition} item={project} action={saveProject} badgeSuggestions={badgeSuggestions} articles={articles}>
       {({ fields, update, errors, fieldProps }) => (
         <>
           <Field label="Summary" optional htmlFor="item-summary" error={errors.summary} errorId="item-summary-error" hint="One or two sentences for the card.">
