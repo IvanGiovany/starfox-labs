@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useEffectEvent, useRef, useState, useTransition } from "react";
+import { useEffect, useEffectEvent, useRef, useState, useTransition, type ReactNode } from "react";
 import { Badge } from "@/components/badge";
+import { CheatSheetPanel } from "@/components/admin/cheat-sheet-panel";
 import { handleMarkdownShortcut, MarkdownToolbar } from "@/components/admin/markdown-toolbar";
 import { TagInput } from "@/components/admin/tag-input";
+import { removeBackup, useLocalBackup } from "@/components/admin/use-local-backup";
 import {
   firstSentence,
   LIMITS,
@@ -35,9 +37,14 @@ function sameFields(a: PostFields, b: PostFields): boolean {
   return FIELD_ORDER.every((key) => (key === "tags" ? a.tags.join(",") === b.tags.join(",") : a[key] === b[key]));
 }
 
+/** Unsaved text is backed up per article; new articles share one slot until their first save. */
+function backupKey(id: string | null): string {
+  return `starfox:post-backup:${id ?? "new"}`;
+}
+
 /** The slug follows the title until Ivan edits it, and never once the article has been published. */
-function slugFollowsTitle(saved: Saved): boolean {
-  return saved.status === "draft" && saved.fields.slug === slugify(saved.fields.title);
+function slugFollowsTitle(status: PostStatus, fields: PostFields): boolean {
+  return status === "draft" && fields.slug === slugify(fields.title);
 }
 
 function timeNow(): string {
@@ -49,11 +56,20 @@ function timeNow(): string {
  * `post` is null on the "new" page; after the first save the address changes
  * to the article's own URL without reloading, so nothing typed is lost.
  */
-export function PostEditor({ post, tagSuggestions }: { post: EditablePost | null; tagSuggestions: string[] }) {
+export function PostEditor({
+  post,
+  tagSuggestions,
+  cheatSheet,
+}: {
+  post: EditablePost | null;
+  tagSuggestions: string[];
+  /** WRITING.md, rendered on the server. */
+  cheatSheet: ReactNode;
+}) {
   const router = useRouter();
   const [saved, setSaved] = useState<Saved>(post ?? BLANK);
   const [fields, setFields] = useState<PostFields>(post?.fields ?? EMPTY);
-  const [slugLinked, setSlugLinked] = useState(() => slugFollowsTitle(post ?? BLANK));
+  const [slugLinked, setSlugLinked] = useState(() => slugFollowsTitle(post?.status ?? "draft", post?.fields ?? EMPTY));
   const [errors, setErrors] = useState<PostFieldErrors>({});
   const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [savingIntent, setSavingIntent] = useState<SaveIntent | null>(null);
@@ -63,6 +79,24 @@ export function PostEditor({ post, tagSuggestions }: { post: EditablePost | null
   const published = saved.status === "published";
   const dirty = !sameFields(fields, saved.fields);
   const liveSlug = published ? saved.fields.slug : null;
+  const backup = useLocalBackup(backupKey(saved.id), fields, dirty, (value) => sameFields(value, saved.fields));
+
+  // Closing the tab, reloading or leaving the site with unsaved text asks first.
+  // (Links inside the admin don't trigger this; the backup covers those.)
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+
+  function restoreBackup() {
+    const restored = backup.restore();
+    if (!restored) return;
+    setFields(restored);
+    setSlugLinked(slugFollowsTitle(saved.status, restored));
+    setNotice({ tone: "ok", text: "Restored. Save to keep it." });
+  }
 
   function update<K extends keyof PostFields>(key: K, value: PostFields[K]) {
     setFields((current) => ({
@@ -100,6 +134,7 @@ export function PostEditor({ post, tagSuggestions }: { post: EditablePost | null
 
       if (addAnother) {
         const label = `Saved “${checked.data.title}”.`;
+        removeBackup(backupKey(null));
         if (post === null) {
           // Already on the "new" page: just clear the form.
           setSaved(BLANK);
@@ -123,7 +158,10 @@ export function PostEditor({ post, tagSuggestions }: { post: EditablePost | null
 
       const verb = intent === "publish" ? "Published" : intent === "unpublish" ? "Unpublished" : "Saved";
       setNotice({ tone: "ok", text: `${verb} at ${timeNow()}.` });
-      if (saved.id === null) window.history.replaceState(null, "", `/admin/writing/${result.id}`);
+      if (saved.id === null) {
+        removeBackup(backupKey(null)); // from now on it's backed up under its own id
+        window.history.replaceState(null, "", `/admin/writing/${result.id}`);
+      }
     });
   }
 
@@ -159,6 +197,24 @@ export function PostEditor({ post, tagSuggestions }: { post: EditablePost | null
           </a>
         )}
       </div>
+
+      {backup.offer && (
+        <div role="alert" className="mb-6 rounded-xl bg-bg-raised px-4 py-3 text-sm">
+          <p>
+            Unsaved changes from{" "}
+            {new Date(backup.offer.savedAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })} were found on
+            this device.
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button type="button" onClick={restoreBackup} className="button-primary">
+              Restore them
+            </button>
+            <button type="button" onClick={backup.discard} className="row-action border border-rule">
+              Discard
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col gap-6">
         <Field label="Title" htmlFor="post-title" error={errors.title} errorId="post-title-error">
@@ -256,7 +312,9 @@ export function PostEditor({ post, tagSuggestions }: { post: EditablePost | null
         <Field label="Article" htmlFor="post-bodyMd" error={errors.bodyMd} errorId="post-bodyMd-error">
           {/* The toolbar stays in view while scrolling a long article. */}
           <div className="sticky top-0 z-10 -mx-1 mb-1.5 bg-bg/95 px-1 py-1 backdrop-blur">
-            <MarkdownToolbar textareaRef={bodyRef} />
+            <MarkdownToolbar textareaRef={bodyRef}>
+              <CheatSheetPanel>{cheatSheet}</CheatSheetPanel>
+            </MarkdownToolbar>
           </div>
           <textarea
             {...fieldProps("bodyMd")}

@@ -126,7 +126,7 @@ export async function savePost(input: SavePostInput): Promise<SavePostResult> {
   if (!data) {
     return {
       ok: false,
-      error: "This article changed somewhere else (or was deleted). Copy anything you need, then reload.",
+      error: "This article was changed somewhere else (or deleted). Your text is backed up on this device: reload, then choose Restore.",
     };
   }
 

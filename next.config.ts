@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
   // Next 16's caching model: data functions opt in with "use cache",
   // everything else is fresh per request. See lib/posts.ts.
   cacheComponents: true,
+  // The editor's cheat sheet reads WRITING.md at request time (lib/admin/cheat-sheet.ts),
+  // so the file has to be deployed with those routes.
+  outputFileTracingIncludes: {
+    "/admin/writing/*": ["./WRITING.md"],
+  },
   images: {
     remotePatterns: [
       ...(supabaseUrl ? [new URL(`${supabaseUrl}/storage/v1/object/public/**`)] : []),
