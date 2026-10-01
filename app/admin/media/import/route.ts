@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { fetchRemoteImage } from "@/lib/admin/fetch-remote-image";
-import { ImageError, mediaPath, type ImageUse } from "@/lib/admin/image-rules";
+import { ImageError, type ImageUse } from "@/lib/admin/image-rules";
 import { prepareImageOnServer } from "@/lib/admin/prepare-image-server";
 import { getCurrentUser, isAdmin } from "@/lib/auth";
 import { withSize } from "@/lib/image-size";
-import { MEDIA_FOLDERS, type MediaFolder } from "@/lib/media";
+import { MEDIA_FOLDERS, mediaPath, type MediaFolder } from "@/lib/media";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 // "Paste image URL" in the editor: the server downloads the image (safely, see

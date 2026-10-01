@@ -3,6 +3,7 @@ import { ImageError, type ImageUse } from "./image-rules";
 import { importImageFromUrl } from "./import-image";
 import { prepareImage } from "./prepare-image";
 import { uploadImage, type UploadedImage } from "./upload-image";
+import { UploadError } from "./upload-media";
 
 // The two ways an image gets into an article or item, as one small API:
 //   - a file (pasted, dropped or picked): prepared in the browser, then uploaded
@@ -21,7 +22,7 @@ export function addImageFromUrl(url: string, use: ImageUse, folder: MediaFolder)
 
 /** Messages from our own checks are already plain sentences; anything else gets a generic one. */
 export function imageErrorMessage(error: unknown): string {
-  return error instanceof ImageError ? error.message : "Something went wrong with that image. Try again.";
+  return error instanceof ImageError || error instanceof UploadError ? error.message : "Something went wrong with that image. Try again.";
 }
 
 /** A single http(s) link, e.g. pasted from "Copy image address". */

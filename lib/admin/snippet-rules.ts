@@ -20,3 +20,60 @@ export type SnippetExtension = keyof typeof SNIPPET_RULES.types;
 export function isSnippetPath(path: string): boolean {
   return isMediaPath(path, "music") && /\.(mp3|m4a)$/.test(path);
 }
+
+/** Problems with a snippet file, as plain sentences the form can show. */
+export class SnippetError extends Error {}
+
+// What systems report for these files: Chrome says audio/mpeg and audio/x-m4a,
+// Safari audio/mp4, some say audio/mp3 or audio/m4a, and some send nothing.
+const TYPE_TO_EXTENSION: Record<string, SnippetExtension> = {
+  "audio/mpeg": "mp3",
+  "audio/mp3": "mp3",
+  "audio/mp4": "m4a",
+  "audio/x-m4a": "m4a",
+  "audio/m4a": "m4a",
+};
+
+/**
+ * Which kind of snippet a file is, from its name first (the reported type
+ * varies by system), then its type; null if it's neither an MP3 nor an M4A.
+ */
+export function snippetExtension(file: { name: string; type: string }): SnippetExtension | null {
+  const fromName = file.name.toLowerCase().match(/\.(mp3|m4a)$/)?.[1] as SnippetExtension | undefined;
+  const fromType = TYPE_TO_EXTENSION[file.type.toLowerCase()];
+  if (fromName) return !file.type || fromType || file.type.startsWith("audio/") ? fromName : null;
+  return fromType ?? null;
+}
+
+/** Checks a file before it's read: type and size. Returns the extension to store it with. */
+export function checkSnippetFile(file: { name: string; type: string; size: number }): SnippetExtension {
+  const extension = snippetExtension(file);
+  if (!extension) throw new SnippetError("That isn't an MP3 or M4A file. Export the snippet as one of those.");
+  if (file.size > SNIPPET_RULES.maxBytes) {
+    throw new SnippetError(`This file is ${formatBytes(file.size)}; a snippet can be at most 2 MB. Export it at a lower bitrate.`);
+  }
+  if (file.size === 0) throw new SnippetError("This file is empty.");
+  return extension;
+}
+
+/** Checks the length read from the audio itself. */
+export function checkSnippetDuration(seconds: number): void {
+  if (!Number.isFinite(seconds) || seconds <= 0) throw new SnippetError("Couldn't tell how long this file is. Try exporting it again.");
+  if (seconds > SNIPPET_RULES.maxSeconds + SNIPPET_RULES.toleranceSeconds) {
+    // Seconds with one decimal: rounded to "0:30", a 30.4 s clip would look allowed.
+    const shown = seconds < 60 ? `${seconds.toFixed(1)} seconds` : formatDuration(seconds);
+    throw new SnippetError(`This clip is ${shown} long; a snippet can be at most ${SNIPPET_RULES.maxSeconds} seconds.`);
+  }
+}
+
+/** 24.6 → "0:25", 95 → "1:35". */
+export function formatDuration(seconds: number): string {
+  const whole = Math.round(seconds);
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
+}
+
+/** 421_888 → "412 KB", 2_400_000 → "2.3 MB". */
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}

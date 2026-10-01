@@ -3,7 +3,7 @@
 import { useRef, useState, type ClipboardEvent, type DragEvent, type RefObject } from "react";
 import { replaceRange } from "@/components/admin/markdown-toolbar";
 import { addImageFile, addImageFromUrl, imageErrorMessage, imageFilesFrom, looksLikeImageLink, type AddedImage } from "@/lib/admin/add-image";
-import { randomId } from "@/lib/admin/image-rules";
+import { randomId } from "@/lib/media";
 
 // Images in the article body: pasted, dropped, picked, or imported from a URL.
 //
