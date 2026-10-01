@@ -130,7 +130,7 @@ export function LivePreview({
           publishedAt={publishedAt}
           minutes={readingTime(fields.bodyMd)}
           tags={tags}
-          coverImageUrl={null}
+          coverImageUrl={fields.coverImageUrl || null}
           youtubeUrl={fields.youtubeUrl.trim() || null}
           body={body ?? <p className="text-fg-muted">Nothing to preview yet.</p>}
         />

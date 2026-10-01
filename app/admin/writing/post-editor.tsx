@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore, useTransition, type ReactNode } from "react";
 import { Badge } from "@/components/badge";
 import { CheatSheetPanel } from "@/components/admin/cheat-sheet-panel";
+import { CoverImageField } from "@/components/admin/cover-image-field";
 import { handleMarkdownShortcut, MarkdownToolbar } from "@/components/admin/markdown-toolbar";
 import { TagInput } from "@/components/admin/tag-input";
 import { useMediaQuery } from "@/components/admin/use-media-query";
@@ -25,7 +26,7 @@ import {
 import { savePost } from "./actions";
 import { LivePreview } from "./live-preview";
 
-const EMPTY: PostFields = { title: "", slug: "", summary: "", tags: [], youtubeUrl: "", bodyMd: "" };
+const EMPTY: PostFields = { title: "", slug: "", summary: "", tags: [], youtubeUrl: "", coverImageUrl: "", bodyMd: "" };
 
 /** What the database holds, as far as the editor knows. */
 type Saved = { id: string | null; updatedAt: string | null; status: PostStatus; publishedAt: string | null; fields: PostFields };
@@ -33,7 +34,7 @@ type Saved = { id: string | null; updatedAt: string | null; status: PostStatus; 
 const BLANK: Saved = { id: null, updatedAt: null, status: "draft", publishedAt: null, fields: EMPTY };
 
 // Field order, so the first invalid one gets the focus.
-const FIELD_ORDER: (keyof PostFields)[] = ["title", "slug", "summary", "tags", "youtubeUrl", "bodyMd"];
+const FIELD_ORDER: (keyof PostFields)[] = ["title", "slug", "summary", "tags", "youtubeUrl", "coverImageUrl", "bodyMd"];
 
 function sameFields(a: PostFields, b: PostFields): boolean {
   return FIELD_ORDER.every((key) => (key === "tags" ? a.tags.join(",") === b.tags.join(",") : a[key] === b[key]));
@@ -142,8 +143,9 @@ export function PostEditor({
   }, [dirty]);
 
   function restoreBackup() {
-    const restored = backup.restore();
-    if (!restored) return;
+    const backedUp = backup.restore();
+    if (!backedUp) return;
+    const restored = { ...EMPTY, ...backedUp }; // backups from before a field existed lack it
     setFields(restored);
     setSlugLinked(slugFollowsTitle(saved.status, restored));
     setNotice({ tone: "ok", text: "Restored. Save to keep it." });
@@ -375,6 +377,22 @@ export function PostEditor({
               autoCorrect="off"
               spellCheck={false}
               className="field"
+            />
+          </Field>
+
+          <Field
+            label="Cover image"
+            optional
+            htmlFor="post-coverImageUrl"
+            error={errors.coverImageUrl}
+            errorId="post-coverImageUrl-error"
+            hint={fields.coverImageUrl ? null : "Shown above the article. Resized to 1200 px wide and saved as our own copy."}
+          >
+            <CoverImageField
+              id="post-coverImageUrl"
+              value={fields.coverImageUrl}
+              onChange={(url) => update("coverImageUrl", url)}
+              describedBy={errors.coverImageUrl ? "post-coverImageUrl-error" : undefined}
             />
           </Field>
 

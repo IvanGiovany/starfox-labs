@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { supabaseUrl } from "@/lib/supabase/config";
 import { youtubeId } from "@/lib/youtube";
 
 // The article editor's rules, shared by the form (instant feedback) and the
@@ -51,6 +52,14 @@ export function firstSentence(markdown: string, maxLength = 200): string {
   return `${(lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
 }
 
+/** Public URLs of files in our media bucket start with this. */
+export const MEDIA_URL_PREFIX = `${supabaseUrl.replace(/\/$/, "")}/storage/v1/object/public/media/`;
+
+/** Covers are only ever our own copies (uploaded or imported in the editor), never links to other sites. */
+export function isOwnMediaUrl(url: string): boolean {
+  return url.startsWith(MEDIA_URL_PREFIX) && !url.includes("..");
+}
+
 export const postFieldsSchema = z.object({
   title: z.string().trim().min(1, "Add a title.").max(LIMITS.title, `Keep the title under ${LIMITS.title} characters.`),
   // Empty is allowed: the server then makes one from the title.
@@ -69,6 +78,11 @@ export const postFieldsSchema = z.object({
     .string()
     .trim()
     .refine((url) => url === "" || youtubeId(url) !== null, "That doesn't look like a YouTube video link."),
+  // Empty means no cover. Stored without the "#WxH" size hint: the cover box has a fixed shape.
+  coverImageUrl: z
+    .string()
+    .trim()
+    .refine((url) => url === "" || isOwnMediaUrl(url), "Add the cover here (upload or import it), so we keep our own copy."),
   bodyMd: z.string(),
 });
 

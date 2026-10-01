@@ -94,7 +94,7 @@ export async function savePost(input: SavePostInput): Promise<SavePostResult> {
   const checked = validatePost(input.fields, status);
   if (!checked.ok) return { ok: false, error: "Check the highlighted fields.", fieldErrors: checked.fieldErrors };
 
-  const { title, slug, summary, tags, youtubeUrl, bodyMd } = checked.data;
+  const { title, slug, summary, tags, youtubeUrl, coverImageUrl, bodyMd } = checked.data;
   const row = {
     title,
     // Titles with no Latin letters (e.g. Cyrillic) slugify to "", so fall back to a short random one.
@@ -102,6 +102,7 @@ export async function savePost(input: SavePostInput): Promise<SavePostResult> {
     summary: summary || firstSentence(bodyMd),
     tags,
     youtube_url: youtubeUrl || null,
+    cover_image_url: coverImageUrl || null,
     body_md: bodyMd,
     status,
   };

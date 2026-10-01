@@ -14,7 +14,7 @@ export async function getEditablePost(id: string): Promise<EditablePost | null> 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("posts")
-    .select("id, title, slug, summary, tags, youtube_url, body_md, status, published_at, updated_at")
+    .select("id, title, slug, summary, tags, youtube_url, cover_image_url, body_md, status, published_at, updated_at")
     .eq("id", id)
     .maybeSingle();
 
@@ -32,6 +32,7 @@ export async function getEditablePost(id: string): Promise<EditablePost | null> 
       summary: data.summary,
       tags: data.tags,
       youtubeUrl: data.youtube_url ?? "",
+      coverImageUrl: data.cover_image_url ?? "",
       bodyMd: data.body_md,
     },
   };
