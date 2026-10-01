@@ -41,7 +41,16 @@ export type ItemFormApi<F> = {
   errors: FieldErrors<F>;
   /** id, aria-invalid and aria-describedby for a field's input. */
   fieldProps: (key: keyof F & string) => { id: string; "aria-invalid"?: true; "aria-describedby"?: string };
+  /** A field reports an upload starting or ending ("snippet", true); saving waits for it. */
+  setUploading: (name: string, busy: boolean) => void;
 };
+
+const WAIT_FOR_UPLOADS = "Wait for the upload to finish, then save.";
+
+/** "Uploading the image…", or "Uploading 2 files…". */
+function uploadingStatus(names: string[]): string {
+  return names.length === 1 ? `Uploading the ${names[0]}…` : `Uploading ${names.length} files…`;
+}
 
 function sameFields<F>(a: F, b: F): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
@@ -86,6 +95,8 @@ export function ItemEditor<F extends BaseItemFields, D>({
   const [savingIntent, setSavingIntent] = useState<SaveIntent | null>(null);
   const [pending, startTransition] = useTransition();
   const [writingArticle, setWritingArticle] = useState(false);
+  // Fields with an upload in progress ("image", "snippet"). Saving now would miss the new file.
+  const [uploads, setUploads] = useState<string[]>([]);
 
   const published = saved.status === "published";
   const dirty = !sameFields(fields, saved.fields);
@@ -116,6 +127,17 @@ export function ItemEditor<F extends BaseItemFields, D>({
     if (notice?.tone === "ok") setNotice(null);
   }
 
+  function setUploading(name: string, busy: boolean) {
+    setUploads((current) => (busy ? [...current.filter((n) => n !== name), name] : current.filter((n) => n !== name)));
+    // Starting one makes "Saved at 14:32" out of date, as an edit does. Once one ends, "wait for
+    // the upload" no longer applies (any other upload still shows in the status).
+    setNotice((current) => {
+      if (busy && current?.tone === "ok") return null;
+      if (!busy && current?.text === WAIT_FOR_UPLOADS) return null;
+      return current;
+    });
+  }
+
   function restoreBackup() {
     const backedUp = backup.restore();
     if (!backedUp) return;
@@ -126,6 +148,11 @@ export function ItemEditor<F extends BaseItemFields, D>({
   /** `after` runs once the save succeeded, with the item's id (used by "Write the article"). */
   function save(intent: SaveIntent, { addAnother = false, after }: { addAnother?: boolean; after?: (id: string) => void } = {}) {
     if (pending) return;
+    if (uploads.length > 0) {
+      setWritingArticle(false);
+      setNotice({ tone: "error", text: WAIT_FOR_UPLOADS });
+      return;
+    }
     const checked = validateItem(definition.schema, definition.publishRules, fields, statusAfter(intent, saved.status));
     if (!checked.ok) {
       setWritingArticle(false);
@@ -237,7 +264,7 @@ export function ItemEditor<F extends BaseItemFields, D>({
       )}
 
       <div className="flex flex-col gap-6">
-        {header?.({ fields, update, patch, errors, fieldProps })}
+        {header?.({ fields, update, patch, errors, fieldProps, setUploading })}
 
         <Field label="Title" htmlFor="item-title" {...fieldError("title")}>
           <input
@@ -261,6 +288,7 @@ export function ItemEditor<F extends BaseItemFields, D>({
             frameClassName={imageFrame}
             fit={imageFit}
             describedBy={errors.imagePath ? "item-imagePath-error" : undefined}
+            onBusyChange={(busy) => setUploading("image", busy)}
           />
         </Field>
 
@@ -282,7 +310,7 @@ export function ItemEditor<F extends BaseItemFields, D>({
           </Field>
         )}
 
-        {children({ fields, update, patch, errors, fieldProps })}
+        {children({ fields, update, patch, errors, fieldProps, setUploading })}
 
         <Field
           label="Linked article"
@@ -350,7 +378,7 @@ export function ItemEditor<F extends BaseItemFields, D>({
       </div>
 
       <SaveBar
-        status={notice?.text ?? (dirty ? "Unsaved changes" : saved.id ? "All changes saved" : "")}
+        status={notice?.text ?? (uploads.length > 0 ? uploadingStatus(uploads) : dirty ? "Unsaved changes" : saved.id ? "All changes saved" : "")}
         isError={notice?.tone === "error"}
         published={published}
         pending={pending}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ClipboardEvent, type DragEvent } from "react";
+import { useEffect, useEffectEvent, useRef, useState, type ClipboardEvent, type DragEvent } from "react";
 import {
   addImageFile,
   addImageFromUrl,
@@ -29,6 +29,7 @@ export function ImageField({
   frameClassName = "aspect-[16/9]",
   fit = "cover",
   describedBy,
+  onBusyChange,
 }: {
   id: string;
   /** The current image's URL, or "" for none. */
@@ -44,8 +45,16 @@ export function ImageField({
   fit?: "cover" | "contain";
   /** The field's error message, if any. */
   describedBy?: string;
+  /** Tells the form an image is being prepared or uploaded, so it can hold off saving. */
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const [busy, setBusy] = useState<Busy>(null);
+  const reportBusy = useEffectEvent((isBusy: boolean) => onBusyChange?.(isBusy));
+  useEffect(() => {
+    if (busy === null) return;
+    reportBusy(true);
+    return () => reportBusy(false); // done, or the field went away mid-upload
+  }, [busy]);
   const [error, setError] = useState<string | null>(null);
   const [replacing, setReplacing] = useState(false);
   const [urlOpen, setUrlOpen] = useState(false);

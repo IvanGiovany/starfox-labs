@@ -119,11 +119,13 @@ export function PostEditor({
   );
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const [imagePanelOpen, setImagePanelOpen] = useState(false);
+  const [coverUploading, setCoverUploading] = useState(false);
   const bodyImages = useBodyImages({
     textareaRef: bodyRef,
     updateBody: (change) => setFields((current) => ({ ...current, bodyMd: change(current.bodyMd) })),
     onError: (message) => setNotice({ tone: "error", text: message }),
   });
+  const uploadingImages = bodyImages.pending + (coverUploading ? 1 : 0);
 
   const wide = useMediaQuery("(min-width: 80rem)"); // room for the form and the preview side by side
   const storedLayout = useSyncExternalStore(subscribeLayout, readLayout, () => null);
@@ -182,8 +184,8 @@ export function PostEditor({
 
   function save(intent: SaveIntent, addAnother = false) {
     if (pending) return;
-    if (bodyImages.pending > 0) {
-      // Saving now would store the "⏳ Uploading…" placeholders as article text.
+    if (uploadingImages > 0) {
+      // Saving now would store the "⏳ Uploading…" placeholders as article text, or miss the new cover.
       setNotice({ tone: "error", text: "Wait for the images to finish uploading, then save." });
       return;
     }
@@ -427,6 +429,10 @@ export function PostEditor({
               use="cover"
               folder="writing"
               describedBy={errors.coverImageUrl ? "post-coverImageUrl-error" : undefined}
+              onBusyChange={(busy) => {
+                setCoverUploading(busy);
+                if (busy) setNotice((current) => (current?.tone === "ok" ? null : current)); // "Saved at …" is out of date
+              }}
             />
           </Field>
 
@@ -470,8 +476,8 @@ export function PostEditor({
       <SaveBar
         status={
           notice?.text ??
-          (bodyImages.pending > 0
-            ? `Uploading ${bodyImages.pending} image${bodyImages.pending === 1 ? "" : "s"}…`
+          (uploadingImages > 0
+            ? `Uploading ${uploadingImages} image${uploadingImages === 1 ? "" : "s"}…`
             : dirty
               ? "Unsaved changes"
               : saved.id

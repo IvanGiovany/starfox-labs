@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type DragEvent } from "react";
+import { useEffect, useEffectEvent, useRef, useState, type DragEvent } from "react";
 import { addSnippetFile, snippetErrorMessage, type AddedSnippet } from "@/lib/admin/add-snippet";
 import { formatBytes, formatDuration, SNIPPET_RULES } from "@/lib/admin/snippet-rules";
 import { mediaUrl } from "@/lib/media";
@@ -16,6 +16,7 @@ export function SnippetField({
   onAdded,
   onRemove,
   describedBy,
+  onBusyChange,
 }: {
   id: string;
   /** The current snippet's path in the media bucket, or "" for none. */
@@ -24,8 +25,16 @@ export function SnippetField({
   onRemove: () => void;
   /** The field's error message, if any. */
   describedBy?: string;
+  /** Tells the form a file is being checked or uploaded, so it can hold off saving. */
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const reportBusy = useEffectEvent((isBusy: boolean) => onBusyChange?.(isBusy));
+  useEffect(() => {
+    if (!busy) return;
+    reportBusy(true);
+    return () => reportBusy(false); // done, or the field went away mid-upload
+  }, [busy]);
   const [error, setError] = useState<string | null>(null);
   const [replacing, setReplacing] = useState(false);
   const [dragging, setDragging] = useState(false);
