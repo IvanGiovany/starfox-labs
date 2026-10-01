@@ -66,6 +66,24 @@ export function checkSnippetDuration(seconds: number): void {
   }
 }
 
+/** What Storage reports about a stored file, or null when there's no such file. */
+export type StoredFile = { size?: number; contentType?: string } | null;
+
+/**
+ * The server's check of an uploaded snippet before a song is saved with it:
+ * the file must exist, be stored as audio of the kind its name says, and fit
+ * the size limit. Returns the problem as a sentence, or null if it's fine.
+ * (Its length can't be checked without decoding it; the browser did that.)
+ */
+export function storedSnippetProblem(path: string, file: StoredFile): string | null {
+  if (!file) return "The snippet file isn't in storage (the upload may not have finished). Add it again.";
+  const extension = path.slice(path.lastIndexOf(".") + 1);
+  const allowed = extension === "mp3" ? ["audio/mpeg"] : extension === "m4a" ? ["audio/mp4", "audio/x-m4a"] : [];
+  if (!allowed.includes(file.contentType ?? "")) return "The stored snippet isn't an MP3 or M4A. Add it again.";
+  if (file.size === undefined || file.size > SNIPPET_RULES.maxBytes) return "The stored snippet is larger than 2 MB. Add a smaller one.";
+  return null;
+}
+
 /** 24.6 → "0:25", 95 → "1:35". */
 export function formatDuration(seconds: number): string {
   const whole = Math.round(seconds);
