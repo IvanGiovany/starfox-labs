@@ -8,7 +8,8 @@ import { youtubeId } from "@/lib/youtube";
 /** Same pattern as the `posts.slug` check in the database. */
 export const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
-export const LIMITS = { title: 200, slug: 100, summary: 300, tags: 10, tag: 30 } as const;
+// `preview`: the longest body (in characters) the live preview renders, about 80,000 words.
+export const LIMITS = { title: 200, slug: 100, summary: 300, tags: 10, tag: 30, preview: 500_000 } as const;
 
 /** "Café & Next.js 16!" → "cafe-next-js-16". Returns "" if nothing usable is left. */
 export function slugify(text: string, maxLength: number = LIMITS.slug): string {
