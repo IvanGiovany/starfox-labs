@@ -59,6 +59,7 @@ export function ItemEditor<F extends BaseItemFields, D>({
   articles,
   imageFrame = "aspect-[16/10]",
   imageFit = "cover",
+  header,
   children,
 }: {
   definition: ItemDefinition<F, D>;
@@ -71,6 +72,8 @@ export function ItemEditor<F extends BaseItemFields, D>({
   /** The image preview's shape and fit (book covers are tall and shown whole). */
   imageFrame?: string;
   imageFit?: "cover" | "contain";
+  /** Above the title, e.g. the Reading form's Open Library search. */
+  header?: (form: ItemFormApi<F>) => ReactNode;
   children: (form: ItemFormApi<F>) => ReactNode;
 }) {
   const { section } = definition;
@@ -234,6 +237,8 @@ export function ItemEditor<F extends BaseItemFields, D>({
       )}
 
       <div className="flex flex-col gap-6">
+        {header?.({ fields, update, patch, errors, fieldProps })}
+
         <Field label="Title" htmlFor="item-title" {...fieldError("title")}>
           <input
             {...fieldProps("title")}

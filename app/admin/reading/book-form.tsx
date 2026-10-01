@@ -9,6 +9,7 @@ import type { EditableItem } from "@/lib/admin/items/item-form";
 import { localToday } from "@/lib/format";
 import { READING_STATUS_LABELS, READING_STATUSES } from "@/lib/reading";
 import { saveBook } from "./actions";
+import { OpenLibraryAutofill } from "./open-library-autofill";
 
 // The Reading form: the shared item fields, plus what a book card shows.
 // The cover is stored at 1200 px and shown whole in a tall frame.
@@ -30,6 +31,7 @@ export function BookForm({
       articles={articles}
       imageFrame="aspect-[2/3] max-w-48"
       imageFit="contain"
+      header={({ fields, patch }) => <OpenLibraryAutofill fields={fields} patch={patch} />}
     >
       {({ fields, update, patch, errors, fieldProps }) => {
         const text = (key: "author" | "note" | "url" | "isbn" | "publishedYear" | "pageCount") => ({
