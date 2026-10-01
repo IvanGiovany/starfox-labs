@@ -330,14 +330,24 @@ Everything built so far, with file maps, decisions and how it was tested:
 - **Phase 2 (Admin + content model):** 2.1 admin sign-in, 2.2 content schema, 2.3 `/admin`
   shell + Writing editor (form, live preview, images), 2.4a shared item pieces + Projects,
   2.4b Reading (with Open Library autofill): all done, tested by Ivan, pushed.
-- **Next: 2.4c Music**, in two parts. Plan it first, then build.
+- **Now: 2.4c Music** (plan approved 2026-10-01), in two parts:
   1. The form (released on, in progress, full-track link, links for Spotify / SoundCloud /
      Bandcamp / YouTube / Apple, note) with a manual snippet upload (MP3/M4A, max 30 s /
      2 MB, into `media/music/`). An in-progress song can be published before its article
-     and snippet exist.
-  2. The in-browser snippet cutter (waveform, pick the 30 s, preview, fades, MP3 encoding
-     in the browser; the encoder library loads only when the cutter opens).
+     and snippet exist. Steps: definition (`lib/admin/items/tracks.ts`) → snippet field →
+     server check of the uploaded file (Storage `.info()`, only when the path changes) →
+     item forms wait for uploads before saving → form, list (`NOW PRODUCING` badge,
+     detail line shows a missing snippet/article) and pages.
+  2. The in-browser snippet cutter (waveform, pick 20–30 s, preview, 0.5 s / 2 s fades,
+     **MP3 at 320 kbps** stereo in a Web Worker with `@breezystack/lamejs`; the encoder
+     loads only when the cutter opens).
+  - Decisions (Ivan): **several songs can be in progress**; "Now producing" shows the top
+    one in the Music order. Cut snippets are 320 kbps (30 s ≈ 1.2 MB).
 - Then 2.4d Games, 2.4e Hobbies; then Phase 3.
+- **For Phase 3:** Spektral is Ivan's artist name. Move it into `lib/site.ts` (e.g.
+  `site.artist`; today it sits in the `now.producing` placeholder), and change the
+  `home_feed` view (new migration) to label song cards `Music · <song title>` like the
+  other sections, instead of the hard-coded `'Music · Spektral'`.
 
 ### How the admin is built (for the next sections)
 - **Adding an item section** = a definition file in `lib/admin/items/` (schema + publish
