@@ -420,13 +420,42 @@ Track *active days* and *articles read* (one read per article per user), not raw
       (`lib/markdown-react.tsx`) turns it into `width`/`height`.
     - Random ids use `crypto.getRandomValues` (`randomId()`), not `crypto.randomUUID`,
       which browsers only offer on https/localhost.
-- **Step 2.4 next — section forms** (Projects, Reading, Music, Games, Hobbies; one step
-  per section). Reuse from the Writing editor: tag input (badges), image helpers
-  (`lib/admin/add-image.ts`, with a folder per section), save bar, local backup, the
-  `updated_at` conflict check, and the per-page `<Suspense>` + `requireAdmin()` rule.
-  Plan it first, then build.
-- Step 2.4 note: **Open Library covers must be downloaded into our own `media` bucket**
-  (`books/`) when a book is picked, never hotlinked from covers.openlibrary.org.
+- Step 2.4 (section forms) — plan approved: shared item pieces, then one step per section.
+  Decisions: **Reading is ordered automatically** (reading, then read newest finished
+  first, then to read; no drag handles); every other section is drag-to-reorder
+  (`@dnd-kit`). New items go to the top.
+  - **4a done** (tested by Ivan): shared item pieces + Projects.
+    - `lib/media.ts`: bucket folders (`writing`, `projects`, `books`, `music`, `games`,
+      `hobbies`), `mediaUrl(path)`, `isMediaPath`, `isOwnMediaUrl`. Uploads and the URL
+      import take a whitelisted folder and return the stored **path** (items store paths,
+      articles store URLs).
+    - `lib/admin/items/`: `sections.ts` (table, folder, image size, order, cache tag per
+      section), `item-form.ts` (shared fields and rules; badges keep their wording, max 4;
+      real calendar dates; `ItemDefinition`), `projects.ts` (the Projects definition: a
+      section = schema + publish rules + `toRow`/`fromRow` + empty form), `item-errors.ts`
+      (every database rule as a sentence on its field), `save-item.ts` (one save for all
+      sections), `list-actions.ts` (publish/unpublish, delete, reorder via
+      `reorder_items`), `article-options.ts`, `link-target.ts` + `link-article.ts`.
+    - UI: `components/admin/item-list.tsx` (list, one-tap actions, drag/↑↓/keyboard
+      reorder, rolls back on failure), `item-editor.tsx` (the shared form: each section
+      passes its own fields as children), `article-picker.tsx`, and `form-field.tsx`,
+      `save-bar.tsx`, `image-field.tsx`, which the article editor shares.
+    - Routes: `app/admin/projects/` (list, `new`, `[id]`, `actions.ts`,
+      `project-form.tsx`). Adding a section = its definition file, a loader, an
+      `actions.ts` one-liner, a form with its own fields, three pages, and flipping
+      `ready` in `lib/admin/sections.ts`.
+    - "Write the article": the item form saves, then opens `/admin/writing/new?for=<section>:<id>`;
+      the article's first save links it back (only if the item has no article yet).
+    - Saving an item refreshes the cache tags for its section, `home` and `posts`
+      (Phase 3 pages will use them).
+  - **4b next — Reading**: author, reading status (`TO READ → READING → READ` one-tap in
+    the list; READ fills `finished_on` with today, READING fills `started_on` if empty),
+    dates, rating 1–5, note, link, ISBN, year, page count, **Open Library autofill**
+    through a small server route (our User-Agent, as Open Library asks), and the cover
+    copied into `media/books/` with the existing import pipeline, never hotlinked from
+    covers.openlibrary.org. Automatic order (no drag). Plan it first, then build.
+  - Then 4c Music (form + manual snippet upload, then the in-browser snippet cutter),
+    4d Games, 4e Hobbies.
 
 ### Still open
 - **Placeholders for Ivan** (all marked `TODO(Ivan)`): home intro (`app/page.tsx`),
