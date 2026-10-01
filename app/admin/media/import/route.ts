@@ -4,6 +4,7 @@ import { ImageError, mediaPath, type ImageUse } from "@/lib/admin/image-rules";
 import { prepareImageOnServer } from "@/lib/admin/prepare-image-server";
 import { getCurrentUser, isAdmin } from "@/lib/auth";
 import { withSize } from "@/lib/image-size";
+import { MEDIA_FOLDERS, type MediaFolder } from "@/lib/media";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 // "Paste image URL" in the editor: the server downloads the image (safely, see
@@ -29,15 +30,22 @@ export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user || !(await isAdmin())) return fail(401, "Your sign-in has expired. Save your work, then reload to sign in again.");
 
+  const usage = 'Expected JSON like { "url": "https://…", "use": "body", "folder": "writing" }.';
   let url: unknown;
   let use: unknown;
+  let folder: unknown;
   try {
-    ({ url, use } = await request.json());
+    ({ url, use, folder } = await request.json());
   } catch {
-    return fail(400, "Expected JSON like { \"url\": \"https://…\", \"use\": \"body\" }.");
+    return fail(400, usage);
   }
-  if (typeof url !== "string" || url.length > 2048 || (use !== "body" && use !== "cover")) {
-    return fail(400, "Expected JSON like { \"url\": \"https://…\", \"use\": \"body\" }.");
+  if (
+    typeof url !== "string" ||
+    url.length > 2048 ||
+    (use !== "body" && use !== "cover") ||
+    !(MEDIA_FOLDERS as readonly unknown[]).includes(folder)
+  ) {
+    return fail(400, usage);
   }
 
   try {
@@ -45,7 +53,7 @@ export async function POST(request: Request) {
     const image = await prepareImageOnServer(downloaded.bytes, use as ImageUse);
 
     const supabase = await createSupabaseServerClient();
-    const path = mediaPath(image.extension);
+    const path = mediaPath(folder as MediaFolder, image.extension);
     const { error } = await supabase.storage.from("media").upload(path, image.bytes, {
       contentType: image.type,
       cacheControl: "31536000", // a new random name every time, so it can be kept for a year
@@ -55,7 +63,7 @@ export async function POST(request: Request) {
 
     const { publicUrl } = supabase.storage.from("media").getPublicUrl(path).data;
     return NextResponse.json(
-      { url: withSize(publicUrl, image.width, image.height), width: image.width, height: image.height },
+      { path, url: withSize(publicUrl, image.width, image.height), width: image.width, height: image.height },
       { headers: NO_STORE },
     );
   } catch (error) {

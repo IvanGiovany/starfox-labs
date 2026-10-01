@@ -56,8 +56,8 @@ export function CoverImageField({
     }
   }
 
-  const addFile = (file: File) => add("preparing", () => addImageFile(file, "cover"));
-  const addLink = (url: string) => add("importing", () => addImageFromUrl(url.trim(), "cover"));
+  const addFile = (file: File) => add("preparing", () => addImageFile(file, "cover", "writing"));
+  const addLink = (url: string) => add("importing", () => addImageFromUrl(url.trim(), "cover", "writing"));
 
   function onPaste(event: ClipboardEvent) {
     const [file] = imageFilesFrom(event.clipboardData);

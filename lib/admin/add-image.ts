@@ -1,22 +1,22 @@
+import type { MediaFolder } from "@/lib/media";
 import { ImageError, type ImageUse } from "./image-rules";
 import { importImageFromUrl } from "./import-image";
 import { prepareImage } from "./prepare-image";
-import { uploadImage } from "./upload-image";
+import { uploadImage, type UploadedImage } from "./upload-image";
 
-// The two ways an image gets into an article, as one small API for the
-// editor's cover field and body:
+// The two ways an image gets into an article or item, as one small API:
 //   - a file (pasted, dropped or picked): prepared in the browser, then uploaded
 //   - a link: imported by the server, which keeps our own copy
-// Either way the result is a URL in our media bucket.
+// Either way the result is our own copy in the section's media folder.
 
-export type AddedImage = { url: string; width: number; height: number };
+export type AddedImage = UploadedImage;
 
-export async function addImageFile(file: Blob, use: ImageUse): Promise<AddedImage> {
-  return uploadImage(await prepareImage(file, use));
+export async function addImageFile(file: Blob, use: ImageUse, folder: MediaFolder): Promise<AddedImage> {
+  return uploadImage(await prepareImage(file, use), folder);
 }
 
-export function addImageFromUrl(url: string, use: ImageUse): Promise<AddedImage> {
-  return importImageFromUrl(url, use);
+export function addImageFromUrl(url: string, use: ImageUse, folder: MediaFolder): Promise<AddedImage> {
+  return importImageFromUrl(url, use, folder);
 }
 
 /** Messages from our own checks are already plain sentences; anything else gets a generic one. */

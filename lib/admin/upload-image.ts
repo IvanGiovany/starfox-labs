@@ -1,14 +1,18 @@
 import { withSize } from "@/lib/image-size";
+import type { MediaFolder } from "@/lib/media";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { ImageError, mediaPath } from "./image-rules";
 import type { PreparedImage } from "./prepare-image";
 
-// Uploads a prepared image to the public "media" bucket and returns its URL,
-// with the image's size in the fragment (…/abc.webp#2400x1600) for the renderer.
+// Uploads a prepared image to the public "media" bucket, into its section's
+// folder. Returns the stored path (what items save) and the URL (what articles
+// save), the URL with the image's size in the fragment (…/abc.webp#2400x1600).
 
-export async function uploadImage(image: PreparedImage): Promise<{ url: string; width: number; height: number }> {
+export type UploadedImage = { path: string; url: string; width: number; height: number };
+
+export async function uploadImage(image: PreparedImage, folder: MediaFolder): Promise<UploadedImage> {
   const supabase = createSupabaseBrowserClient();
-  const path = mediaPath(image.extension);
+  const path = mediaPath(folder, image.extension);
 
   const { error } = await supabase.storage.from("media").upload(path, image.blob, {
     contentType: image.type,
@@ -19,7 +23,7 @@ export async function uploadImage(image: PreparedImage): Promise<{ url: string; 
   if (error) throw new ImageError(explainUploadError(error));
 
   const { publicUrl } = supabase.storage.from("media").getPublicUrl(path).data;
-  return { url: withSize(publicUrl, image.width, image.height), width: image.width, height: image.height };
+  return { path, url: withSize(publicUrl, image.width, image.height), width: image.width, height: image.height };
 }
 
 /**

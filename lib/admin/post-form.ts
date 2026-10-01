@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { supabaseUrl } from "@/lib/supabase/config";
+import { isOwnMediaUrl } from "@/lib/media";
 import { youtubeId } from "@/lib/youtube";
 
 // The article editor's rules, shared by the form (instant feedback) and the
@@ -50,14 +50,6 @@ export function firstSentence(markdown: string, maxLength = 200): string {
   const cut = sentence.slice(0, maxLength);
   const lastSpace = cut.lastIndexOf(" ");
   return `${(lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
-}
-
-/** Public URLs of files in our media bucket start with this. */
-export const MEDIA_URL_PREFIX = `${supabaseUrl.replace(/\/$/, "")}/storage/v1/object/public/media/`;
-
-/** Covers are only ever our own copies (uploaded or imported in the editor), never links to other sites. */
-export function isOwnMediaUrl(url: string): boolean {
-  return url.startsWith(MEDIA_URL_PREFIX) && !url.includes("..");
 }
 
 export const postFieldsSchema = z.object({

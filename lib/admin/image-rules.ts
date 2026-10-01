@@ -1,3 +1,5 @@
+import type { MediaFolder } from "@/lib/media";
+
 // How every uploaded image is prepared, wherever the preparation runs: in the
 // browser for pasted or dropped files (lib/admin/prepare-image.ts), on the
 // server for "paste image URL" imports. One set of numbers, so both paths
@@ -45,11 +47,11 @@ export function randomId(bytes = 16): string {
 }
 
 /**
- * Where an article image is stored in the media bucket: by month, with a
- * random name, so it works before a new article is first saved and two
- * uploads can never overwrite each other.
+ * Where an uploaded file is stored in the media bucket: its section's folder,
+ * then by month, with a random name. That works before a new article or item
+ * is first saved, and two uploads can never overwrite each other.
  */
-export function mediaPath(extension: "webp" | "jpg", now = new Date()): string {
+export function mediaPath(folder: MediaFolder, extension: string, now = new Date()): string {
   const month = String(now.getUTCMonth() + 1).padStart(2, "0");
-  return `writing/${now.getUTCFullYear()}/${month}/${randomId()}.${extension}`;
+  return `${folder}/${now.getUTCFullYear()}/${month}/${randomId()}.${extension}`;
 }

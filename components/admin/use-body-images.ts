@@ -108,12 +108,12 @@ export function useBodyImages({ textareaRef, updateBody, onError }: Options) {
   function addFiles(files: File[]) {
     if (files.length === 0) return;
     const tokens = insertPlaceholders(files.map((file) => file.name || "image"));
-    files.forEach((file, i) => run(tokens[i], altFromName(file.name), () => addImageFile(file, "body")));
+    files.forEach((file, i) => run(tokens[i], altFromName(file.name), () => addImageFile(file, "body", "writing")));
   }
 
   function addUrl(url: string) {
     const [token] = insertPlaceholders([url.split(/[?#]/)[0].split("/").pop() || "image"]);
-    run(token, altFromName(url), () => addImageFromUrl(url.trim(), "body"));
+    run(token, altFromName(url), () => addImageFromUrl(url.trim(), "body", "writing"));
   }
 
   /** Paste: image files become uploads. Text (including links) pastes as text, as usual. */
