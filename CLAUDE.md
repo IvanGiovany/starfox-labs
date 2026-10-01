@@ -122,56 +122,47 @@ footer, emails).
   small avatar button (menu → Settings, Sign out) or a "Sign in" text link when logged out.
 
 ## Admin (`/admin`)
-- Ivan only: enforced server-side (the page checks the session) and by RLS
-  (`public.is_admin()`), not just hidden in the UI.
-- **Adding entries must be quick and easy** — Ivan does it often, frequently on his phone:
-  - **Minimum required fields** (everything else optional; drafts need only a title):
+Built so far: sign-in, the Writing editor, Projects and Reading (details in
+`docs/build-log.md`). The requirements below apply to every section, including those
+still to build.
+- Ivan only: enforced server-side (`requireAdmin()`) and by RLS (`public.is_admin()`), not
+  just hidden in the UI.
+- **Adding entries must be quick and easy** — Ivan does it often, frequently on his phone.
+  Minimum required fields (everything else optional; drafts need only a title):
 
-    | Type | To save a draft | To publish |
-    |---|---|---|
-    | Article | title | title, body (summary falls back to the first sentence) |
-    | Project | title | title + one of live URL / repo / linked article |
-    | Book | title | title (status defaults to `TO READ`) |
-    | Song | title | title, audio snippet, linked article |
-    | Game | title | title, linked review article (status defaults to `PLAYING`) |
-    | Hobby item | title | title, category |
+  | Type | To save a draft | To publish |
+  |---|---|---|
+  | Article | title | title, body (summary falls back to the first sentence) |
+  | Project | title | title + one of live URL / repo / linked article |
+  | Book | title | title (status defaults to `TO READ`) |
+  | Song | title | title, audio snippet, linked article |
+  | Game | title | title, linked review article (status defaults to `PLAYING`) |
+  | Hobby item | title | title, category |
 
-  - **Books autofill from Open Library** (free, no API key): type a title or ISBN, pick a
-    result, and the cover, author, year and page count fill in. The cover is copied into
-    our Storage (not hotlinked). Requests identify the site in their User-Agent, as Open
-    Library asks.
-  - **One-click status changes** in the list view (`TO READ → READING → READ`,
-    `PLAYING → FINISHED / DROPPED`, draft → published) without opening the form. Setting
-    READ fills `finished_on` with today.
-  - **"Save and add another"** on every form (saves, then opens a fresh form of the same type).
-  - **Images: drag and drop, paste, or pick** (camera roll on phones). Resized and compressed
-    in the browser before upload (longest edge 2400 px, covers 1200 px; WebP, or JPEG where
-    WebP encoding isn't available), with EXIF orientation applied and location data dropped.
-  - **Song snippets made in the browser:** upload the full track (it stays on the device,
-    only the snippet is uploaded), see its waveform, drag to pick where the 30 s starts,
-    preview it, and the snippet is cut with short fades and encoded to MP3 in the
-    browser. Manual upload of a ready-made snippet remains as a fallback.
-  - **Drag to reorder** cards within each section (sets `sort_order`); on touch screens a
-    drag handle plus keyboard/button alternatives (move up / move down).
-  - **Works well on a phone:** single-column forms, large tap targets (44 px+), sticky
-    Save bar at the bottom, the right keyboard for each field (URL, number), no hover-only
-    controls.
-- One tab per content type: **Writing, Projects, Reading, Music, Games, Hobbies**. Each tab
-  lists items (drafts included) with New / Edit / Delete, and a form for one item.
-- Every item form has: title, image upload (paste, drag or pick; stored in Supabase
+- **Works well on a phone:** single-column forms, large tap targets (44 px+), sticky Save
+  bar at the bottom, the right keyboard for each field (URL, number), no hover-only controls.
+- One tab per content type: **Writing, Projects, Reading, Music, Games, Hobbies**. Each
+  lists its items (drafts included) with New / Edit / Delete, **one-click status changes**
+  without opening the form (`TO READ → READING → READ`, `PLAYING → FINISHED / DROPPED`,
+  draft ↔ published; setting READ fills `finished_on` with today), and **drag to reorder**
+  (sets `sort_order`; a touch handle plus move up / move down and keyboard), except Reading,
+  which is ordered automatically.
+- Every item form: title, image (drag, paste, pick or an image URL; resized in the browser
+  before upload — longest edge 2400 px, covers 1200 px, WebP or JPEG, EXIF orientation
+  applied, location data dropped — or imported by the server; always our own copy in
   Storage), badges, **linked article** (a picker over published and draft posts, with a
-  "Write the article" shortcut that opens a new Writing draft already linked),
-  **Show on home**, **Card size** (small / wide), Save draft, Publish.
-- Per-section fields: see the Data model table. Music also has an **audio snippet upload**
-  (MP3/M4A, max 30 s / 2 MB) and a full-track link; a song can only be published once its
-  article exists. Games need their review article before publishing, too.
-- Writing form: title, slug (auto from title), summary, tags, optional cover image,
-  optional YouTube link, markdown body with side-by-side live preview, images pasted or
-  dragged into the body. The body is a plain text area with a small toolbar (heading,
-  bold, italic, link, inline code, code block, list, quote, image) and a **"?" button
-  that opens the WRITING.md cheat sheet in a panel**. Publishing optionally sends the
-  newsletter (checkbox added in Phase 6, not before).
-- Saving or publishing refreshes the cached pages (`revalidateTag`) so changes show at once.
+  "Write the article" shortcut), **Show on home**, **Card size** (small / wide), Save
+  draft, Publish, **"Save and add another"**.
+- Per-section fields: see the Data model table. Books autofill from Open Library (cover
+  copied into our Storage, never hotlinked). **Music:** an audio snippet (MP3/M4A, max
+  30 s / 2 MB) made in the browser from the full track (the track stays on the device;
+  waveform, drag to pick where the 30 s starts, preview, cut with short fades, encoded to
+  MP3 in the browser), with manual upload of a ready-made snippet as a fallback; plus a
+  full-track link. A song can only be published once its article exists (unless it's
+  still in progress); games need their review article before publishing, too.
+- Writing editor (built): publishing will optionally send the newsletter (a checkbox
+  added in Phase 6, not before).
+- Saving or publishing refreshes the cached pages (cache tags) so changes show at once.
 - Moderation: delete any comment.
 
 ## Data model
@@ -293,19 +284,10 @@ from the live schema (`npm run db:types`) — regenerate it after every migratio
 ## Build phases (build ONE phase at a time)
 1. **Foundation** — *done.* Design system, header/footer, Supabase + `posts`, home grid,
    Writing page, article page, link previews, 404s, README.
-2. **Admin + content model** — everything Ivan needs to *enter* content for every section.
-   1. Admin sign-in: magic link for Ivan only, `admins` + `is_admin()`, cookie-aware
-      Supabase client, `/admin` protected on the server (and by RLS).
-   2. Content schema: migrations for `projects`, `books`, `tracks`, `games`,
-      `hobby_items`, the `home_feed` and `post_items` views, admin policies on every
-      table including `posts`, and the `media` bucket with its policies.
-   3. `/admin` shell (one tab per section) and the **Writing editor**: markdown with live
-      preview, image paste/drag upload, drafts, publish, cache refresh.
-   4. **Section forms** sharing one set of fields (image upload with in-browser resizing,
-      badges, linked-article picker, show on home, card size, "Save and add another"),
-      plus list views with one-click status changes and drag-to-reorder; one step per
-      section. Books get Open Library autofill; Music gets the in-browser snippet cutter.
-   Everything in `/admin` must work well on a phone.
+2. **Admin + content model** — everything Ivan needs to *enter* content for every section:
+   2.1 admin sign-in, 2.2 content schema, 2.3 `/admin` shell + Writing editor, 2.4 section
+   forms (one step per section). Everything in `/admin` must work well on a phone.
+   Progress: see "Where we left off".
 3. **Section pages** — showing that content, one step per section: Projects, Reading,
    Music (including the custom audio player and the "about this" panel on song
    articles), Games, Hobbies; then the home grid from `home_feed` and status cards from
@@ -341,141 +323,37 @@ Track *active days* and *articles read* (one read per article per user), not raw
 - Run `npm run build` and fix errors before saying a step is done.
 
 ## Where we left off (updated 2026-10-01)
-### Done — Phase 1, complete (all on `main`, pushed)
-1. Design system: warm light/dark tokens via `light-dark()`, UQ purple, Newsreader + Inter,
-   paper grain, `prose` styles, flash-free theme script (Next 16 inline-script pattern).
-2. Layout shell: header tab bar, footer, theme toggle.
-3. Supabase `posts` table + RLS (public reads published only; verified with the
-   publishable key: 7 visible, draft hidden, writes blocked), sample seed posts,
-   `lib/posts.ts` data layer with `"use cache"` + `cacheTag("posts")`.
-4. Home: chester-style 4-column grid, badges, status cards; page widened to 1460px.
-5. Writing page (`/writing`): section header, card grid, search, tag filters, load more,
-   lazily loaded body search index.
-6. Article page (`/writing/[slug]`): reading layout, markdown via `lib/markdown.tsx`
-   (Shiki code blocks with copy button, highlighted lines/words, line numbers, footnotes),
-   click-to-play YouTube, older/newer links, comments placeholder, one fade-in; page
-   metadata, canonical URLs, generated link-preview images (`lib/og.tsx`); friendly
-   404s (`app/not-found.tsx`, `app/writing/[slug]/not-found.tsx`). `WRITING.md` lists
-   every markdown feature.
-7. README with screenshots (`docs/screenshots/`), architecture notes and setup steps.
+Everything built so far, with file maps, decisions and how it was tested:
+**`docs/build-log.md`**. Read the relevant part before changing that area.
 
-### Now — Phase 2 (Admin + content model)
-- Step 2.1 (admin sign-in): **done** and tested on laptop (email code via Resend SMTP).
-- Step 2.2 (content schema): **done** — tables, rules, RLS, views, `media` bucket, sample
-  section data, generated types. Visitor-side checks pass with the publishable key.
-- Step 2.3 (`/admin` shell + Writing editor): **done** (all four parts tested by Ivan).
-  - **3a done:** admin tabs, Writing list (search, All/Drafts/Published, one-tap Publish /
-    Unpublish / Delete with plain-language errors), placeholders for the other tabs.
-  - **3b done** (tested by Ivan): the editor form at `/admin/writing/new` and
-    `/admin/writing/[id]` (`app/admin/writing/post-editor.tsx`).
-    - Rules shared by client and server live in `lib/admin/post-form.ts` (zod schema,
-      `slugify`, `normalizeTag`, `firstSentence`, `statusAfter`). The `savePost` action is
-      in `app/admin/writing/actions.ts`.
-    - Slug: follows the title until edited or published; a warning shows when a live slug
-      changes.
-    - Summary: if left empty, the first sentence is saved as the summary.
-    - Tags: chip input with suggestions (`components/admin/tag-input.tsx`, reusable for
-      item badges).
-    - Body: markdown toolbar and shortcuts (`components/admin/markdown-toolbar.tsx`).
-      The "?" button opens WRITING.md in a dialog (`lib/admin/cheat-sheet.ts`, traced via
-      `outputFileTracingIncludes`).
-    - Save bar: Save draft / Publish / Update / Unpublish / Save and add another.
-    - Safety: an `updated_at` check refuses to overwrite newer saves; unsaved text is
-      backed up in localStorage with Restore / Discard (`components/admin/use-local-backup.ts`);
-      a `beforeunload` warning covers closing the tab.
-  - **3c done** (tested by Ivan): live preview in the editor.
-    - Write / Split / Preview switch at the top right of the editor. Split (form + preview
-      side by side) only on screens >= 1280 px; Write/Split is remembered per device.
-      Full Preview shows the article at reading width and hides the admin bar and tabs
-      (`data-admin-chrome` in `app/admin/layout.tsx`, rule in `globals.css`); Esc leaves it.
-    - `components/article-view.tsx` draws the article for both the public page and the
-      preview, so they can't drift.
-    - The renderer is split at the HTML-tree stage: `lib/markdown.tsx` (server-only, Shiki;
-      uncached `markdownToHast` and cached `renderMarkdown`) and `lib/markdown-react.tsx`
-      (`hastToReact`, runs on server or browser).
-    - `POST /admin/writing/preview` (`app/admin/writing/preview/route.ts`) returns the tree
-      as JSON, admin only, uncached, max `LIMITS.preview` characters; the browser side is
-      `lib/admin/fetch-preview.ts` and `app/admin/writing/live-preview.tsx` (0.3 s debounce,
-      cancels superseded requests). **A route handler, not a server action**, because Next
-      runs a page's server actions one at a time and previews would hold up Save (verified:
-      saves start while previews are pending).
-  - **3d done**: images.
-    - Shared rules in `lib/admin/image-rules.ts`: 2400 px body, 1200 px cover, WebP at
-      85% (JPEG where WebP can't be encoded), JPEG/PNG/WebP/AVIF in (GIF and SVG refused),
-      5 MB bucket limit. Stored as `media/writing/YYYY/MM/<random>.webp`.
-    - Files (paste, drop, pick) are prepared in the browser (`lib/admin/prepare-image.ts`:
-      EXIF orientation, step-down scaling, re-encode, so no metadata) and uploaded straight
-      to Storage (`lib/admin/upload-image.ts`, `lib/supabase/browser.ts`).
-    - Image URLs (Unsplash, Pexels, game art…) are imported by the server:
-      `POST /admin/media/import` → `lib/admin/fetch-remote-image.ts` (admin + same-origin
-      only; http(s) on standard ports; public addresses only, checked inside the
-      connection's own DNS lookup and on every redirect; 15 s / 25 MB caps) →
-      `lib/admin/prepare-image-server.ts` (`sharp`, same rules) → our own copy in Storage.
-      A route handler because imports take seconds and server actions run one at a time.
-    - Cover: `components/admin/cover-image-field.tsx`; the schema only accepts our own
-      `media` URLs (browser and server). Covers are decorative (`alt=""`) by Ivan's choice.
-    - Body: `components/admin/use-body-images.ts` + `body-image-panel.tsx` (toolbar Image
-      button). Placeholders at the cursor become `![alt](url#WxH)`; saving waits for uploads.
-      `lib/image-size.ts` carries the size in the URL fragment, and the renderer
-      (`lib/markdown-react.tsx`) turns it into `width`/`height`.
-    - Random ids use `crypto.getRandomValues` (`randomId()`), not `crypto.randomUUID`,
-      which browsers only offer on https/localhost.
-- Step 2.4 (section forms) — plan approved: shared item pieces, then one step per section.
-  Decisions: **Reading is ordered automatically** (reading, then read newest finished
-  first, then to read; no drag handles); every other section is drag-to-reorder
-  (`@dnd-kit`). New items go to the top.
-  - **4a done** (tested by Ivan): shared item pieces + Projects.
-    - `lib/media.ts`: bucket folders (`writing`, `projects`, `books`, `music`, `games`,
-      `hobbies`), `mediaUrl(path)`, `isMediaPath`, `isOwnMediaUrl`. Uploads and the URL
-      import take a whitelisted folder and return the stored **path** (items store paths,
-      articles store URLs).
-    - `lib/admin/items/`: `sections.ts` (table, folder, image size, order, cache tag per
-      section), `item-form.ts` (shared fields and rules; badges keep their wording, max 4;
-      real calendar dates; `ItemDefinition`), `projects.ts` (the Projects definition: a
-      section = schema + publish rules + `toRow`/`fromRow` + empty form), `item-errors.ts`
-      (every database rule as a sentence on its field), `save-item.ts` (one save for all
-      sections), `list-actions.ts` (publish/unpublish, delete, reorder via
-      `reorder_items`), `article-options.ts`, `link-target.ts` + `link-article.ts`.
-    - UI: `components/admin/item-list.tsx` (list, one-tap actions, drag/↑↓/keyboard
-      reorder, rolls back on failure), `item-editor.tsx` (the shared form: each section
-      passes its own fields as children), `article-picker.tsx`, and `form-field.tsx`,
-      `save-bar.tsx`, `image-field.tsx`, which the article editor shares.
-    - Routes: `app/admin/projects/` (list, `new`, `[id]`, `actions.ts`,
-      `project-form.tsx`). Adding a section = its definition file, a loader, an
-      `actions.ts` one-liner, a form with its own fields, three pages, and flipping
-      `ready` in `lib/admin/sections.ts`.
-    - "Write the article": the item form saves, then opens `/admin/writing/new?for=<section>:<id>`;
-      the article's first save links it back (only if the item has no article yet).
-    - Saving an item refreshes the cache tags for its section, `home` and `posts`
-      (Phase 3 pages will use them).
-  - **4b done** (tested by Ivan): Reading.
-    - `lib/reading.ts` (public, also for the Phase 3 page): statuses, badge labels and
-      `compareBooks` (reading, then read newest finished first, then to read newest
-      added first; id breaks ties). `lib/admin/items/books.ts`: the definition, ISBN
-      cleaning + check-digit validation, `withReadingStatus` (status changes fill the
-      start/finish date from the admin's **local** day, never overwriting; going back to
-      TO READ keeps dates, by Ivan's choice).
-    - List (`app/admin/reading/`): automatic order, status badges, stars, one-tap
-      "Start reading" / "Mark as read" (`setReadingStatus`; the browser sends its local
-      date, accepted only if `isPlausibleToday`). The shared list gained optional
-      `stateBadge` + `quickStep` (a server action passed from the page), for Games too.
-    - Form: author, status toggle, dates, `StarRating` (reusable, max 10 for Games),
-      note, link, ISBN, year, pages; covers 1200 px, shown whole. The item editor gained
-      `patch()` and a `header` slot.
-    - Open Library: `lib/admin/open-library.ts` (fixed host, User-Agent
-      `StarfoxLabs/1.0 (+https://starfoxlabs.org)` — site only, by Ivan's choice; no
-      email) behind `GET /admin/reading/open-library` (`?q=` search, `?covers=<work>`
-      edition covers). `open-library-autofill.tsx`: pick fills details and copies the
-      cover into `media/books/`; "Choose a different cover" shows other editions'
-      covers; no cover → clear message, image left empty. Values the autofill filled are
-      replaced/cleared by the next pick, never values Ivan typed or uploaded.
-  - **4c next — Music**, in two parts: (1) the form (released on, in progress, full-track
-    link, links for Spotify/SoundCloud/Bandcamp/YouTube/Apple, note) with a manual
-    snippet upload (MP3/M4A, max 30 s / 2 MB, into `media/music/`); an in-progress song
-    can be published before its article and snippet exist; (2) the in-browser snippet
-    cutter (waveform, pick the 30 s, preview, fades, MP3 encoding in the browser; the
-    encoder library is loaded only when the cutter opens). Plan it first, then build.
-  - Then 4d Games, 4e Hobbies.
+- **Phase 1 (Foundation):** done.
+- **Phase 2 (Admin + content model):** 2.1 admin sign-in, 2.2 content schema, 2.3 `/admin`
+  shell + Writing editor (form, live preview, images), 2.4a shared item pieces + Projects,
+  2.4b Reading (with Open Library autofill): all done, tested by Ivan, pushed.
+- **Next: 2.4c Music**, in two parts. Plan it first, then build.
+  1. The form (released on, in progress, full-track link, links for Spotify / SoundCloud /
+     Bandcamp / YouTube / Apple, note) with a manual snippet upload (MP3/M4A, max 30 s /
+     2 MB, into `media/music/`). An in-progress song can be published before its article
+     and snippet exist.
+  2. The in-browser snippet cutter (waveform, pick the 30 s, preview, fades, MP3 encoding
+     in the browser; the encoder library loads only when the cutter opens).
+- Then 2.4d Games, 2.4e Hobbies; then Phase 3.
+
+### How the admin is built (for the next sections)
+- **Adding an item section** = a definition file in `lib/admin/items/` (schema + publish
+  rules + `toRow`/`fromRow` + empty form; see `projects.ts`, `books.ts`), a loader
+  (`load-*.ts`), an `actions.ts` one-liner around `saveItem`, a form passing its own fields
+  to `components/admin/item-editor.tsx`, three pages (list, `new`, `[id]`), and flipping
+  `ready` in `lib/admin/sections.ts`. Lists use `components/admin/item-list.tsx`
+  (optional `stateBadge` + `quickStep` for one-tap status steps, as Reading does).
+- Items store image **paths**, articles store image **URLs** (`lib/media.ts`). Uploads and
+  URL imports go to the section's media folder (`lib/admin/add-image.ts`).
+- Saving an item updates the cache tags `home`, `posts` and the section's tag (`projects`,
+  `books`, `tracks`, `games`, `hobby_items`). Phase 3 pages must use these tags.
+- Decisions already made: Reading is ordered automatically, other sections are
+  drag-to-reorder (`@dnd-kit`), new items go to the top; article covers are decorative
+  (`alt=""`); going back to TO READ keeps a book's dates; the Open Library User-Agent is
+  site only (no email).
 
 ### Still open
 - **Placeholders for Ivan** (all marked `TODO(Ivan)`): home intro (`app/page.tsx`),
@@ -486,65 +364,90 @@ Track *active days* and *articles read* (one read per article per user), not raw
 - **Vercel** (Ivan to confirm it's done): Production Branch = `main`; env vars
   `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (the publishable
   key, NOT `..._ANON_KEY` as first suggested); check the latest deploy succeeded.
-- **Known dead links** until later steps: Projects / Reading / Music / Games / Hobbies tabs
-  show the 404 page (it says they're still being built) until Phase 3; the newsletter
-  line is plain text until Phase 6.
+- **Known dead links** until later steps: the public Projects / Reading / Music / Games /
+  Hobbies pages show the 404 page (it says they're still being built) until Phase 3; the
+  newsletter line is plain text until Phase 6.
 - UQ palette beyond purple is still a TODO (see Colors).
 - **Two-factor sign-in for the admin** before the newsletter goes live (see Phase 6).
-- **Scheduled publishing** (to-do, after the Writing editor): pick a future date and time
-  and the article goes live then, so Ivan can write several daily posts in advance. Needs
-  public queries to require `published_at <= now()`, and something to refresh the cache
-  at that moment (e.g. a Vercel Cron job calling a route that runs `revalidateTag`).
-- **Hydration mismatch report (unconfirmed)**: once, editing a book, the browser reported
-  an `ArticlePicker` option rendered `disabled` in the browser but not on the server.
-  Not reproduced: server-render + hydrate with identical props (with and without a
-  stored backup) and a no-login probe page on the dev server were both clean, with one
-  query per load. Likely cause: articles tied on `updated_at` (seed rows share
-  timestamps) coming back in different orders; every admin list now ends its order with
-  `id`. If it happens again, note the exact steps and browser.
-- **Unused media** (to-do, later): images removed from an article body, and replaced or
-  removed covers, stay in the `media` bucket. Deleting automatically is risky (a file may
-  be used elsewhere, or the change undone), so build an admin view that lists files no
-  article or item references, to delete by hand.
-- **Redirects for changed slugs** (to-do, later): the editor allows changing a published
-  article's slug with a warning, but old links then 404. Fix: a `post_redirects` table
-  (`old_slug` → `post_id`) filled when a published slug changes, checked by the article
-  page before calling `notFound()` (permanent redirect to the current slug).
+- **Scheduled publishing** (to-do): pick a future date and time and the article goes live
+  then. Needs public queries to require `published_at <= now()`, and something to refresh
+  the cache at that moment (e.g. a Vercel Cron job calling a route that runs
+  `revalidateTag`).
+- **Unused media** (to-do): images removed from an article body, and replaced or removed
+  covers, stay in the `media` bucket. Deleting automatically is risky (a file may be used
+  elsewhere, or the change undone), so build an admin view that lists files no article or
+  item references, to delete by hand.
+- **Redirects for changed slugs** (to-do): changing a published article's slug breaks old
+  links. Fix: a `post_redirects` table (`old_slug` → `post_id`) filled when a published
+  slug changes, checked by the article page before `notFound()` (permanent redirect).
+- **Hydration mismatch report (unconfirmed)**: once, an `ArticlePicker` option was
+  `disabled` in the browser but not on the server. Not reproduced; the likely cause (ties
+  in ordering) is fixed. If it happens again, note the exact steps and browser. Details
+  in the build log, 2.4b.
 
-### Notes for the next session
-- Next.js 16: read `node_modules/next/dist/docs/` before using an API (see AGENTS.md).
-  Cache Components is on: anything using the clock, cookies or URL data must be
-  cached (`"use cache"`) or wrapped in `<Suspense>`, or the build fails.
-  Middleware is called **Proxy** in this version. `proxy.ts` only runs on `/admin`, `/login`
-  and `/auth` (see its `matcher`), so public pages stay static; keep it that way.
+### Notes for the next session (gotchas — keep these)
+**Next.js 16**
+- Read `node_modules/next/dist/docs/` before using an API (see AGENTS.md). Middleware is
+  called **Proxy**; `proxy.ts` only runs on `/admin`, `/login` and `/auth` (its `matcher`),
+  so public pages stay static. Keep it that way.
+- Cache Components is on: anything using the clock, cookies or URL data must be cached
+  (`"use cache"`) or wrapped in `<Suspense>`, or the build fails. Anything that reads files
+  or the clock (Shiki, `next/og` fonts) must sit inside a `"use cache"` function, or the
+  route silently becomes request-time / `no-store`.
+- `dynamicParams`, `dynamic`, `revalidate` and `fetchCache` don't exist with Cache
+  Components. For a fixed set of params use `generateStaticParams`, and read `params`
+  inside `<Suspense>` for the rest (see `app/admin/[section]/page.tsx`).
+- **Admin pages:** a client navigation inside `/admin` only re-renders below
+  `app/admin/layout.tsx`, so the layout's `<Suspense>` and `requireAdmin()` don't run again.
+  Every admin page puts its request-time work (params, session, database) in a component
+  behind its **own** `<Suspense>`, and that component calls `requireAdmin()`. Otherwise
+  `next dev` reports "uncached data … outside of `<Suspense>`".
+- Any Client Component that calls `usePathname()` must sit inside `<Suspense>` (with a
+  non-highlighted fallback), or pages with unknown URLs like `/admin/writing/<id>` fail the
+  build. The header nav and admin tabs already do this.
+- `notFound()` for a slug that wasn't prerendered returns a proper 404 with noindex, but
+  the HTML body is empty and the 404 page is drawn by JavaScript. Wrapping the page in
+  `<Suspense>` doesn't fix it (and turns the status into 200), so we keep the real 404.
+  `app/writing/[slug]/page.tsx` sets `export const instant = false` to tell the dev
+  validation this wait is intended (it changes nothing else).
+- Inline scripts (the theme script in `app/layout.tsx`) go through
+  `components/inline-script.tsx`: `text/javascript` in the server HTML, inert `text/plain`
+  when React renders in the browser, which avoids React's "Encountered a script tag" warning.
+- **Server actions run one at a time per browser tab.** Anything frequent or slow that
+  shouldn't hold up Save (live preview, image imports, Open Library lookups) is a route
+  handler instead.
+- Server actions: call `requireAdmin()` first, then update the cache tags (`posts`, and the
+  item tags above) and `refresh()` the current admin page. Exception: the editors' save
+  skips `refresh()`, which would re-render the form while Ivan types.
+- `react-dom/server` throws inside route handlers (they run in the React Server Components
+  environment), so a route can't render components to HTML. The live preview sends the
+  HTML tree as JSON instead and the browser turns it into React.
+
+**Data and the browser**
+- Admin lists must have a fully determined order: end every `.order()` chain (and JS sort)
+  with `id`. Rows saved together tie on timestamps and can come back in any order.
+- JavaScript date parsing is lenient (`2026-02-30` becomes 2 March). Check dates with a
+  round trip, as `isRealDate` and `isPlausibleToday` do. "Today" for the admin is the
+  browser's local date (`localToday` in `lib/format.ts`); the server runs on UTC.
+- Use `crypto.getRandomValues` (`randomId()`), not `crypto.randomUUID`: browsers only offer
+  the latter on https/localhost, not on the dev server opened from a phone.
 - Auth: sign-in is email code + link (`signInWithOtp` with `shouldCreateUser: false` on the
   admin form only; sign-ups stay enabled project-wide for Phase 4 readers). The email
   template links to `/auth/confirm?token_hash=…`, which works in any browser.
-- Known Next 16 behaviour: `notFound()` for a slug that wasn't prerendered returns a
-  proper 404 with noindex, but the HTML body is empty and the 404 page is drawn by
-  JavaScript. Wrapping the page in `<Suspense>` doesn't fix it (and turns the status
-  into 200), so we keep the real 404. Browsers show the friendly page normally.
-  `app/writing/[slug]/page.tsx` sets `export const instant = false` to tell Next's dev
-  validation this wait is intended (it only affects that check, not rendering).
-- Inline scripts (the theme script in `app/layout.tsx`) go through
-  `components/inline-script.tsx`: `text/javascript` in the server HTML, inert
-  `text/plain` when React renders in the browser (e.g. the client-drawn 404), which
-  avoids React's "Encountered a script tag" warning.
-- Anything that reads files or the clock (Shiki, `next/og` fonts) must sit inside a
-  `"use cache"` function, or the route silently becomes request-time / `no-store`.
-- Any Client Component that calls `usePathname()` must sit inside `<Suspense>` (with a
-  non-highlighted fallback), or pages with unknown URLs like `/admin/writing/<id>` fail
-  the build. The header nav and admin tabs already do this.
-- **Admin pages:** a client navigation inside `/admin` only re-renders below
-  `app/admin/layout.tsx`, so the layout's `<Suspense>` and its `requireAdmin()` don't run
-  again. Every admin page puts its request-time work (params, session, database) in a
-  component behind its **own** `<Suspense>`, and that component calls `requireAdmin()`.
-  Otherwise `next dev` reports "uncached data … outside of `<Suspense>`".
-- Server actions: call `requireAdmin()` first, then `updateTag("posts")` (public pages)
-  and `refresh()` (current admin page) after a successful change. Exception: the editor's
-  `savePost` skips `refresh()`, which would re-render the form while Ivan types.
-- Server actions run **one at a time** per browser tab. Anything frequent that doesn't
-  change data (like the live preview) goes through a route handler instead.
-- chester.how blocks automated fetches; use the screenshots in `design-refs/`.
-- Visual checks were done with headless Edge + `puppeteer-core` installed in a temp
-  folder (not a project dependency) at 1280 / 1440 / 1920 px, dark mode, and 390 px mobile.
+
+**Working in this repo**
+- Ivan usually has `npm run dev` running on port 3000: don't stop it. Its log is
+  `.next/dev/logs/next-development.log`. For production checks use `next start -p 3124`
+  and stop it afterwards.
+- `npm run build` needs network access (it queries Supabase while prerendering). A
+  "fetch failed" or DNS error means the network or sandbox, not the code.
+- Admin pages can't be checked without Ivan's sign-in (signed-out requests get a 307), so
+  test logic and components in isolation (methods in the build log, "How things were
+  tested"), then give Ivan a short browser checklist.
+- Git: a `git add` that lists one path that no longer exists (e.g. after `git mv`) stages
+  **nothing**. Never silence its errors; after committing, check `git show --stat HEAD`.
+- Long multi-file shell heredocs sometimes fail to parse in this environment; write files
+  with the file tool instead.
+- chester.how blocks automated fetches; use the screenshots in `design-refs/`. Visual checks
+  use headless Edge + `puppeteer-core` installed in a temp folder (not a project
+  dependency) at 1280 / 1440 / 1920 px, dark mode, and 390 px mobile.
