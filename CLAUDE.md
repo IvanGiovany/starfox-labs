@@ -395,6 +395,10 @@ Track *active days* and *articles read* (one read per article per user), not raw
   and the article goes live then, so Ivan can write several daily posts in advance. Needs
   public queries to require `published_at <= now()`, and something to refresh the cache
   at that moment (e.g. a Vercel Cron job calling a route that runs `revalidateTag`).
+- **Redirects for changed slugs** (to-do, later): the editor allows changing a published
+  article's slug with a warning, but old links then 404. Fix: a `post_redirects` table
+  (`old_slug` → `post_id`) filled when a published slug changes, checked by the article
+  page before calling `notFound()` (permanent redirect to the current slug).
 
 ### Notes for the next session
 - Next.js 16: read `node_modules/next/dist/docs/` before using an API (see AGENTS.md).
