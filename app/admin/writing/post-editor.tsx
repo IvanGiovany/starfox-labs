@@ -39,6 +39,8 @@ type Saved = { id: string | null; updatedAt: string | null; status: PostStatus; 
 const BLANK: Saved = { id: null, updatedAt: null, status: "draft", publishedAt: null, fields: EMPTY };
 
 // Field order, so the first invalid one gets the focus.
+const WAIT_FOR_IMAGES = "Wait for the images to finish uploading, then save.";
+
 const FIELD_ORDER: (keyof PostFields)[] = ["title", "slug", "summary", "tags", "youtubeUrl", "coverImageUrl", "bodyMd"];
 
 function sameFields(a: PostFields, b: PostFields): boolean {
@@ -126,6 +128,8 @@ export function PostEditor({
     onError: (message) => setNotice({ tone: "error", text: message }),
   });
   const uploadingImages = bodyImages.pending + (coverUploading ? 1 : 0);
+  // "Wait for the images" no longer applies once they're all in.
+  const shownNotice = notice?.text === WAIT_FOR_IMAGES && uploadingImages === 0 ? null : notice;
 
   const wide = useMediaQuery("(min-width: 80rem)"); // room for the form and the preview side by side
   const storedLayout = useSyncExternalStore(subscribeLayout, readLayout, () => null);
@@ -186,7 +190,7 @@ export function PostEditor({
     if (pending) return;
     if (uploadingImages > 0) {
       // Saving now would store the "⏳ Uploading…" placeholders as article text, or miss the new cover.
-      setNotice({ tone: "error", text: "Wait for the images to finish uploading, then save." });
+      setNotice({ tone: "error", text: WAIT_FOR_IMAGES });
       return;
     }
     const status = statusAfter(intent, saved.status);
@@ -476,7 +480,7 @@ export function PostEditor({
 
       <SaveBar
         status={
-          notice?.text ??
+          shownNotice?.text ??
           (uploadingImages > 0
             ? `Uploading ${uploadingImages} image${uploadingImages === 1 ? "" : "s"}…`
             : dirty
@@ -485,7 +489,7 @@ export function PostEditor({
                 ? "All changes saved"
                 : "")
         }
-        isError={notice?.tone === "error"}
+        isError={shownNotice?.tone === "error"}
         published={published}
         pending={pending}
         savingIntent={savingIntent}
