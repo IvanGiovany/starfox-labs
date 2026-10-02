@@ -179,7 +179,7 @@ Shared columns on every item table: `id`, `title`, `status` (`draft` | `publishe
 `post_id` (→ `posts.id`, unique, `on delete set null`), `image_path` (Storage path),
 `image_alt`, `badges text[]`, `show_on_home` (bool), `card_size` (`small` | `wide`),
 `sort_order` (int, set by drag-to-reorder), `created_at`, `updated_at`.
-Built in migrations `20260930100000`–`20260930140000`; `lib/database.types.ts` is generated
+Built in migrations `20260930100000`–`20260930140000` (plus `20261002100000`: `tracks.snippet_seconds`, also in `post_items`); `lib/database.types.ts` is generated
 from the live schema (`npm run db:types`) — regenerate it after every migration.
 
 | Table | Extra columns | Rules |
@@ -187,7 +187,7 @@ from the live schema (`npm run db:types`) — regenerate it after every migratio
 | `posts` (exists) | slug, summary, body_md, tags, cover_image_url, youtube_url, published_at | — |
 | `projects` | summary, url, repo_url, stack text[], started_on | at least one of url / repo_url / post_id |
 | `books` | author, reading_status (`to_read` / `reading` / `read`), started_on, finished_on, rating 1–5 (optional), url, isbn, open_library_key, published_year, page_count | — |
-| `tracks` | released_on, in_progress (bool), snippet_path (audio), full_track_url, links jsonb (spotify, soundcloud, bandcamp, youtube, apple), note | published ⇒ `post_id` and `snippet_path` set, **unless `in_progress`** (so "Now producing" can show before the article exists; the Music page lists only finished songs) |
+| `tracks` | released_on, in_progress (bool), snippet_path (audio), snippet_seconds (decoded length, saved at upload; null for older rows), full_track_url, links jsonb (spotify, soundcloud, bandcamp, youtube, apple), note | published ⇒ `post_id` and `snippet_path` set, **unless `in_progress`** (so "Now producing" can show before the article exists; the Music page lists only finished songs) |
 | `games` | platform, hours_played numeric, rating 1–10 (optional), play_status (`playing` / `finished` / `dropped`, default playing), finished_on | published ⇒ `post_id` set |
 | `hobby_items` | category (e.g. Coffee), subtitle, note, image_style (`photo` / `cutout` / `none`), caption, url | published ⇒ `category` set |
 
@@ -341,15 +341,19 @@ Everything built so far, with file maps, decisions and how it was tested:
      waiting for uploads, list and pages. Details: `docs/build-log.md`, 4c. Ivan passed
      checklist 1–7 by hand; Claude re-ran 1–7 in the Playwright window on 2026-10-01 (all
      pass; mouse drag untestable there, reorder passed via ↑↓ and keyboard). That run
-     found three small bugs, fixed and **uncommitted** (Ivan hasn't tested them yet):
-     - `components/admin/snippet-field.tsx`: show the decoded length, not the player's
-       (files that don't state their length showed "0:00"); read the player's state on
-       mount (on server-rendered pages "loadedmetadata"/"error" fire before React
-       listens, so stored snippets showed no length and missing files no error).
-     - `app/admin/writing/post-editor.tsx`: "Wait for the images…" now clears once uploads
-       finish (it stayed until the next save).
-     - `.gitignore`: `.playwright-mcp/` (the MCP's snapshots, logs, test files).
-     The two code fixes were verified in the browser; type check and lint pass.
+     found three small bugs, all fixed, tested by Ivan, committed and pushed:
+     - Article editor "Wait for the images…" message and `.gitignore` (`40e6429`, `f57ab8b`).
+     - **Snippet length** (retested by Ivan 2026-10-02). His first test 2.1 failed:
+       after a reload, the browser-recorded `test-8s.m4a` showed "M4A · 0:00". Cause: the
+       file states two lengths (movie header 7.018 s, track header 0.146 s, milliseconds
+       written into a 48 kHz field), and Firefox's player trusts the wrong one. Fix: the
+       decoded length is saved at upload in `tracks.snippet_seconds` (migration
+       `20261002100000`, **already applied** to the live database; additive, nullable) and
+       shown before the player's figure; older rows fall back to the player. Files:
+       the migration, `lib/database.types.ts`, `lib/admin/items/tracks.ts`,
+       `lib/admin/items/item-errors.ts`, `components/admin/snippet-field.tsx` (also reads
+       the player's state on mount, which Ivan's 2.2 passed), `app/admin/music/track-form.tsx`.
+       Reproduced and verified in real Firefox (0:00 without, 0:07 with the saved length).
   - **Found, not fixed (needs a plan):** after the first save of a new item or article,
     `history.replaceState` to `/<id>` makes Next's router fetch the `[id]` page and
     remount the form about a second later ("Saved at …" becomes "All changes saved";
@@ -361,8 +365,8 @@ Everything built so far, with file maps, decisions and how it was tested:
     after 2026-10-01 10:45 UTC) are still in Storage. List them, check nothing references
     them, then delete (`.playwright-mcp/storage-tool.js` does both, with the admin session).
   - **Next steps:** (1) delete the test files above: Ivan in the Supabase dashboard
-    (Storage → `media`), or Claude with the Playwright tool if Ivan asks for it; (2) Ivan
-    tests the three fixes (give him a checklist), then commit them; (3) Ivan's phone test
+    (Storage → `media`), or Claude with the Playwright tool if Ivan asks for it; (2) done:
+    the snippet length fix is retested and pushed; (3) Ivan's phone test
     (checklist 8) and listening to a real snippet; (4) part 2, the snippet cutter (plan
     first; consider high effort).
   - Playwright note: real mouse clicks in the MCP's Firefox stopped working mid-session
