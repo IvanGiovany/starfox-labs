@@ -18,6 +18,9 @@ const RULES: Record<string, ExplainedError> = {
     field: "postId",
     message: "A finished, published song needs its article and its audio snippet. (A song still in progress can be published without them.)",
   },
+  // The snippet's measured length has no input of its own: both point at the snippet field.
+  tracks_snippet_seconds_check: { field: "snippetPath", message: "The snippet's length didn't come through right. Add it again." },
+  tracks_snippet_seconds_need_snippet: { field: "snippetPath", message: "The snippet's length was saved without the snippet. Add it again." },
   published_games_have_review: { field: "postId", message: "A published game needs its review article." },
   published_hobby_items_have_category: { field: "category", message: "A published hobby item needs a category." },
   books_finished_after_started: { field: "finishedOn", message: "The finish date can't be before the start date." },

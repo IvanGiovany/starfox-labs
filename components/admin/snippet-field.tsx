@@ -13,6 +13,7 @@ import { mediaUrl } from "@/lib/media";
 export function SnippetField({
   id,
   path,
+  seconds: savedSeconds,
   onAdded,
   onRemove,
   describedBy,
@@ -21,6 +22,8 @@ export function SnippetField({
   id: string;
   /** The current snippet's path in the media bucket, or "" for none. */
   path: string;
+  /** Its length as measured at upload (saved with the song), or null for older snippets. */
+  seconds: number | null;
   onAdded: (snippet: AddedSnippet) => void;
   onRemove: () => void;
   /** The field's error message, if any. */
@@ -38,10 +41,12 @@ export function SnippetField({
   const [error, setError] = useState<string | null>(null);
   const [replacing, setReplacing] = useState(false);
   const [dragging, setDragging] = useState(false);
-  // Size is only known right after an upload; the length comes from the player.
+  // Right after an upload we know the size and the length (decoded, so exact).
+  // A stored snippet's length was saved at upload; older ones only have the player's.
   const [uploaded, setUploaded] = useState<AddedSnippet | null>(null);
   const [playable, setPlayable] = useState<{ path: string; seconds: number | null; failed: boolean } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const player = useRef<HTMLAudioElement>(null);
   const latest = useRef(0); // only the newest attempt may set the snippet
 
   async function addFile(file: File) {
@@ -70,9 +75,27 @@ export function SnippetField({
     else setError("Drop an MP3 or M4A file.");
   }
 
+  /** What the player knows about the file: its length once the metadata is in, or that it failed. */
+  function readPlayer(audio: HTMLAudioElement) {
+    if (audio.error) setPlayable({ path, seconds: null, failed: true });
+    else if (audio.readyState >= HTMLMediaElement.HAVE_METADATA) {
+      setPlayable({ path, seconds: Number.isFinite(audio.duration) ? audio.duration : null, failed: false });
+    }
+  }
+
+  // On a server-rendered page the browser starts loading the player before React
+  // listens, so "loadedmetadata" or "error" may already have happened: read the
+  // player's state once it's ours, as well as listening for those events.
+  const readMountedPlayer = useEffectEvent(() => player.current && readPlayer(player.current));
+  useEffect(() => {
+    readMountedPlayer();
+  }, [path]);
+
   // What the player found out about the current file (reset when the file changes).
   const current = playable?.path === path ? playable : null;
-  const seconds = current?.seconds ?? (uploaded?.path === path ? uploaded.seconds : null);
+  // Measured lengths beat the player's: some files (browser recordings, some MP3s)
+  // state a wrong length in their headers, and the player believes it.
+  const seconds = (uploaded?.path === path ? uploaded.seconds : null) ?? savedSeconds ?? current?.seconds ?? null;
   const details = current?.failed
     ? "This file couldn't be loaded. Replace it with a new upload."
     : [
@@ -95,12 +118,10 @@ export function SnippetField({
             controls
             preload="metadata"
             src={mediaUrl(path)}
+            ref={player}
             aria-label="Snippet preview"
-            onLoadedMetadata={(e) => {
-              const length = e.currentTarget.duration;
-              setPlayable({ path, seconds: Number.isFinite(length) ? length : null, failed: false });
-            }}
-            onError={() => setPlayable({ path, seconds: null, failed: true })}
+            onLoadedMetadata={(e) => readPlayer(e.currentTarget)}
+            onError={(e) => readPlayer(e.currentTarget)}
             className="w-full"
           />
           <p className={`mt-2 text-sm ${current?.failed ? "text-danger" : "text-fg-muted"}`}>{details}</p>

@@ -383,6 +383,7 @@ export type Database = {
           released_on: string | null
           show_on_home: boolean
           snippet_path: string | null
+          snippet_seconds: number | null
           sort_order: number
           status: string
           title: string
@@ -403,6 +404,7 @@ export type Database = {
           released_on?: string | null
           show_on_home?: boolean
           snippet_path?: string | null
+          snippet_seconds?: number | null
           sort_order?: number
           status?: string
           title: string
@@ -423,6 +425,7 @@ export type Database = {
           released_on?: string | null
           show_on_home?: boolean
           snippet_path?: string | null
+          snippet_seconds?: number | null
           sort_order?: number
           status?: string
           title?: string

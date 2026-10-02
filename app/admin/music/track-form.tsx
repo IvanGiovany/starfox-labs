@@ -41,7 +41,7 @@ export function TrackForm({
       imageFrame="aspect-square max-w-64"
       imageFit="contain"
     >
-      {({ fields, update, errors, fieldProps, setUploading }) => {
+      {({ fields, update, patch, errors, fieldProps, setUploading }) => {
         const error = (key: keyof TrackFields & string) => ({ error: errors[key], errorId: `item-${key}-error` });
 
         return (
@@ -84,8 +84,10 @@ export function TrackForm({
               <SnippetField
                 id="item-snippetPath"
                 path={fields.snippetPath}
-                onAdded={(snippet) => update("snippetPath", snippet.path)}
-                onRemove={() => update("snippetPath", "")}
+                seconds={fields.snippetSeconds}
+                // The length is measured at upload and saved with the song (players can misreport it).
+                onAdded={(snippet) => patch({ snippetPath: snippet.path, snippetSeconds: snippet.seconds })}
+                onRemove={() => patch({ snippetPath: "", snippetSeconds: null })}
                 describedBy={errors.snippetPath ? "item-snippetPath-error" : undefined}
                 onBusyChange={(busy) => setUploading("snippet", busy)}
               />
