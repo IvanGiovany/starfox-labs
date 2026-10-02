@@ -360,11 +360,11 @@ Everything built so far, with file maps, decisions and how it was tested:
     (covers and snippets in `media/music/2026/10/` and `media/writing/2026/10/`, uploaded
     after 2026-10-01 10:45 UTC) are still in Storage. List them, check nothing references
     them, then delete (`.playwright-mcp/storage-tool.js` does both, with the admin session).
-  - **Next steps:** (1) restart Claude Code if the Playwright tools are missing, check the
-    Playwright window is still signed in (it was on 2026-10-01); (2) delete the test files
-    above; (3) Ivan tests the three fixes (or Claude does, with test items), then commit
-    them; (4) Ivan's phone test (checklist 8) and listening to a real snippet; (5) part 2,
-    the snippet cutter (plan first; consider high effort).
+  - **Next steps:** (1) delete the test files above: Ivan in the Supabase dashboard
+    (Storage → `media`), or Claude with the Playwright tool if Ivan asks for it; (2) Ivan
+    tests the three fixes (give him a checklist), then commit them; (3) Ivan's phone test
+    (checklist 8) and listening to a real snippet; (4) part 2, the snippet cutter (plan
+    first; consider high effort).
   - Playwright note: real mouse clicks in the MCP's Firefox stopped working mid-session
     (after a "Leave page?" dialog); page-level `element.click()`, `setInputFiles` and
     keyboard events kept working. Wait for `networkidle` before setting files, or the
@@ -501,8 +501,9 @@ Everything built so far, with file maps, decisions and how it was tested:
   use headless Edge + `puppeteer-core` installed in a temp folder (not a project
   dependency) at 1280 / 1440 / 1920 px, dark mode, and 390 px mobile.
 
-**Browser testing (Playwright MCP)**: Claude runs the browser checklists itself (Ivan's
-request, 2026-10-01); Ivan only gets what truly needs him (e.g. a real phone).
+**Browser testing (Playwright MCP)**: **not by default.** Give Ivan a short browser
+checklist and he tests it himself. Use the Playwright browser only when Ivan explicitly
+asks for it: it's slow and uses a lot of tokens (Ivan's rule, 2026-10-02). When asked:
 - The `playwright` MCP server (local scope, not in the repo) drives Playwright's Firefox
   build with a persistent profile where Ivan signed in once as admin. Config:
   `C:\Users\Ivan\AppData\Local\starfox-labs\playwright-mcp.json` (the profile folder sits
