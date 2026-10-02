@@ -21,6 +21,7 @@ import {
   type SaveItemInput,
   type SaveItemResult,
 } from "@/lib/admin/items/item-form";
+import { useNewItemUrl } from "@/lib/admin/editor-url";
 import type { ArticleOption } from "@/lib/admin/items/article-options";
 import { statusAfter, type PostStatus, type SaveIntent } from "@/lib/admin/post-form";
 import { mediaUrl } from "@/lib/media";
@@ -87,6 +88,8 @@ export function ItemEditor<F extends BaseItemFields, D>({
 }) {
   const { section } = definition;
   const router = useRouter();
+  // A "new" page reloaded after its first save (new#<id>) opens the item's own page.
+  const { reopening, rememberNewId } = useNewItemUrl(item === null, (id) => `/admin/${section.key}/${id}`);
   const blank: Saved<F> = { id: null, updatedAt: null, status: "draft", fields: definition.empty };
   const [saved, setSaved] = useState<Saved<F>>(item ?? blank);
   const [fields, setFields] = useState<F>(item?.fields ?? definition.empty);
@@ -201,7 +204,7 @@ export function ItemEditor<F extends BaseItemFields, D>({
       setNotice({ tone: "ok", text: `${verb} at ${timeNow()}.` });
       if (saved.id === null) {
         removeBackup(backupKey(null)); // from now on it's backed up under its own id
-        window.history.replaceState(null, "", `/admin/${section.key}/${result.id}`);
+        rememberNewId(result.id); // new#<id>, not /<id>: see lib/admin/editor-url.ts
       }
       after?.(result.id);
     });
@@ -236,6 +239,8 @@ export function ItemEditor<F extends BaseItemFields, D>({
     "aria-describedby": errors[key] ? `item-${key}-error` : undefined,
   });
   const fieldError = (key: keyof BaseItemFields & keyof F & string) => ({ error: errors[key], errorId: `item-${key}-error` });
+
+  if (reopening) return <p className="py-6 text-fg-muted">Opening the saved {section.singular}…</p>;
 
   return (
     // autoComplete="off": Firefox would otherwise carry controls' state (e.g. a button enabled

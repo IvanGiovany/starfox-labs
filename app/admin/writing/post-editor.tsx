@@ -27,6 +27,7 @@ import {
   type PostStatus,
   type SaveIntent,
 } from "@/lib/admin/post-form";
+import { useNewItemUrl } from "@/lib/admin/editor-url";
 import type { LinkTarget } from "@/lib/admin/items/link-target";
 import { savePost } from "./actions";
 import { LivePreview } from "./live-preview";
@@ -108,6 +109,8 @@ export function PostEditor({
   cheatSheet: ReactNode;
 }) {
   const router = useRouter();
+  // A "new" page reloaded after its first save (new#<id>) opens the article's own page.
+  const { reopening, rememberNewId } = useNewItemUrl(post === null, (id) => `/admin/writing/${id}`);
   const [saved, setSaved] = useState<Saved>(post ?? BLANK);
   const [fields, setFields] = useState<PostFields>(post?.fields ?? EMPTY);
   const [slugLinked, setSlugLinked] = useState(() => slugFollowsTitle(post?.status ?? "draft", post?.fields ?? EMPTY));
@@ -248,7 +251,7 @@ export function PostEditor({
       setNotice({ tone: "ok", text: `${verb} at ${timeNow()}.` });
       if (saved.id === null) {
         removeBackup(backupKey(null)); // from now on it's backed up under its own id
-        window.history.replaceState(null, "", `/admin/writing/${result.id}`);
+        rememberNewId(result.id); // new#<id>, not /<id>: see lib/admin/editor-url.ts
       }
     });
   }
@@ -273,6 +276,8 @@ export function PostEditor({
     "aria-invalid": errors[key] ? true : undefined,
     "aria-describedby": errors[key] ? `post-${key}-error` : undefined,
   });
+
+  if (reopening) return <p className="py-6 text-fg-muted">Opening the saved article…</p>;
 
   return (
     // autoComplete="off": no Firefox form-state restore over reloads (see item-editor.tsx).
