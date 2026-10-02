@@ -327,7 +327,7 @@ Track *active days* and *articles read* (one read per article per user), not raw
 - Use Supabase Row Level Security on every table.
 - Run `npm run build` and fix errors before saying a step is done.
 
-## Where we left off (updated 2026-10-01)
+## Where we left off (updated 2026-10-02)
 Everything built so far, with file maps, decisions and how it was tested:
 **`docs/build-log.md`**. Read the relevant part before changing that area.
 
@@ -354,21 +354,55 @@ Everything built so far, with file maps, decisions and how it was tested:
        `lib/admin/items/item-errors.ts`, `components/admin/snippet-field.tsx` (also reads
        the player's state on mount, which Ivan's 2.2 passed), `app/admin/music/track-form.tsx`.
        Reproduced and verified in real Firefox (0:00 without, 0:07 with the saved length).
-  - **Found, not fixed (needs a plan):** after the first save of a new item or article,
-    `history.replaceState` to `/<id>` makes Next's router fetch the `[id]` page and
-    remount the form about a second later ("Saved at …" becomes "All changes saved";
-    typing in that second is replaced, though the device backup offers it back). Affects
-    every item form and the article editor. Read `node_modules/next/dist/docs/` on
-    `replaceState` before fixing.
+  - **Form replaced after the first save: done 2026-10-02, tested by Ivan (all 7 checks),
+    committed and pushed.** The full plan, kept for reference:
+    - *Bug:* after the first save of a new item or article, the editors did
+      `history.replaceState` to `/<id>`. Next patches `replaceState` and dispatches a
+      "restore"; on request-time admin pages the router refetched the new URL, got the
+      `[id]` route (another segment) and swapped the page subtree about a second later.
+      Lost: typing in that second, focus, the "Saved at" message, uploads in progress.
+      Every item editor and the article editor.
+    - *Fix:* stay on the `new` page and put the id in the hash: `new#<id>`.
+      `lib/admin/editor-url.ts` → `useNewItemUrl(isNewPage, editHref)` gives the editors
+      `rememberNewId` (first save) and `reopening` (a reload, Back or pasted link on
+      `new#<id>` shows "Opening the saved …" and `router.replace`s to `/<id>`). Only
+      UUIDs are accepted from the hash. Ids an open editor saved itself are ignored
+      (otherwise its own first save would trigger "Opening…", caught while building);
+      they're released on unmount, so Back still works. Keeps `?for=` (article editor).
+      "Save and add another" clears the hash as before. Trade-off: the address bar shows
+      `…/new#<id>` while the form is open.
+    - *Rejected:* `router.replace('/<id>')` (another segment always remounts); one route
+      for new and edit (keyed by id, still remounts); bypassing Next's patch via the native
+      `History.prototype.replaceState` (Next's `HistoryUpdater` writes its URL back on the
+      next update, and it relies on internals); creating the draft on "New" (leaves
+      "Untitled" drafts, changes how drafts work); keeping form state in a layout above
+      the page (text survives, focus and uploads don't).
+    - *Testing, probe first:* before touching the editors, a temporary public route
+      (`app/remount-probe/`, deleted afterwards) copied the admin page shape (`new` and
+      `[id]` pages, own `<Suspense>`, request-time work, a server action with
+      `updateTag`) and was driven with `puppeteer-core` in Edge and real Firefox (not the
+      Playwright window): type, save without moving focus, keep typing, then check the same
+      input element, value, focus, status, scroll, fallback, other DOM changes, and
+      requests. Path swap remounted in 4 of 9 runs (whenever the router refetched; Firefox
+      also flashed the loading fallback); hash in 0 of 13, no flicker, focus kept, no
+      other DOM change in the form. Then: unit tests for `idFromHash`, the editor harness
+      (first save keeps the page; unmount + remount opens the item), a server-rendered +
+      hydrated Firefox test (`new#<id>` opens, junk hash ignored, first save stays, reload
+      opens, no hydration warnings), and the Firefox form-state repro again.
+    - *Rule kept for similar work:* changes to routing or URL handling start with a probe
+      shaped like the real pages, and **if anything flickers or loses focus, stop and tell
+      Ivan before touching the real code.**
+    - Also: `eslint.config.mjs` ignores `.playwright-mcp/**` (Claude's helper scripts
+      there were the only lint warnings). Gotcha: see "Next.js 16" below.
   - **Cleanup pending:** the test rows are deleted, but the session's uploaded test files
     (covers and snippets in `media/music/2026/10/` and `media/writing/2026/10/`, uploaded
     after 2026-10-01 10:45 UTC) are still in Storage. List them, check nothing references
     them, then delete (`.playwright-mcp/storage-tool.js` does both, with the admin session).
   - **Next steps:** (1) delete the test files above: Ivan in the Supabase dashboard
-    (Storage → `media`), or Claude with the Playwright tool if Ivan asks for it; (2) done:
-    the snippet length fix is retested and pushed; (3) Ivan's phone test
-    (checklist 8) and listening to a real snippet; (4) part 2, the snippet cutter (plan
-    first; consider high effort).
+    (Storage → `media`), or Claude with the Playwright tool if Ivan asks for it; (2) Ivan's
+    phone test (checklist 8) and listening to a real snippet; (3) part 2, the snippet
+    cutter (plan first; consider high effort). The snippet length fix and the
+    form-replaced fix are both done and pushed.
   - Playwright note: real mouse clicks in the MCP's Firefox stopped working mid-session
     (after a "Leave page?" dialog); page-level `element.click()`, `setInputFiles` and
     keyboard events kept working. Wait for `networkidle` before setting files, or the
@@ -456,6 +490,14 @@ Everything built so far, with file maps, decisions and how it was tested:
 - Inline scripts (the theme script in `app/layout.tsx`) go through
   `components/inline-script.tsx`: `text/javascript` in the server HTML, inert `text/plain`
   when React renders in the browser, which avoids React's "Encountered a script tag" warning.
+- **Never `history.replaceState` to a different route from a request-time page** (every
+  admin page). Next patches `replaceState`, treats it as a "restore", refetches the new
+  URL and, if that's another route segment (`/new` → `/[id]`), swaps the page subtree:
+  the form remounts (state, focus and uploads lost; Firefox even flashed the loading
+  fallback). It happened in 4 of 9 probe runs, whenever the router refetched. Same-route
+  changes (query or hash) are safe. That's why a new item's first save goes to `new#<id>`
+  (`useNewItemUrl` in `lib/admin/editor-url.ts`). Bypassing Next's patch doesn't work
+  either: its `HistoryUpdater` writes its own URL back on the next router update.
 - **Server actions run one at a time per browser tab.** Anything frequent or slow that
   shouldn't hold up Save (live preview, image imports, Open Library lookups) is a route
   handler instead.
