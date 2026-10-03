@@ -14,12 +14,20 @@ export function snippetLength(requested: number, trackSeconds: number): number {
   return Math.max(CUT_RULES.minSeconds, Math.min(longest, Math.round(requested)));
 }
 
+/**
+ * The latest the window can start, on a tenth of a second. (Decoded tracks
+ * often end in a few odd milliseconds of encoder padding, e.g. 180.036 s.)
+ */
+export function latestStart(length: number, trackSeconds: number): number {
+  // The tiny extra keeps 150 from becoming 149.9 when floating point gives 1499.9999999.
+  return Math.max(0, Math.floor((trackSeconds - length) / STEP_SECONDS + 1e-6) * STEP_SECONDS);
+}
+
 /** Where the window starts: rounded to a tenth of a second, and kept inside the track. */
 export function clampStart(start: number, length: number, trackSeconds: number): number {
-  const latest = Math.max(0, trackSeconds - length);
   const rounded = Number.isFinite(start) ? Math.round(start / STEP_SECONDS) * STEP_SECONDS : 0;
   // Rounding to tenths in floating point leaves tails like 0.30000000000000004.
-  return Math.min(Math.max(0, Number(rounded.toFixed(1))), latest);
+  return Number(Math.min(Math.max(0, rounded), latestStart(length, trackSeconds)).toFixed(1));
 }
 
 /**
@@ -92,7 +100,7 @@ export function loudestStart(loudness: Float64Array, length: number, trackSecond
  * (the track's own are left alone). The preview plays exactly this, and it's
  * what gets encoded. Keeps at most two channels, since an MP3 has no more.
  */
-export function cutSnippet(channels: Float32Array[], sampleRate: number, start: number, length: number): Float32Array[] {
+export function cutSnippet(channels: Float32Array[], sampleRate: number, start: number, length: number): Float32Array<ArrayBuffer>[] {
   const from = Math.round(start * sampleRate);
   const count = Math.round(length * sampleRate);
   const fadeIn = Math.round(CUT_RULES.fadeInSeconds * sampleRate);

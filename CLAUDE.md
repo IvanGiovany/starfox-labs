@@ -408,8 +408,11 @@ Everything built so far, with file maps, decisions and how it was tested:
      (LGPL-3.0; the worker starts only when the cutter opens), then the same
      `addSnippetFile` path as a manual upload. No server or database changes.
      Steps: (1) worker probe: **done**, passed in dev and production, Edge and real
-     Firefox; (2) logic + encoder + unit tests: **done, not yet committed**; (3) waveform +
-     cutter UI; (4) wire into the snippet field; (5) docs + Ivan's checklist.
+     Firefox; (2) logic + encoder + unit tests: **done, pushed** (`28cd201`); (3) waveform
+     (SVG) + cutter UI, tested in a harness in Edge and Firefox: **done, not yet
+     committed**; (4) wire into the snippet field (lazy-loaded; after "Use this snippet"
+     the cutter hides but stays mounted, keeping the track, and the field offers "Cut a
+     different part"); (5) docs + Ivan's checklist.
   - Decisions (Ivan): **several songs can be in progress**; "Now producing" shows the top
     one in the Music order. Cut snippets are 320 kbps (30 s ≈ 1.2 MB). Ivan exports full
     tracks as MP3, about 3 minutes long (limits: 200 MB, 15 minutes).

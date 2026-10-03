@@ -285,6 +285,55 @@ exports full tracks as MP3 (~3 min), so the limits (200 MB, 15 min) are generous
     CBR 320, 44.1 kHz, stereo, 30.04 s, 1.2 MB, frames fill the file), wrapper 9 with a
     fake `Worker` (request, progress, reuse, failure, cancel, newer cancels older, late
     messages ignored, load failure and retry, close).
+- **Step 3, waveform + cutter UI (done):**
+  - `components/admin/snippet-waveform.tsx`: the waveform is **SVG, not canvas** (the
+    plan said canvas): one filled path from `trackPeaks`, stretched with
+    `preserveAspectRatio="none"`, so it's sharp at any pixel density, follows the theme's
+    `light-dark()` colours (a canvas would need them resolved and redrawn) and needs no
+    redraw on resize. The window is a `role="slider"` (arrows 0.1 s, Shift 1 s,
+    PageUp/Down 5 s, Home/End) holding a second copy of the path in the accent colour,
+    shifted so it lines up with the one behind. Pointer: a press becomes a drag after
+    4 px sideways (dragging the window keeps the grab point; starting outside centres
+    it), a tap outside centres the window there, a tap on it only focuses it;
+    `touch-action: pan-y`, so a vertical swipe scrolls the page and doesn't move the
+    window (`pointercancel`). The playhead is a line the cutter moves directly.
+  - `lib/admin/snippet-cut.ts`: `latestStart` rounds the latest start **down to a tenth**:
+    decoded MP3s end in encoder padding (180.036 s), which made the end position
+    150.036 and `+1 s` look stuck. Found by the harness.
+  - `components/admin/snippet-cutter.tsx`: pick or drop the full track ("It stays on
+    this device"), "Reading the track…", then file line + "Choose another track",
+    waveform, **Starts at** (typed `1:23.5` / `83.5`, applied on Enter or leaving the
+    box; anything else shows "Type a time in the song, like 1:23.5." and keeps the old
+    value), −1 s / +1 s, **Length** (20–30 s select), a line saying what's cut and the
+    fades, **Play preview / Stop** (plays `cutSnippet`'s buffer; any change to the window
+    stops it; sets `navigator.audioSession.type = "playback"` where Safari has it, so
+    the iPhone's silent switch doesn't mute it), **Use this snippet** (encode with a
+    progress bar + Cancel, then `addSnippetFile` as a `File` named `snippet.mp3`, then
+    `onAdded`). The encoder starts on mount and closes on unmount. Busy (Save waits)
+    only while encoding or uploading; Close is disabled while uploading. Icons are SVG:
+    "▶" and "■" render as coloured emoji on Windows.
+  - Tested in a harness (esbuild bundle of the cutter in a form, fakes for `lib/media`
+    and `upload-media`, the worker bundled separately and served under the name the
+    bundle asks for, the site's CSS compiled with Tailwind), driven with `puppeteer-core`
+    in headless Edge (55 checks) and real Firefox (49; no touch or screenshots). Test
+    songs made in Node: every second its own pitch (300 Hz + 5 Hz per second), quiet
+    except a loud 60–90 s, as WAV and MP3 (3 and 5 min). Checked: wrong files (text,
+    broken MP3, 10 s clip) give their messages; the window starts at 1:00.0 (loudest);
+    the uploaded file is `snippet.mp3`, `audio/mpeg`, 1.2 MB, stereo, 30.04 s, and its
+    pitch 15 s in is the 75th second's (the right part); fades silent at both ends, half
+    level at 0.25 s; a 20 s cut from 1:35 has the 105th second's pitch and keeps the
+    quiet level (no normalising); keyboard, typed times, ±1 s, the end of the track,
+    mouse drag / click / click on the window, touch tap / drag / vertical swipe (Edge);
+    preview playhead moves at real speed (Firefox; **headless Edge's audio clock runs at
+    a tenth of real speed**, no sound device) and stops on any change; Cancel mid-encode
+    (no upload, no error, busy back to false, next encode works); "Uploading…" disables
+    Close and the controls; another track resets to its loudest part; Close; no console
+    warnings. Screenshots 1280 / 390 px, light and dark, including the window across the
+    quiet/loud boundary (both waveforms line up). Tap targets ≥ 44 px, no sideways
+    scroll at 390 px. Timings on the laptop: reading a 3-min MP3 0.3 s (Edge) / 0.6 s
+    (Firefox), 5-min 0.5 / 0.9 s; Use (encode + checks + fake upload) 1.6–2.2 s.
+  - Harness gotchas: Firefox's `uploadFile` (WebDriver BiDi) wants Windows paths with
+    backslashes; test math must use the **decoded** length (180.036 s), as the page does.
 
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
