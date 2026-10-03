@@ -426,6 +426,38 @@ exports full tracks as MP3 (~3 min), so the limits (200 MB, 15 min) are generous
      the waveform scrolls the page; preview plays (iPhone: also with the silent switch
      on); how long "Use this snippet" takes.
 
+#### 4d — Games (in progress)
+Plan (approved 2026-10-04). No database changes: the `games` table, its publish rule,
+the views and the media folder exist since 2.2. Form: the shared item fields (screenshot =
+the Projects image field, 16:9, 2400 px, `media/games/`) plus **status** (PLAYING /
+FINISHED / DROPPED toggle like Reading; FINISHED fills "Finished on" with today if empty;
+**DROPPED leaves it empty**), **platform** (text with suggestions: platforms already used,
+then PC, PlayStation 5, Nintendo Switch, Xbox Series X|S, Steam Deck; Ivan may change the
+list), **hours played** (decimal keyboard, comma allowed, at most one decimal, ≤ 99,999.9),
+**rating 1–10** as **number buttons** (one row on a laptop, two rows of five on a phone;
+tap again to clear), **finished on** (not in the future). Publishing needs the review
+article. List: drag to reorder, the status badge, detail `Platform · 42 h · 8/10 ·
+Review | No review`, and one-tap **Finished** / **Dropped** on a playing game.
+Steps: (1) definition + list change + unit tests; (2) form, list, pages, tab, harness;
+(3) docs + Ivan's checklist.
+- **Step 1 (done):**
+  - `lib/games.ts`: `PLAY_STATUSES`, `PLAY_STATUS_LABELS`, `isPlayStatus` (shared with the
+    Phase 3 page, like `lib/reading.ts`).
+  - `lib/admin/items/games.ts`: schema, `gamePublishRules` (one message on the article
+    field), `withPlayStatus` (lives here like `withReadingStatus` in `books.ts`),
+    `gameToRow` / `gameFromRow` (unknown status → playing), `PLATFORM_SUGGESTIONS`.
+    Hours stay text in the form (so the box can be empty) and become a number in the row.
+  - `lib/format.ts`: `isNotInFuture(date)`: not after the UTC date + 1 day, i.e. today in
+    the furthest-ahead time zone. The schema runs in the browser and on the UTC server, so
+    "today" has to be a rule both agree on (Brisbane is UTC+10).
+  - `components/admin/item-list.tsx`: `quickStep` → `quickSteps` (a list; a playing game
+    has two buttons). `app/admin/reading/page.tsx` passes one-element lists (or none).
+  - Tested with tsx, 12: statuses; empty game; hours (`12,5`, `.5`, `12.50` ok; `12.25`,
+    `-3`, `1e3` refused; too many) and their row values; rating 1–10 / none / 7.5;
+    platform length; finish date real and not in the future (`isNotInFuture` at 03:00 and
+    23:30 UTC); publishing needs the review (field errors first); `withPlayStatus`; the two
+    sample games round-trip and validate (Celeste can't be published).
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:

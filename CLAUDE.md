@@ -348,12 +348,13 @@ Everything built so far, with file maps, decisions and how it was tested:
   - *Rule kept for similar work:* changes to routing or URL handling start with a probe
     shaped like the real pages, and **if anything flickers or loses focus, stop and tell
     Ivan before touching the real code.**
-- **Next: 2.4d Games** (plan first; wait for approval). Then 2.4e Hobbies; then Phase 3.
-  Games per this file: platform, hours played, rating 1–10 (optional), `play_status`
-  (`PLAYING` / `FINISHED` / `DROPPED`, default playing, one-tap `PLAYING → FINISHED /
-  DROPPED` in the list), `finished_on`, screenshot image; publishing needs the linked
-  review article. Follow "How the admin is built" below (`projects.ts` / `books.ts` /
-  `tracks.ts` as models).
+- **Now: 2.4d Games** (plan approved 2026-10-04; plan and progress: `docs/build-log.md`,
+  "4d — Games"). No database changes. Rating 1–10 as number buttons (two rows of five on
+  a phone); DROPPED leaves "Finished on" empty; platform suggestions PC, PlayStation 5,
+  Nintendo Switch, Xbox Series X|S, Steam Deck (Ivan may change them). Steps: (1)
+  definition + `quickSteps` list change + unit tests: **done, not yet committed**; (2)
+  form, list, pages, tab, harness; (3) docs + Ivan's checklist. Then 2.4e Hobbies; then
+  Phase 3.
 - **For Phase 3:** Spektral is Ivan's artist name. Move it into `lib/site.ts` (e.g.
   `site.artist`; today it sits in the `now.producing` placeholder), and change the
   `home_feed` view (new migration) to label song cards `Music · <song title>` like the

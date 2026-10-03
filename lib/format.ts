@@ -38,3 +38,14 @@ export function isPlausibleToday(date: string, now = new Date()): boolean {
   const utcToday = Date.parse(now.toISOString().slice(0, 10) + "T00:00:00Z");
   return Math.abs(day.getTime() - utcToday) <= 86_400_000;
 }
+
+/**
+ * Whether a date ("2026-10-04") isn't later than today anywhere on Earth: the
+ * furthest-ahead time zone (UTC+14) is at most a day past the UTC date. The
+ * server doesn't know the admin's time zone, so this is the check the browser
+ * and the server agree on.
+ */
+export function isNotInFuture(date: string, now = new Date()): boolean {
+  const utcToday = Date.parse(now.toISOString().slice(0, 10) + "T00:00:00Z");
+  return Date.parse(`${date}T00:00:00Z`) <= utcToday + 86_400_000;
+}

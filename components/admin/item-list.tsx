@@ -38,8 +38,8 @@ export type ItemListRow = {
   cardSize: "small" | "wide";
   /** The section's own status, e.g. "READING" or "PLAYING". */
   stateBadge?: string;
-  /** A one-tap next step, e.g. { label: "Mark as read", value: "read" }. */
-  quickStep?: { label: string; value: string } | null;
+  /** One-tap next steps, e.g. [{ label: "Mark as read", value: "read" }]; a playing game has two. */
+  quickSteps?: { label: string; value: string }[];
 };
 
 /** Runs a row's quick step: a server action passed in by the section's page. */
@@ -306,17 +306,19 @@ function ItemRow({
             </button>
           </>
         )}
-        {row.quickStep && quickAction && (
-          <button
-            type="button"
-            autoComplete="off"
-            disabled={pending}
-            onClick={() => run(() => quickAction(row.id, row.quickStep!.value, localToday()))}
-            className="row-action border border-rule"
-          >
-            {row.quickStep.label}
-          </button>
-        )}
+        {quickAction &&
+          row.quickSteps?.map((step) => (
+            <button
+              key={step.value}
+              type="button"
+              autoComplete="off"
+              disabled={pending}
+              onClick={() => run(() => quickAction(row.id, step.value, localToday()))}
+              className="row-action border border-rule"
+            >
+              {step.label}
+            </button>
+          ))}
         <Link href={editHref} className="row-action no-underline">
           Edit
         </Link>

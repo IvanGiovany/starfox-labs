@@ -11,10 +11,10 @@ import { setReadingStatus } from "./actions";
 const section = ITEM_SECTIONS.reading;
 
 // The one-tap next step for each reading status. Going back is done in the form.
-const NEXT_STEP: Record<ReadingStatus, ItemListRow["quickStep"]> = {
-  to_read: { label: "Start reading", value: "reading" },
-  reading: { label: "Mark as read", value: "read" },
-  read: null,
+const NEXT_STEP: Record<ReadingStatus, NonNullable<ItemListRow["quickSteps"]>> = {
+  to_read: [{ label: "Start reading", value: "reading" }],
+  reading: [{ label: "Mark as read", value: "read" }],
+  read: [],
 };
 
 // The list streams in behind its own <Suspense> and checks the admin itself:
@@ -56,7 +56,7 @@ async function Books() {
     showOnHome: b.show_on_home,
     cardSize: b.card_size === "wide" ? "wide" : "small",
     stateBadge: READING_STATUS_LABELS[b.readingStatus],
-    quickStep: NEXT_STEP[b.readingStatus],
+    quickSteps: NEXT_STEP[b.readingStatus],
   }));
   return <ItemList sectionKey={section.key} singular={section.singular} rows={rows} order={section.order} quickAction={setReadingStatus} />;
 }
