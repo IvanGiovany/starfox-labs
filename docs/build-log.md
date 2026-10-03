@@ -426,7 +426,7 @@ exports full tracks as MP3 (~3 min), so the limits (200 MB, 15 min) are generous
      the waveform scrolls the page; preview plays (iPhone: also with the silent switch
      on); how long "Use this snippet" takes.
 
-#### 4d — Games (in progress)
+#### 4d — Games (done, tested by Ivan: checklist 1–7, laptop Firefox and phone)
 Plan (approved 2026-10-04). No database changes: the `games` table, its publish rule,
 the views and the media folder exist since 2.2. Form: the shared item fields (screenshot =
 the Projects image field, 16:9, 2400 px, `media/games/`) plus **status** (PLAYING /
@@ -457,6 +457,48 @@ Steps: (1) definition + list change + unit tests; (2) form, list, pages, tab, ha
     platform length; finish date real and not in the future (`isNotInFuture` at 03:00 and
     23:30 UTC); publishing needs the review (field errors first); `withPlayStatus`; the two
     sample games round-trip and validate (Celeste can't be published).
+- **Step 2 (done):**
+  - `components/admin/rating-buttons.tsx`: number buttons 1–`max` (`grid-cols-5
+    sm:grid-cols-10`, 44 px), single choice (`aria-pressed`), tap again to clear, arrow
+    keys, "8 out of 10" / "Not rated".
+  - `lib/admin/items/games.ts`: `platformSuggestions(used)`: used platforms first (most
+    used, merged ignoring case), then the defaults not used yet.
+  - `lib/admin/items/load-games.ts`: `getEditableGame`, `getGameSuggestions` (badges and
+    platforms from one query).
+  - `app/admin/games/`: `actions.ts` (`saveGame`; `setPlayStatus`, the list's one-tap step,
+    like `setReadingStatus`), `game-form.tsx` (status toggle as on Reading; platform
+    `<input list>` + `<datalist>`; hours `inputMode="decimal"`; rating buttons; finished
+    on), `list-row.ts` (`gameListRow` + the selected columns: kept out of the page so it
+    can be tested), `page.tsx`, `new/`, `[id]/`. Games tab on (`lib/admin/sections.ts`).
+  - Gotcha: `PageProps<"/admin/games/[id]">` only type-checks after a build (or `next
+    typegen`) has generated the new route's types.
+  - Tested: tsx 2 more (platform suggestions, list rows: zero hours shown, unknown status
+    → PLAYING). Harness (server-rendered + hydrated; fakes for `next/link`,
+    `next/navigation`, `next/image`, `lib/media`, list actions, image import, and the
+    Games actions, whose save runs the real validation), Edge and real Firefox, 28 each:
+    status toggle and dates (FINISHED fills today, never overwrites; PLAYING keeps it;
+    DROPPED leaves it empty); rating (pick, arrow keys + focus, clear; one row at 1280 px,
+    two rows of five at 390 px, ≥ 44 px, no sideways scroll); platform suggestions and
+    decimal keyboard; 12.25 h and a future date refused; the saved row (`12,5` → 12.5,
+    rating, status, date); Publish without a review → the message, nothing saved; list
+    rows (badges, detail lines, Finished + Dropped only while playing; Finished calls the
+    action with today and the row updates); Reading still one step per status; reload
+    hydrates cleanly (only the end rows' ↑ / ↓ disabled, as on a fresh load). No
+    screenshots (Ivan checks the looks).
+- **Ivan's browser checklist** (laptop Firefox, then phone; `[test] …` drafts, deleted
+  afterwards with their screenshots):
+  1. Games tab → New game: add a screenshot, pick a platform from the suggestions, hours
+     `12,5`, rating 8 (then tap 8 again: cleared; pick 7), Save draft.
+  2. Tap FINISHED: "Finished on" becomes today; DROPPED on a game without a date leaves
+     it empty.
+  3. Type `12.25` hours or a date next year → the message under the field.
+  4. Publish without a review → "A game needs its review article to be published."; then
+     "Write the article" (or pick one) and publish; unpublish right after.
+  5. List: the badge and detail line; on a playing game tap **Finished** (date filled,
+     buttons gone) and on another **Dropped**. Drag to reorder.
+  6. Edit the sample "Hollow Knight (sample)" and save: everything loads and saves.
+  7. Looks: the form and list in both themes; on the phone the rating is two rows of
+     five, the status toggle and the list's buttons are easy to tap.
 
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so

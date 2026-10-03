@@ -5,7 +5,7 @@ export const adminSections = [
   { key: "projects", label: "Projects", ready: true },
   { key: "reading", label: "Reading", ready: true },
   { key: "music", label: "Music", ready: true },
-  { key: "games", label: "Games", ready: false },
+  { key: "games", label: "Games", ready: true },
   { key: "hobbies", label: "Hobbies", ready: false },
 ] as const;
 

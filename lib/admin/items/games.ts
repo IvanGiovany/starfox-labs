@@ -25,6 +25,21 @@ const section = ITEM_SECTIONS.games;
 /** Offered in the platform box after the platforms already used. */
 export const PLATFORM_SUGGESTIONS = ["PC", "PlayStation 5", "Nintendo Switch", "Xbox Series X|S", "Steam Deck"];
 
+/**
+ * The platform box's suggestions: the ones Ivan has used (most used first),
+ * then the defaults he hasn't, without repeats that differ only in case.
+ */
+export function platformSuggestions(used: string[]): string[] {
+  const counts = new Map<string, { name: string; count: number }>();
+  for (const platform of used.map((p) => p.trim()).filter(Boolean)) {
+    const entry = counts.get(platform.toLowerCase());
+    if (entry) entry.count++;
+    else counts.set(platform.toLowerCase(), { name: platform, count: 1 });
+  }
+  const mostUsed = [...counts.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)).map((e) => e.name);
+  return [...mostUsed, ...PLATFORM_SUGGESTIONS.filter((p) => !counts.has(p.toLowerCase()))];
+}
+
 /** The column is numeric(7, 1): one decimal, under a million. */
 export const MAX_HOURS = 99_999.9;
 

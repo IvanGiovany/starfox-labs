@@ -122,7 +122,7 @@ footer, emails).
   small avatar button (menu → Settings, Sign out) or a "Sign in" text link when logged out.
 
 ## Admin (`/admin`)
-Built so far: sign-in, the Writing editor, Projects, Reading and Music (details in
+Built so far: sign-in, the Writing editor, Projects, Reading, Music and Games (details in
 `docs/build-log.md`). The requirements below apply to every section, including those
 still to build.
 - Ivan only: enforced server-side (`requireAdmin()`) and by RLS (`public.is_admin()`), not
@@ -334,7 +334,8 @@ Everything built so far, with file maps, decisions and how it was tested:
 - **Phase 1 (Foundation):** done.
 - **Phase 2 (Admin + content model):** 2.1 admin sign-in, 2.2 content schema, 2.3 `/admin`
   shell + Writing editor (form, live preview, images), 2.4a shared item pieces + Projects,
-  2.4b Reading (with Open Library autofill), **2.4c Music**: all done, tested by Ivan, pushed.
+  2.4b Reading (with Open Library autofill), **2.4c Music**, **2.4d Games**: all done, tested
+  by Ivan, pushed.
   - 2.4c Music (build log, "4c"): part 1 = the form, manual snippet upload, the server's
     snippet check, item forms waiting for uploads; then fixes (snippet length saved in
     `tracks.snippet_seconds`; a new item's editor stays on `new#<id>` after the first
@@ -348,13 +349,19 @@ Everything built so far, with file maps, decisions and how it was tested:
   - *Rule kept for similar work:* changes to routing or URL handling start with a probe
     shaped like the real pages, and **if anything flickers or loses focus, stop and tell
     Ivan before touching the real code.**
-- **Now: 2.4d Games** (plan approved 2026-10-04; plan and progress: `docs/build-log.md`,
-  "4d — Games"). No database changes. Rating 1–10 as number buttons (two rows of five on
-  a phone); DROPPED leaves "Finished on" empty; platform suggestions PC, PlayStation 5,
-  Nintendo Switch, Xbox Series X|S, Steam Deck (Ivan may change them). Steps: (1)
-  definition + `quickSteps` list change + unit tests: **done, not yet committed**; (2)
-  form, list, pages, tab, harness; (3) docs + Ivan's checklist. Then 2.4e Hobbies; then
-  Phase 3.
+  - 2.4d Games (build log, "4d"): no database changes; status toggle (FINISHED fills
+    today, DROPPED leaves the date empty), platform suggestions (used first, then PC,
+    PlayStation 5, Nintendo Switch, Xbox Series X|S, Steam Deck), hours with at most one
+    decimal, rating 1–10 as number buttons (two rows of five on a phone), finish date not
+    in the future (`isNotInFuture`); the list has one-tap Finished / Dropped (admin lists
+    now take several `quickSteps` per row). Ivan passed the checklist on laptop and phone
+    (2026-10-04).
+- **Next: 2.4e Hobbies** (plan first; wait for approval). Then Phase 3.
+  Hobbies per this file: `hobby_items` with category (e.g. Coffee, Plants, `Learning`;
+  required to publish), subtitle, note, `image_style` (`photo` / `cutout` / `none`),
+  caption, url; cards labelled `Hobbies · <category>` (chester's hobbies page in
+  `design-refs/`). "Learning" items feed the home page's Learning status card in Phase 3.
+  Follow "How the admin is built" below (`projects.ts` / `games.ts` as models).
 - **For Phase 3:** Spektral is Ivan's artist name. Move it into `lib/site.ts` (e.g.
   `site.artist`; today it sits in the `now.producing` placeholder), and change the
   `home_feed` view (new migration) to label song cards `Music · <song title>` like the
