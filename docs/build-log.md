@@ -189,7 +189,7 @@ ordered automatically** (no drag handles); every other section is drag-to-reorde
   - Side effect, intended: Firefox no longer refills typed text in the editors after a
     reload (React state never had it anyway); the local backup's Restore covers that.
 
-#### 4c — Music, part 1 (done, tested by Ivan: checklist 1–7 in Firefox; 8, phone, open)
+#### 4c — Music, part 1 (done, tested by Ivan: checklist 1–8, laptop Firefox and phone)
 Decisions (Ivan): several songs can be in progress ("Now producing" = the top one in the
 Music order); cut snippets (part 2) are MP3 at 320 kbps.
 - `lib/admin/items/tracks.ts`: the definition. Platform links are separate form fields
@@ -240,6 +240,52 @@ Music order); cut snippets (part 2) are MP3 at 320 kbps.
      other changes must still work). Drag songs to reorder.
   8. Phone: pick a snippet from Files (iPhone: Voice Memos / GarageBand exports are M4A).
 
+#### 4c — Music, part 2: the snippet cutter (in progress)
+Plan (approved 2026-10-04): in the snippet field, **Cut from the full track** (main) or
+**Upload a ready-made snippet** (part 1). The track is decoded in the browser and never
+uploaded. A window on its waveform (drag, tap, ±1 s buttons, typed start time, keyboard)
+starts on the loudest stretch; length 20–30 s in 1 s steps, default 30. Preview plays the
+cut buffer itself, so what Ivan hears is what's encoded. **Use this snippet** encodes an
+MP3 in a worker and hands it to `addSnippetFile`, so checks, upload and the saved length
+are the same as a manual upload. "Cut a different part" reuses the decoded track.
+Decisions (Ivan): adjustable length, loudest start, 0.5 s fade-in / 2 s fade-out; he
+exports full tracks as MP3 (~3 min), so the limits (200 MB, 15 min) are generous.
+
+- **Step 1, probe (done):** a temporary public route (`app/worker-probe/`, deleted) loaded
+  a component on demand that started `new Worker(new URL("./x.worker.ts",
+  import.meta.url), { type: "module" })` importing lamejs, encoded 30 s of stereo tone
+  and decoded the MP3 again. Driven with `puppeteer-core` in Edge and real Firefox, in
+  `next dev` and after `next build` + `next start`: all four passed (1,201,632 bytes,
+  decodes to 30.04 s, encoding 1.2–1.5 s on the laptop), no console warnings from it;
+  lamejs is its own 162 KB chunk, fetched only after the click (none of the page's
+  first scripts contain it). Edge logs five 404s on every public page: the header's
+  prefetches of the unbuilt section pages (known, until Phase 3).
+- **Step 2, logic + encoder (done):**
+  - `lib/admin/snippet-rules.ts`: `CUT_RULES` (20–30 s, fades, 44.1 kHz, 320 kbps,
+    track ≤ 200 MB and ≤ 15 min), `checkTrackFile` (audio type or a known extension;
+    an empty type is left to the decoder), `checkTrackDuration` (≥ 20 s, ≤ 15 min).
+  - `lib/admin/snippet-cut.ts`: pure functions on `Float32Array` channels:
+    `snippetLength`, `clampStart` (tenths of a second, inside the track), `trackPeaks`
+    (waveform), `blockLoudness` + `loudestStart` (mean square per 0.1 s, sliding window,
+    earliest wins a tie), `cutSnippet` (new arrays, at most two channels, half-cosine
+    fades so neither end clicks), `formatPosition` / `parsePosition` ("1:23.5").
+  - `lib/admin/decode-track.ts`: checks, then decodes at 44.1 kHz (so the cut is already
+    at the encoder's rate); keeps at most two channels.
+  - `lib/admin/mp3-encoding.ts` (only imported by the worker, so only the worker pulls in
+    lamejs): `toInt16` (clipped) and `encodeMp3` (1152-sample frames, mono sent as both
+    channels, progress about once a second). `lib/admin/mp3-encoder.worker.ts`: the
+    worker, typed with a small `scope` cast (the project has DOM types, not worker
+    ones). `lib/admin/snippet-encoder.ts`: `createSnippetEncoder()` starts the worker
+    at once (lamejs downloads while Ivan picks his part); `encode()` copies the arrays
+    (the cutter keeps them for preview), one encode at a time (a newer one cancels the
+    older), `cancel()` / `close()` end the worker (the only way to stop it mid-encode)
+    and reject with `EncodeCancelled`; a worker that fails to load becomes a plain
+    message and the next encode starts a new one.
+  - Tested with tsx: logic, rules and encoder 15 (incl. walking the MP3's frame headers:
+    CBR 320, 44.1 kHz, stereo, 30.04 s, 1.2 MB, frames fill the file), wrapper 9 with a
+    fake `Worker` (request, progress, reuse, failure, cancel, newer cancels older, late
+    messages ignored, load failure and retry, close).
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:
@@ -263,6 +309,11 @@ admin code is tested in pieces, then by Ivan in the browser:
     screenshot: headless Edge follows the OS dark setting otherwise.
   - Audio: there's no ffmpeg; test MP3s are made with `@breezystack/lamejs` (sine waves of
     known length and bitrate), an M4A with the browser's own `MediaRecorder`.
+  - lamejs under tsx: tsx loads project files as CommonJS, and lamejs's `require` build
+    only sets a global `lamejs` (no exports), so `Mp3Encoder` is undefined. Tests load it
+    through a `Module._resolveFilename` hook that returns that global, passed as
+    `NODE_OPTIONS="--require <hook>"` (the tsx CLI runs tests in a child process, so a
+    plain `--require` doesn't reach them). Bundlers use the ESM build; the app is fine.
   - Answer `/favicon.ico` in the test server, or its 404 counts as a console error.
 - **Public pages:** production build on another port (3124), screenshots and rendered
   HTML before/after, and per-element layout when screenshots flicker by a pixel.

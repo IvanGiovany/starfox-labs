@@ -394,24 +394,25 @@ Everything built so far, with file maps, decisions and how it was tested:
       Ivan before touching the real code.**
     - Also: `eslint.config.mjs` ignores `.playwright-mcp/**` (Claude's helper scripts
       there were the only lint warnings). Gotcha: see "Next.js 16" below.
-  - **Cleanup pending:** the test rows are deleted, but the session's uploaded test files
-    (covers and snippets in `media/music/2026/10/` and `media/writing/2026/10/`, uploaded
-    after 2026-10-01 10:45 UTC) are still in Storage. List them, check nothing references
-    them, then delete (`.playwright-mcp/storage-tool.js` does both, with the admin session).
-  - **Next steps:** (1) delete the test files above: Ivan in the Supabase dashboard
-    (Storage → `media`), or Claude with the Playwright tool if Ivan asks for it; (2) Ivan's
-    phone test (checklist 8) and listening to a real snippet; (3) part 2, the snippet
-    cutter (plan first; consider high effort). The snippet length fix and the
-    form-replaced fix are both done and pushed.
+  - Ivan deleted the session's test files from Storage and passed the phone test
+    (checklist 8) by 2026-10-04. Part 1 is finished.
   - Playwright note: real mouse clicks in the MCP's Firefox stopped working mid-session
     (after a "Leave page?" dialog); page-level `element.click()`, `setInputFiles` and
     keyboard events kept working. Wait for `networkidle` before setting files, or the
     change event fires before hydration and is lost.
-  2. The in-browser snippet cutter (waveform, pick 20–30 s, preview, 0.5 s / 2 s fades,
-     **MP3 at 320 kbps** stereo in a Web Worker with `@breezystack/lamejs`; the encoder
-     loads only when the cutter opens).
+  2. **The in-browser snippet cutter** (plan approved 2026-10-04; full plan and progress:
+     `docs/build-log.md`, "4c — Music, part 2"). Pick the full track (stays on the
+     device), waveform with a window that starts on the loudest part, length 20–30 s in
+     1 s steps (default 30), preview = exactly what's encoded, **0.5 s fade-in, 2 s
+     fade-out**, **MP3 at 320 kbps** stereo in a Web Worker with `@breezystack/lamejs`
+     (LGPL-3.0; the worker starts only when the cutter opens), then the same
+     `addSnippetFile` path as a manual upload. No server or database changes.
+     Steps: (1) worker probe: **done**, passed in dev and production, Edge and real
+     Firefox; (2) logic + encoder + unit tests: **done, not yet committed**; (3) waveform +
+     cutter UI; (4) wire into the snippet field; (5) docs + Ivan's checklist.
   - Decisions (Ivan): **several songs can be in progress**; "Now producing" shows the top
-    one in the Music order. Cut snippets are 320 kbps (30 s ≈ 1.2 MB).
+    one in the Music order. Cut snippets are 320 kbps (30 s ≈ 1.2 MB). Ivan exports full
+    tracks as MP3, about 3 minutes long (limits: 200 MB, 15 minutes).
 - Then 2.4d Games, 2.4e Hobbies; then Phase 3.
 - **For Phase 3:** Spektral is Ivan's artist name. Move it into `lib/site.ts` (e.g.
   `site.artist`; today it sits in the `now.producing` placeholder), and change the

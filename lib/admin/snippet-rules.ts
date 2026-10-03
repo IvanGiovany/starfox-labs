@@ -16,6 +16,24 @@ export const SNIPPET_RULES = {
 
 export type SnippetExtension = keyof typeof SNIPPET_RULES.types;
 
+/** The snippet cutter: a snippet cut in the browser from the full track. */
+export const CUT_RULES = {
+  /** Seconds. Ivan picks the length in whole seconds; it starts at the longest. */
+  minSeconds: 20,
+  maxSeconds: SNIPPET_RULES.maxSeconds,
+  fadeInSeconds: 0.5,
+  fadeOutSeconds: 2,
+  /** The track is decoded at this rate and the snippet encoded at it: CD quality, MP3's usual rate. */
+  sampleRate: 44_100,
+  kbps: 320,
+  /**
+   * The full track stays on the device. A decoded stereo minute takes about 21 MB
+   * of memory, so these keep a phone comfortable (a 3-minute MP3 is about 7 MB).
+   */
+  maxTrackBytes: 200 * 1024 * 1024,
+  maxTrackSeconds: 15 * 60,
+} as const;
+
 /** "music/2026/10/abc.mp3": our own MP3 or M4A in the music folder. */
 export function isSnippetPath(path: string): boolean {
   return isMediaPath(path, "music") && /\.(mp3|m4a)$/.test(path);
@@ -63,6 +81,34 @@ export function checkSnippetDuration(seconds: number): void {
     // Seconds with one decimal: rounded to "0:30", a 30.4 s clip would look allowed.
     const shown = seconds < 60 ? `${seconds.toFixed(1)} seconds` : formatDuration(seconds);
     throw new SnippetError(`This clip is ${shown} long; a snippet can be at most ${SNIPPET_RULES.maxSeconds} seconds.`);
+  }
+}
+
+// Any audio the browser can decode will do for the full track; the name helps
+// when a system reports the type wrongly or not at all.
+const TRACK_EXTENSIONS = /\.(mp3|m4a|mp4|aac|wav|flac|ogg|oga|opus|webm|aif|aiff)$/i;
+
+/** Checks the full track before it's decoded: that it's audio, and its size. */
+export function checkTrackFile(file: { name: string; type: string; size: number }): void {
+  if (file.type && !file.type.startsWith("audio/") && !TRACK_EXTENSIONS.test(file.name)) {
+    throw new SnippetError("That isn't an audio file. Pick the song's MP3 or WAV export.");
+  }
+  if (file.size === 0) throw new SnippetError("This file is empty.");
+  if (file.size > CUT_RULES.maxTrackBytes) {
+    throw new SnippetError(`This file is ${formatBytes(file.size)}; the full track can be at most 200 MB. Export it as an MP3.`);
+  }
+}
+
+/** Checks the full track's length, read by decoding it. */
+export function checkTrackDuration(seconds: number): void {
+  if (!Number.isFinite(seconds) || seconds <= 0) throw new SnippetError("Couldn't tell how long this track is. Try exporting it again.");
+  if (seconds < CUT_RULES.minSeconds) {
+    throw new SnippetError(
+      `This track is only ${seconds.toFixed(1)} seconds long; cutting needs at least ${CUT_RULES.minSeconds}. Upload it as a ready-made snippet instead.`,
+    );
+  }
+  if (seconds > CUT_RULES.maxTrackSeconds) {
+    throw new SnippetError(`This track is ${formatDuration(seconds)} long; the cutter takes up to 15 minutes. Export the part around the snippet.`);
   }
 }
 
