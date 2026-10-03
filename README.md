@@ -156,4 +156,6 @@ Built one phase at a time; the full plan is in [CLAUDE.md](CLAUDE.md#build-phase
 Design inspired by [chester.how](https://chester.how) (layout and card grid) and
 [jmduke.com](https://www.jmduke.com) (tag filters, warm dark mode). Code and writing are my
 own. Fonts: [Newsreader](https://github.com/productiontype/Newsreader) and
-[Inter](https://github.com/rsms/inter), both under the SIL Open Font License.
+[Inter](https://github.com/rsms/inter), both under the SIL Open Font License. Song snippets
+cut in the admin are encoded with [lamejs](https://github.com/shijinyu/lamejs) (`@breezystack/lamejs` (a
+on npm; a JavaScript port of the LAME MP3 encoder, LGPL-3.0), used unmodified in its own Web Worker.

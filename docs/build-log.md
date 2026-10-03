@@ -240,7 +240,54 @@ Music order); cut snippets (part 2) are MP3 at 320 kbps.
      other changes must still work). Drag songs to reorder.
   8. Phone: pick a snippet from Files (iPhone: Voice Memos / GarageBand exports are M4A).
 
-#### 4c — Music, part 2: the snippet cutter (in progress)
+#### 4c — fixes after part 1 (done, tested by Ivan, pushed)
+Claude re-ran checklist 1–7 in the Playwright window on 2026-10-01 (all pass; mouse drag
+untestable there, reorder passed via ↑↓ and keyboard). That run found three small bugs:
+- Article editor "Wait for the images…" message and `.gitignore` (`40e6429`, `f57ab8b`).
+- **Snippet length** (`a99e3b2`, retested by Ivan 2026-10-02). After a reload, the
+  browser-recorded `test-8s.m4a` showed "M4A · 0:00". Cause: the file states two lengths
+  (movie header 7.018 s, track header 0.146 s, milliseconds written into a 48 kHz field),
+  and Firefox's player trusts the wrong one. Fix: the decoded length is saved at upload in
+  `tracks.snippet_seconds` (migration `20261002100000`, applied; additive, nullable) and
+  shown before the player's figure; older rows fall back to the player. Files: the
+  migration, `lib/database.types.ts`, `lib/admin/items/tracks.ts`,
+  `lib/admin/items/item-errors.ts`, `components/admin/snippet-field.tsx` (also reads the
+  player's state on mount), `app/admin/music/track-form.tsx`. Reproduced and verified in
+  real Firefox (0:00 without, 0:07 with the saved length).
+- **Form replaced after the first save** (`3405dca`, tested by Ivan, all 7 checks):
+  - *Bug:* after the first save of a new item or article, the editors did
+    `history.replaceState` to `/<id>`. Next patches `replaceState` and dispatches a
+    "restore"; on request-time admin pages the router refetched the new URL, got the
+    `[id]` route (another segment) and swapped the page subtree about a second later.
+    Lost: typing in that second, focus, the "Saved at" message, uploads in progress.
+  - *Fix:* stay on the `new` page and put the id in the hash: `new#<id>`.
+    `lib/admin/editor-url.ts` → `useNewItemUrl(isNewPage, editHref)` gives the editors
+    `rememberNewId` (first save) and `reopening` (a reload, Back or pasted link on
+    `new#<id>` shows "Opening the saved …" and `router.replace`s to `/<id>`). Only UUIDs
+    are accepted from the hash. Ids an open editor saved itself are ignored (otherwise its
+    own first save would trigger "Opening…"); they're released on unmount, so Back still
+    works. Keeps `?for=` (article editor). "Save and add another" clears the hash.
+    Trade-off: the address bar shows `…/new#<id>` while the form is open.
+  - *Rejected:* `router.replace('/<id>')` (another segment always remounts); one route for
+    new and edit (keyed by id, still remounts); bypassing Next's patch via the native
+    `History.prototype.replaceState` (Next's `HistoryUpdater` writes its URL back on the
+    next update, and it relies on internals); creating the draft on "New" (leaves
+    "Untitled" drafts); keeping form state in a layout above the page (text survives,
+    focus and uploads don't).
+  - *Testing, probe first:* a temporary public route (`app/remount-probe/`, deleted) copied
+    the admin page shape (`new` and `[id]` pages, own `<Suspense>`, request-time work, a
+    server action with `updateTag`), driven with `puppeteer-core` in Edge and real
+    Firefox: path swap remounted in 4 of 9 runs (Firefox also flashed the loading
+    fallback); hash in 0 of 13, no flicker, focus kept. Then unit tests for `idFromHash`,
+    the editor harness, a server-rendered + hydrated Firefox test, and the Firefox
+    form-state repro again.
+  - Also: `eslint.config.mjs` ignores `.playwright-mcp/**` (`fc21208`).
+- Playwright note: real mouse clicks in the MCP's Firefox stopped working mid-session
+  (after a "Leave page?" dialog); page-level `element.click()`, `setInputFiles` and
+  keyboard events kept working. Wait for `networkidle` before setting files, or the change
+  event fires before hydration and is lost.
+
+#### 4c — Music, part 2: the snippet cutter (done, tested by Ivan: checklist 1–8, laptop Firefox and phone)
 Plan (approved 2026-10-04): in the snippet field, **Cut from the full track** (main) or
 **Upload a ready-made snippet** (part 1). The track is decoded in the browser and never
 uploaded. A window on its waveform (drag, tap, ±1 s buttons, typed start time, keyboard)
@@ -334,6 +381,50 @@ exports full tracks as MP3 (~3 min), so the limits (200 MB, 15 min) are generous
     (Firefox), 5-min 0.5 / 0.9 s; Use (encode + checks + fake upload) 1.6–2.2 s.
   - Harness gotchas: Firefox's `uploadFile` (WebDriver BiDi) wants Windows paths with
     backslashes; test math must use the **decoded** length (180.036 s), as the page does.
+- **Step 4, wired into the snippet field (done):**
+  - `components/admin/snippet-field.tsx`: the picker offers **Cut from the full track**
+    and **Upload a ready-made snippet** (Replace offers both, plus Cancel). The cutter is
+    `next/dynamic` with `ssr: false`, so its code (and the worker it starts) loads only
+    when opened ("Opening the cutter…"); if its chunk can't be fetched, the loader
+    returns `CutterUnavailable` (a message and Close) instead of throwing, so the form
+    survives. The cutter's state is `closed` / `open` / `hidden`: after "Use this
+    snippet" it's **hidden but still mounted**, so **Cut a different part** reopens it
+    with the decoded track (no new file pick); Close unmounts it (frees the track and
+    ends the worker). While it's open, the picker and Replace / Remove are hidden. The
+    field's busy = its own upload or the cutter's encode/upload.
+  - Build check (`next build`): the field's chunk is in `/admin/music/new`'s client
+    manifest; the cutter's chunk isn't (only the dynamic loader references it), and
+    lamejs is referenced only by the cutter's chunk and Turbopack's worker bootstrap.
+  - Tested in a second harness (`renderToString` on Node, `hydrateRoot` in the browser,
+    esbuild code splitting standing in for `next/dynamic`, a server switch that fails
+    chunk requests), headless Edge and real Firefox, 21 checks each, all passing: the
+    first load has neither the cutter's code nor the worker, opening loads both; cut →
+    the field's player (`MP3 · 0:30 · 1.1 MB`: MB is 1024²), cutter hidden, then "Cut a
+    different part" / Replace / Remove; busy `[true, false]`; reopening shows the same
+    track and a second cut replaces the first; Close removes it; Replace + ready-made
+    upload; Remove, then the cutter opens fresh; **reload hydrates cleanly in Firefox**
+    after buttons were disabled and re-enabled (no form-state restore warnings);
+    offline: the message, and Close brings the picker back. In development the worker
+    is requested twice (Strict Mode runs the effect twice); production starts one.
+  - Each "Use this snippet" uploads a new file; replaced snippets stay in Storage (same as
+    replacing an uploaded one; see "Unused media" in CLAUDE.md).
+- **Ivan's browser checklist** (laptop Firefox, then phone; a `[test] …` draft, deleted
+  afterwards with its uploaded snippets):
+  1. Music → New song → Audio snippet: **Cut from the full track** → pick a real MP3
+     export. The waveform appears and the window sits on the loudest part.
+  2. Move the window: drag it, click elsewhere on the waveform, type a start (`1:23.5`),
+     −1 s / +1 s, arrow keys (Shift for whole seconds). Set Length to 20 s.
+  3. **Play preview**: it plays just the window, fading in and out; moving the window
+     stops it.
+  4. **Use this snippet**: progress bar, then the snippet's player shows it (MP3, its
+     length). Tap Save draft while it's still making the MP3 → asked to wait.
+  5. **Cut a different part** → same track, no new file pick; cut again → replaced.
+     Close; Replace → **Upload a ready-made snippet** still works.
+  6. Save the draft, reload: the snippet and its length are still there.
+  7. Looks: both themes, the waveform and window, the panel at phone width.
+  8. Phone: pick the full track from Files; drag with a finger; a vertical swipe over
+     the waveform scrolls the page; preview plays (iPhone: also with the silent switch
+     on); how long "Use this snippet" takes.
 
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so

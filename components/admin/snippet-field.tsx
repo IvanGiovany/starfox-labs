@@ -1,14 +1,44 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useEffectEvent, useRef, useState, type DragEvent } from "react";
 import { addSnippetFile, snippetErrorMessage, type AddedSnippet } from "@/lib/admin/add-snippet";
 import { formatBytes, formatDuration, SNIPPET_RULES } from "@/lib/admin/snippet-rules";
 import { mediaUrl } from "@/lib/media";
+import type { SnippetCutter as SnippetCutterType } from "./snippet-cutter";
 
-// A song's audio snippet: drop or choose a ready-made MP3 or M4A (at most 30 s
-// and 2 MB). It's checked in the browser, uploaded to media/music/, and then
-// shown with the browser's own player so Ivan can hear the right file is
-// attached. (The site's custom player comes with the public Music page.)
+// A song's audio snippet, two ways in: cut it from the full song in the browser
+// (the snippet cutter), or drop or choose a ready-made MP3 or M4A (at most 30 s
+// and 2 MB). Either way it's checked, uploaded to media/music/, and then shown
+// with the browser's own player so Ivan can hear the right file is attached.
+// (The site's custom player comes with the public Music page.)
+
+// The cutter (and the MP3 encoder it starts) only downloads when it's opened.
+// If its code can't be fetched (offline), it says so instead of breaking the form.
+const SnippetCutter = dynamic(
+  () =>
+    import("./snippet-cutter").then(
+      (module) => module.SnippetCutter,
+      () => CutterUnavailable,
+    ),
+  { ssr: false, loading: () => <p className="text-sm text-fg-muted">Opening the cutter…</p> },
+);
+
+function CutterUnavailable({ onClose }: Parameters<typeof SnippetCutterType>[0]) {
+  return (
+    <div className="rounded-xl border border-rule p-3 text-sm sm:p-4">
+      <p role="alert" className="text-danger">
+        Couldn&rsquo;t load the cutter. Check your connection, save, and reload the page; or upload a ready-made snippet.
+      </p>
+      <button type="button" onClick={onClose} className="row-action mt-2 border border-rule">
+        Close
+      </button>
+    </div>
+  );
+}
+
+/** "closed": not loaded. "hidden": a snippet was just cut; kept (with its track) for another go. */
+type CutterState = "closed" | "open" | "hidden";
 
 export function SnippetField({
   id,
@@ -32,12 +62,15 @@ export function SnippetField({
   onBusyChange?: (busy: boolean) => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const [cutter, setCutter] = useState<CutterState>("closed");
+  const [cutterBusy, setCutterBusy] = useState(false);
+  const anyBusy = busy || cutterBusy;
   const reportBusy = useEffectEvent((isBusy: boolean) => onBusyChange?.(isBusy));
   useEffect(() => {
-    if (!busy) return;
+    if (!anyBusy) return;
     reportBusy(true);
     return () => reportBusy(false); // done, or the field went away mid-upload
-  }, [busy]);
+  }, [anyBusy]);
   const [error, setError] = useState<string | null>(null);
   const [replacing, setReplacing] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -106,11 +139,25 @@ export function SnippetField({
         .filter(Boolean)
         .join(" · ");
 
-  const showPicker = !path || replacing;
+  function addCut(snippet: AddedSnippet) {
+    setError(null);
+    setUploaded(snippet);
+    onAdded(snippet);
+    setReplacing(false);
+    setCutter("hidden");
+  }
+
+  function openCutter() {
+    setError(null);
+    setCutter("open");
+  }
+
+  const cutterOpen = cutter === "open";
+  const showPicker = (!path || replacing) && !cutterOpen;
 
   return (
     // The id is on the whole field, so the form can focus it when there's an error.
-    <div id={id} tabIndex={-1} role="group" aria-label="Audio snippet" aria-describedby={describedBy} aria-busy={busy} className="outline-none">
+    <div id={id} tabIndex={-1} role="group" aria-label="Audio snippet" aria-describedby={describedBy} aria-busy={anyBusy} className="outline-none">
       {path && (
         <div className="rounded-xl bg-bg-raised p-3">
           <audio
@@ -128,14 +175,26 @@ export function SnippetField({
         </div>
       )}
 
-      {path && !replacing && (
+      {path && !replacing && !cutterOpen && (
         <div className="mt-2 flex flex-wrap gap-1 text-sm">
+          {cutter === "hidden" && (
+            <button type="button" onClick={openCutter} className="row-action border border-rule">
+              Cut a different part
+            </button>
+          )}
           <button type="button" onClick={() => setReplacing(true)} className="row-action border border-rule">
             Replace
           </button>
           <button type="button" onClick={onRemove} className="row-action">
             Remove
           </button>
+        </div>
+      )}
+
+      {cutter !== "closed" && (
+        // Hidden rather than closed after a cut, so "Cut a different part" doesn't need the file again.
+        <div hidden={!cutterOpen} className={path ? "mt-2" : ""}>
+          <SnippetCutter onAdded={addCut} onClose={() => setCutter("closed")} onBusyChange={setCutterBusy} />
         </div>
       )}
 
@@ -153,11 +212,14 @@ export function SnippetField({
         >
           {/* \u00a0 is a non-breaking space, so "2 MB" never splits across lines. */}
           <p aria-live="polite" className="text-fg-muted">
-            {busy ? "Checking and uploading…" : `Drop an MP3 or M4A here: up to ${SNIPPET_RULES.maxSeconds}\u00a0seconds and 2\u00a0MB.`}
+            {busy ? "Checking and uploading…" : `Cut it from the full song, or drop a ready-made MP3 or M4A here: up to ${SNIPPET_RULES.maxSeconds}\u00a0seconds and 2\u00a0MB.`}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" disabled={busy} onClick={openCutter} className="row-action border border-rule font-medium text-fg">
+              Cut from the full track
+            </button>
             <button type="button" disabled={busy} onClick={() => fileInput.current?.click()} className="row-action border border-rule">
-              Choose file
+              Upload a ready-made snippet
             </button>
             {replacing && (
               <button type="button" disabled={busy} onClick={() => setReplacing(false)} className="row-action">

@@ -122,7 +122,7 @@ footer, emails).
   small avatar button (menu → Settings, Sign out) or a "Sign in" text link when logged out.
 
 ## Admin (`/admin`)
-Built so far: sign-in, the Writing editor, Projects and Reading (details in
+Built so far: sign-in, the Writing editor, Projects, Reading and Music (details in
 `docs/build-log.md`). The requirements below apply to every section, including those
 still to build.
 - Ivan only: enforced server-side (`requireAdmin()`) and by RLS (`public.is_admin()`), not
@@ -327,96 +327,33 @@ Track *active days* and *articles read* (one read per article per user), not raw
 - Use Supabase Row Level Security on every table.
 - Run `npm run build` and fix errors before saying a step is done.
 
-## Where we left off (updated 2026-10-02)
+## Where we left off (updated 2026-10-04)
 Everything built so far, with file maps, decisions and how it was tested:
 **`docs/build-log.md`**. Read the relevant part before changing that area.
 
 - **Phase 1 (Foundation):** done.
 - **Phase 2 (Admin + content model):** 2.1 admin sign-in, 2.2 content schema, 2.3 `/admin`
   shell + Writing editor (form, live preview, images), 2.4a shared item pieces + Projects,
-  2.4b Reading (with Open Library autofill): all done, tested by Ivan, pushed.
-- **Now: 2.4c Music** (plan approved 2026-10-01), in two parts:
-  1. *Done, committed and pushed* (`34d788c`; the Firefox form-state fix is its own commit,
-     `af1c936`): the form, manual snippet upload, the server's snippet check, item forms
-     waiting for uploads, list and pages. Details: `docs/build-log.md`, 4c. Ivan passed
-     checklist 1–7 by hand; Claude re-ran 1–7 in the Playwright window on 2026-10-01 (all
-     pass; mouse drag untestable there, reorder passed via ↑↓ and keyboard). That run
-     found three small bugs, all fixed, tested by Ivan, committed and pushed:
-     - Article editor "Wait for the images…" message and `.gitignore` (`40e6429`, `f57ab8b`).
-     - **Snippet length** (retested by Ivan 2026-10-02). His first test 2.1 failed:
-       after a reload, the browser-recorded `test-8s.m4a` showed "M4A · 0:00". Cause: the
-       file states two lengths (movie header 7.018 s, track header 0.146 s, milliseconds
-       written into a 48 kHz field), and Firefox's player trusts the wrong one. Fix: the
-       decoded length is saved at upload in `tracks.snippet_seconds` (migration
-       `20261002100000`, **already applied** to the live database; additive, nullable) and
-       shown before the player's figure; older rows fall back to the player. Files:
-       the migration, `lib/database.types.ts`, `lib/admin/items/tracks.ts`,
-       `lib/admin/items/item-errors.ts`, `components/admin/snippet-field.tsx` (also reads
-       the player's state on mount, which Ivan's 2.2 passed), `app/admin/music/track-form.tsx`.
-       Reproduced and verified in real Firefox (0:00 without, 0:07 with the saved length).
-  - **Form replaced after the first save: done 2026-10-02, tested by Ivan (all 7 checks),
-    committed and pushed.** The full plan, kept for reference:
-    - *Bug:* after the first save of a new item or article, the editors did
-      `history.replaceState` to `/<id>`. Next patches `replaceState` and dispatches a
-      "restore"; on request-time admin pages the router refetched the new URL, got the
-      `[id]` route (another segment) and swapped the page subtree about a second later.
-      Lost: typing in that second, focus, the "Saved at" message, uploads in progress.
-      Every item editor and the article editor.
-    - *Fix:* stay on the `new` page and put the id in the hash: `new#<id>`.
-      `lib/admin/editor-url.ts` → `useNewItemUrl(isNewPage, editHref)` gives the editors
-      `rememberNewId` (first save) and `reopening` (a reload, Back or pasted link on
-      `new#<id>` shows "Opening the saved …" and `router.replace`s to `/<id>`). Only
-      UUIDs are accepted from the hash. Ids an open editor saved itself are ignored
-      (otherwise its own first save would trigger "Opening…", caught while building);
-      they're released on unmount, so Back still works. Keeps `?for=` (article editor).
-      "Save and add another" clears the hash as before. Trade-off: the address bar shows
-      `…/new#<id>` while the form is open.
-    - *Rejected:* `router.replace('/<id>')` (another segment always remounts); one route
-      for new and edit (keyed by id, still remounts); bypassing Next's patch via the native
-      `History.prototype.replaceState` (Next's `HistoryUpdater` writes its URL back on the
-      next update, and it relies on internals); creating the draft on "New" (leaves
-      "Untitled" drafts, changes how drafts work); keeping form state in a layout above
-      the page (text survives, focus and uploads don't).
-    - *Testing, probe first:* before touching the editors, a temporary public route
-      (`app/remount-probe/`, deleted afterwards) copied the admin page shape (`new` and
-      `[id]` pages, own `<Suspense>`, request-time work, a server action with
-      `updateTag`) and was driven with `puppeteer-core` in Edge and real Firefox (not the
-      Playwright window): type, save without moving focus, keep typing, then check the same
-      input element, value, focus, status, scroll, fallback, other DOM changes, and
-      requests. Path swap remounted in 4 of 9 runs (whenever the router refetched; Firefox
-      also flashed the loading fallback); hash in 0 of 13, no flicker, focus kept, no
-      other DOM change in the form. Then: unit tests for `idFromHash`, the editor harness
-      (first save keeps the page; unmount + remount opens the item), a server-rendered +
-      hydrated Firefox test (`new#<id>` opens, junk hash ignored, first save stays, reload
-      opens, no hydration warnings), and the Firefox form-state repro again.
-    - *Rule kept for similar work:* changes to routing or URL handling start with a probe
-      shaped like the real pages, and **if anything flickers or loses focus, stop and tell
-      Ivan before touching the real code.**
-    - Also: `eslint.config.mjs` ignores `.playwright-mcp/**` (Claude's helper scripts
-      there were the only lint warnings). Gotcha: see "Next.js 16" below.
-  - Ivan deleted the session's test files from Storage and passed the phone test
-    (checklist 8) by 2026-10-04. Part 1 is finished.
-  - Playwright note: real mouse clicks in the MCP's Firefox stopped working mid-session
-    (after a "Leave page?" dialog); page-level `element.click()`, `setInputFiles` and
-    keyboard events kept working. Wait for `networkidle` before setting files, or the
-    change event fires before hydration and is lost.
-  2. **The in-browser snippet cutter** (plan approved 2026-10-04; full plan and progress:
-     `docs/build-log.md`, "4c — Music, part 2"). Pick the full track (stays on the
-     device), waveform with a window that starts on the loudest part, length 20–30 s in
-     1 s steps (default 30), preview = exactly what's encoded, **0.5 s fade-in, 2 s
-     fade-out**, **MP3 at 320 kbps** stereo in a Web Worker with `@breezystack/lamejs`
-     (LGPL-3.0; the worker starts only when the cutter opens), then the same
-     `addSnippetFile` path as a manual upload. No server or database changes.
-     Steps: (1) worker probe: **done**, passed in dev and production, Edge and real
-     Firefox; (2) logic + encoder + unit tests: **done, pushed** (`28cd201`); (3) waveform
-     (SVG) + cutter UI, tested in a harness in Edge and Firefox: **done, not yet
-     committed**; (4) wire into the snippet field (lazy-loaded; after "Use this snippet"
-     the cutter hides but stays mounted, keeping the track, and the field offers "Cut a
-     different part"); (5) docs + Ivan's checklist.
+  2.4b Reading (with Open Library autofill), **2.4c Music**: all done, tested by Ivan, pushed.
+  - 2.4c Music (build log, "4c"): part 1 = the form, manual snippet upload, the server's
+    snippet check, item forms waiting for uploads; then fixes (snippet length saved in
+    `tracks.snippet_seconds`; a new item's editor stays on `new#<id>` after the first
+    save); part 2 = **the in-browser snippet cutter** (pick the full track, waveform with
+    a window on the loudest part, 20–30 s, preview, 0.5 s / 2 s fades, MP3 at 320 kbps in
+    a Web Worker with `@breezystack/lamejs`, LGPL-3.0, loaded only when the cutter
+    opens). Ivan passed every checklist on laptop Firefox and phone (2026-10-04).
   - Decisions (Ivan): **several songs can be in progress**; "Now producing" shows the top
     one in the Music order. Cut snippets are 320 kbps (30 s ≈ 1.2 MB). Ivan exports full
-    tracks as MP3, about 3 minutes long (limits: 200 MB, 15 minutes).
-- Then 2.4d Games, 2.4e Hobbies; then Phase 3.
+    tracks as MP3, about 3 minutes long (cutter limits: 200 MB, 15 minutes).
+  - *Rule kept for similar work:* changes to routing or URL handling start with a probe
+    shaped like the real pages, and **if anything flickers or loses focus, stop and tell
+    Ivan before touching the real code.**
+- **Next: 2.4d Games** (plan first; wait for approval). Then 2.4e Hobbies; then Phase 3.
+  Games per this file: platform, hours played, rating 1–10 (optional), `play_status`
+  (`PLAYING` / `FINISHED` / `DROPPED`, default playing, one-tap `PLAYING → FINISHED /
+  DROPPED` in the list), `finished_on`, screenshot image; publishing needs the linked
+  review article. Follow "How the admin is built" below (`projects.ts` / `books.ts` /
+  `tracks.ts` as models).
 - **For Phase 3:** Spektral is Ivan's artist name. Move it into `lib/site.ts` (e.g.
   `site.artist`; today it sits in the `now.producing` placeholder), and change the
   `home_feed` view (new migration) to label song cards `Music · <song title>` like the
