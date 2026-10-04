@@ -1,5 +1,8 @@
 import Image from "next/image";
+import { Badge } from "@/components/badge";
+import { BookCover, Stars } from "@/components/book-card";
 import { detailList, detailText, type PostItem } from "@/lib/post-items";
+import { READING_STATUS_LABELS, READING_STATUSES, type ReadingStatus } from "@/lib/reading";
 
 // The "about this" panel near the top of an article that an item links to: a
 // quiet raised box with the item's picture and its key facts. Each section
@@ -9,6 +12,8 @@ export function AboutItem({ item }: { item: PostItem }) {
   switch (item.section) {
     case "projects":
       return <AboutProject item={item} />;
+    case "books":
+      return <AboutBook item={item} />;
     default:
       return null;
   }
@@ -40,6 +45,39 @@ function AboutProject({ item }: { item: PostItem }) {
             ))}
           </p>
         )}
+      </div>
+    </aside>
+  );
+}
+
+/** A number field from an item's details, or null. */
+const detailNumber = (details: Record<string, unknown>, key: string): number | null =>
+  typeof details[key] === "number" ? (details[key] as number) : null;
+
+function AboutBook({ item }: { item: PostItem }) {
+  const author = detailText(item.details, "author");
+  const status = detailText(item.details, "reading_status");
+  const rating = detailNumber(item.details, "rating");
+  const year = detailNumber(item.details, "published_year");
+  const pages = detailNumber(item.details, "page_count");
+  const facts = [year && String(year), pages && `${pages} pages`].filter(Boolean).join(" · ");
+
+  return (
+    <aside aria-label="About this book" className="flex items-end gap-4 rounded-xl bg-bg-raised p-4 sm:gap-5 sm:p-5">
+      <div className="w-20 shrink-0 sm:w-24">
+        <BookCover title={item.title} author={author} coverUrl={item.imageUrl} coverAlt={item.imageAlt} sizes="96px" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-xs text-fg-muted">About this book</p>
+        <p className="mt-1 font-serif text-2xl leading-tight">{item.title}</p>
+        {author && <p className="mt-0.5 text-sm text-fg-muted">{author}</p>}
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+          {status && (READING_STATUSES as readonly string[]).includes(status) && (
+            <Badge>{READING_STATUS_LABELS[status as ReadingStatus]}</Badge>
+          )}
+          {rating != null && <Stars rating={rating} />}
+          {facts && <span className="text-fg-muted">{facts}</span>}
+        </div>
       </div>
     </aside>
   );

@@ -351,8 +351,10 @@ Everything built so far, with file maps, decisions and how it was tested:
   and test methods: `docs/build-log.md`, "Phase 3". Steps:
   1. Shared pieces + chester-style motion + **Projects: done** (tested by Ivan on laptop
      and phone, pushed `a55f081`).
-  2. **Reading: next.** Ivan says when to start; build, test, give him the checklist.
-  3. Music + the custom audio player + the song "about this" panel. **Before building,
+  2. **Reading: done** (tested by Ivan, checklist 1–8, pushed). Book titles in the sans,
+     `Reading · Shelf` filler, ratings only on wide cards and in the "about this" panel
+     (Ivan's choices).
+  3. **Music: next.** Music + the custom audio player + the song "about this" panel. **Before building,
      propose a hover effect for the song cards that feels musical but fits chester's
      style, and wait for Ivan's OK.**
   4. Games. **In the step plan, spell out exactly what the "pop up" hover does** (Ivan
@@ -407,6 +409,9 @@ Everything built so far, with file maps, decisions and how it was tested:
   `SectionHeader`, the cached-loader pattern in `lib/projects.ts` (`"use cache"`,
   `cacheLife("hours")`, `cacheTag(section tag, "posts")`, `supabasePublic`, link only to
   published articles), `getPostItem` + `AboutItem` (add a `case` per section).
+  Step 2 added `lib/books.ts` (`getPublishedBooks`, `bookLinks`) and
+  `components/book-card.tsx` (`BookCard`, `BookCover` with the typed cover and `tilt`,
+  `Stars`) for the home grid in step 6.
   Shared helpers: `lib/reading.ts` (`compareBooks`, `READING_STATUS_LABELS`),
   `lib/games.ts`, `lib/hobbies.ts`. Remove each section from `app/not-found.tsx`'s
   "still being built" line as it lands.
@@ -457,9 +462,9 @@ Everything built so far, with file maps, decisions and how it was tested:
 - **Vercel** (Ivan to confirm it's done): Production Branch = `main`; env vars
   `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (the publishable
   key, NOT `..._ANON_KEY` as first suggested); check the latest deploy succeeded.
-- **Known dead links** until later steps: the public Reading / Music / Games / Hobbies
+- **Known dead links** until later steps: the public Music / Games / Hobbies
   pages show the 404 page (it says they're still being built) until their Phase 3 step
-  (Projects is live; remove each from `app/not-found.tsx` as it lands); the newsletter
+  (Projects and Reading are live; remove each from `app/not-found.tsx` as it lands); the newsletter
   line is plain text until Phase 6.
 - UQ palette beyond purple is still a TODO (see Colors).
 - **Two-factor sign-in for the admin** before the newsletter goes live (see Phase 6).

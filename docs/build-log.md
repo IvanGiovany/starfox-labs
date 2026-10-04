@@ -664,6 +664,58 @@ Ivan confirmed the effects list (CLAUDE.md, "Motion, as chester.how does it").
   7. Phone: the tab bar still scrolls sideways; cards and header look right; nothing jumps.
   8. Looks overall, both themes.
 
+- **Step 2 — Reading (done 2026-10-04, tested by Ivan: checklist 1–8, laptop Firefox and phone).** Ivan's choices: book
+  titles in the sans (chester's), a `Reading · Shelf` card as the filler, ratings only on
+  wide cards and in the "about this" panel.
+  - `lib/books.ts`: `getPublishedBooks()` (cached, tags `books` + `posts`; sorted in JS with
+    `compareBooks`, so the admin and the page agree), `bookLinks()` (published article →
+    the card's link, the book's own link then becomes a small link named after its site,
+    e.g. `goodreads.com`; no article → the book's link; neither → not a link, no ↗),
+    `shelfCounts()`.
+  - `components/book-card.tsx` (reused by the home grid in step 6): `BookCard` (cover 40%
+    of the card, bottom-left; beside it, bottom-aligned: status badge, extra badges from
+    `sm`, title, author; wide cards add the rating and note from `sm` up, the note one line
+    at `lg`, three from `xl`), `BookCover` (keeps the cover's own shape: `next/image` with
+    a nominal 600×900 and `h-auto`; without a cover, a **typed cover** in the badge tone of
+    the title, sized with container units, `aria-hidden`; `tilt`: −3°, 110%, deeper shadow,
+    150 ms ease-out, movement `motion-safe:` only), `Stars`. `Badge`'s `toneFor` is exported
+    for the typed cover.
+  - `app/reading/page.tsx` (static `○`): `reading.`, `TODO(Ivan)` intro; fillers: the first
+    is `Reading · Shelf` ("2 read and 2 reading."), any further one "More in writing".
+  - "About this book" panel (`components/about-item.tsx`): cover, title, author, status
+    badge, stars, year · pages, all from the existing `post_items` view (no migration).
+  - 404 page: Reading no longer "still being built".
+  - Phone fit (measured, cells 160–186 px at 360–412 px): small cards clamp the title to 2
+    lines there (3 from `sm`); a wide card's cover is 16% on phones (19% from `sm`), or it
+    sticks out of the card. 360 px leaves a 2 px squeeze into the 16 px bottom padding.
+  - Tested: tsx 9 (`bookLinks` 6 cases incl. draft articles, `shelfCounts`, `compareBooks`
+    order). Production build on :3124, `puppeteer-core`, Edge and real Firefox, 41 checks
+    each: title, drop-in 0/150/300/450 ms, order, badges, links and ↗, real vs typed
+    covers, cover keeps its shape, hover and focus (rotate −3deg, scale 1.1, shadow, card
+    tone, 0.15 s), no holes / no sideways scroll / covers and text inside the card at 390,
+    800, 1280, 1920 px, the panel on `sample-notes-pragmatic-programmer`, 404 text, reduced
+    motion (no delays, no tilt or growth, shadow still deepens), console clean apart from
+    the header's prefetches of `/music`, `/games`, `/hobbies`. Wide cards and both fillers
+    (no live data has them) checked on `next dev` with a temporary edit to the page
+    (reverted): content inside the card padding at 360–1920 px including 1023/1024/1279/1280.
+- **Ivan's browser checklist** for step 2 (laptop Firefox, then phone):
+  1. /reading: `reading.` header; book cards drop in one after another, reading first, then
+     read (newest finished first), then to read.
+  2. Covers: Project Hail Mary's real cover stands bottom-left with a soft shadow; the
+     others get a typed cover (title and author on a soft colour). Badge, title (sans) and
+     author line up with the cover's bottom.
+  3. Hover The Pragmatic Programmer (the only one linked to an article): the cover tilts,
+     grows and its shadow deepens; the card goes one step lighter/darker; the arrow lights
+     up; clicking opens the article. Tab to it with the keyboard: same effect.
+  4. The article shows "About this book": cover, title, author, READING, stars, 2019.
+  5. Admin: give a book a link (e.g. Goodreads) → after saving, its card links there; give
+     The Pragmatic Programmer a link too → a small `goodreads.com` link appears on its card
+     while the card still opens the article. Make one book wide with a rating and note →
+     stars and note show. Undo afterwards.
+  6. Widen and narrow the window: no gaps (a `Reading · Shelf` card may fill one).
+  7. Phone: cards readable (titles up to 2 lines), nothing spills out; both themes.
+  8. /reading in the header is no longer a 404.
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:

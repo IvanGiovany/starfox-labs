@@ -13,7 +13,8 @@ const STATUS_TONES: Record<string, Tone> = {
   learning: "tone-lavender",
 };
 
-function toneFor(text: string): Tone {
+/** The tone class for a text (also colours books' typed covers). */
+export function toneFor(text: string): Tone {
   const status = STATUS_TONES[text.toLowerCase()];
   if (status) return status;
   // A tiny string hash: stable across server and browser, no randomness.
