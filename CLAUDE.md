@@ -122,9 +122,9 @@ footer, emails).
   small avatar button (menu → Settings, Sign out) or a "Sign in" text link when logged out.
 
 ## Admin (`/admin`)
-Built so far: sign-in, the Writing editor, Projects, Reading, Music and Games (details in
-`docs/build-log.md`). The requirements below apply to every section, including those
-still to build.
+Built: sign-in, the Writing editor and every section form: Projects, Reading, Music,
+Games, Hobbies (details in `docs/build-log.md`). The requirements below apply to every
+section.
 - Ivan only: enforced server-side (`requireAdmin()`) and by RLS (`public.is_admin()`), not
   just hidden in the UI.
 - **Adding entries must be quick and easy** — Ivan does it often, frequently on his phone.
@@ -284,10 +284,9 @@ from the live schema (`npm run db:types`) — regenerate it after every migratio
 ## Build phases (build ONE phase at a time)
 1. **Foundation** — *done.* Design system, header/footer, Supabase + `posts`, home grid,
    Writing page, article page, link previews, 404s, README.
-2. **Admin + content model** — everything Ivan needs to *enter* content for every section:
+2. **Admin + content model** — *done.* Everything Ivan needs to *enter* content for every section:
    2.1 admin sign-in, 2.2 content schema, 2.3 `/admin` shell + Writing editor, 2.4 section
    forms (one step per section). Everything in `/admin` must work well on a phone.
-   Progress: see "Where we left off".
 3. **Section pages** — showing that content, one step per section: Projects, Reading,
    Music (including the custom audio player and the "about this" panel on song
    articles), Games, Hobbies; then the home grid from `home_feed` and status cards from
@@ -332,43 +331,47 @@ Everything built so far, with file maps, decisions and how it was tested:
 **`docs/build-log.md`**. Read the relevant part before changing that area.
 
 - **Phase 1 (Foundation):** done.
-- **Phase 2 (Admin + content model):** 2.1 admin sign-in, 2.2 content schema, 2.3 `/admin`
-  shell + Writing editor (form, live preview, images), 2.4a shared item pieces + Projects,
-  2.4b Reading (with Open Library autofill), **2.4c Music**, **2.4d Games**: all done, tested
-  by Ivan, pushed.
-  - 2.4c Music (build log, "4c"): part 1 = the form, manual snippet upload, the server's
-    snippet check, item forms waiting for uploads; then fixes (snippet length saved in
-    `tracks.snippet_seconds`; a new item's editor stays on `new#<id>` after the first
-    save); part 2 = **the in-browser snippet cutter** (pick the full track, waveform with
-    a window on the loudest part, 20–30 s, preview, 0.5 s / 2 s fades, MP3 at 320 kbps in
-    a Web Worker with `@breezystack/lamejs`, LGPL-3.0, loaded only when the cutter
-    opens). Ivan passed every checklist on laptop Firefox and phone (2026-10-04).
-  - Decisions (Ivan): **several songs can be in progress**; "Now producing" shows the top
-    one in the Music order. Cut snippets are 320 kbps (30 s ≈ 1.2 MB). Ivan exports full
-    tracks as MP3, about 3 minutes long (cutter limits: 200 MB, 15 minutes).
+- **Phase 2 (Admin + content model): done** (2026-10-04), every step tested by Ivan on
+  laptop Firefox and phone, pushed. 2.1 admin sign-in; 2.2 content schema; 2.3 `/admin`
+  shell + Writing editor (form, live preview, images); 2.4 section forms: a Projects,
+  b Reading (Open Library autofill), c Music (manual snippet upload, then **the
+  in-browser snippet cutter**: waveform, window on the loudest part, 20–30 s, 0.5 s / 2 s
+  fades, MP3 at 320 kbps in a Web Worker with `@breezystack/lamejs`, LGPL-3.0), d Games
+  (status toggle, one-tap Finished / Dropped, rating 1–10 as number buttons), e Hobbies
+  (card style PHOTO / CUT-OUT / NONE, category spelling matched ignoring case, cut-outs
+  keep their transparency). The `[section]` placeholder page is gone (all sections built).
+  - Decisions (Ivan) that Phase 3 must honour: **several songs can be in progress**, "Now
+    producing" shows the top one in the Music order; a published photo or cut-out hobby
+    card always has an image (text cards are NONE); "Learning" = hobby items in the
+    `Learning` category (no separate switch); DROPPED games keep no finish date.
   - *Rule kept for similar work:* changes to routing or URL handling start with a probe
     shaped like the real pages, and **if anything flickers or loses focus, stop and tell
     Ivan before touching the real code.**
-  - 2.4d Games (build log, "4d"): no database changes; status toggle (FINISHED fills
-    today, DROPPED leaves the date empty), platform suggestions (used first, then PC,
-    PlayStation 5, Nintendo Switch, Xbox Series X|S, Steam Deck), hours with at most one
-    decimal, rating 1–10 as number buttons (two rows of five on a phone), finish date not
-    in the future (`isNotInFuture`); the list has one-tap Finished / Dropped (admin lists
-    now take several `quickSteps` per row). Ivan passed the checklist on laptop and phone
-    (2026-10-04).
-- **Now: 2.4e Hobbies** (plan approved 2026-10-04; plan and progress: `docs/build-log.md`,
-  "4e — Hobbies"). No database changes. Card style PHOTO / CUT-OUT / NONE; publishing
-  needs a category and (unless NONE) an image; category spelling matched ignoring case;
-  "Learning" = learning now. Steps: (1) definition + image pipeline (cut-outs keep
-  transparency: PNG when WebP can't be encoded; `ItemEditor` `imageFor`) + tests: **done,
-  not yet committed**; (2) form, list, pages, tab, harness; (3) docs + Ivan's checklist.
-  Then Phase 3.
-- **For Phase 3:** Spektral is Ivan's artist name. Move it into `lib/site.ts` (e.g.
-  `site.artist`; today it sits in the `now.producing` placeholder), and change the
-  `home_feed` view (new migration) to label song cards `Music · <song title>` like the
-  other sections, instead of the hard-coded `'Music · Spektral'`.
+- **Next: Phase 3, the public section pages** (plan first; wait for approval). Per "Build
+  phases" and "Pages" above: one step per section, Projects, Reading, Music (with the
+  custom audio player and the "about this" panel on song articles), Games, Hobbies; then
+  the home grid from `home_feed` and the status cards from data (the placeholders in
+  `lib/site.ts` go away). Things to carry in:
+  - Pages use the cache tags the admin already updates (`projects`, `books`, `tracks`,
+    `games`, `hobby_items`, plus `home` and `posts`); public pages stay static (Proxy
+    only runs on `/admin`, `/login`, `/auth`).
+  - Read `design-refs/` (chester's projects, reading and hobbies pages) before each page,
+    and the "Cards" rules under Visual design. Ivan checks the looks himself; keep
+    screenshots to diagnosing specific bugs.
+  - Shared helpers already exist for the pages: `lib/reading.ts` (`compareBooks`, labels),
+    `lib/games.ts`, `lib/hobbies.ts` (`IMAGE_STYLES`, `LEARNING_CATEGORY`).
+  - Music: the snippet length to show is `tracks.snippet_seconds` (decoded at upload; the
+    player's own figure can be wrong, e.g. in Firefox); older rows fall back to the player.
+  - Spektral is Ivan's artist name: move it into `lib/site.ts` (e.g. `site.artist`; today
+    it sits in the `now.producing` placeholder) and change the `home_feed` view (new
+    migration) to label song cards `Music · <song title>` like the other sections, instead
+    of the hard-coded `'Music · Spektral'`.
+  - Sample data: "Monstera (sample)" is a published cut-out without an image (from before
+    the image rule); give it an image or NONE, or leave it for the pre-launch cleanup.
+  - The section links in the header stop being dead links as each page lands (see "Known
+    dead links" under "Still open").
 
-### How the admin is built (for the next sections)
+### How the admin is built (reference)
 - **Adding an item section** = a definition file in `lib/admin/items/` (schema + publish
   rules + `toRow`/`fromRow` + empty form; see `projects.ts`, `books.ts`), a loader
   (`load-*.ts`), an `actions.ts` one-liner around `saveItem`, a form passing its own fields
@@ -423,7 +426,10 @@ Everything built so far, with file maps, decisions and how it was tested:
   route silently becomes request-time / `no-store`.
 - `dynamicParams`, `dynamic`, `revalidate` and `fetchCache` don't exist with Cache
   Components. For a fixed set of params use `generateStaticParams`, and read `params`
-  inside `<Suspense>` for the rest (see `app/admin/[section]/page.tsx`).
+  inside `<Suspense>` for the rest (see `app/admin/games/[id]/page.tsx`).
+  `generateStaticParams` **must return at least one result**, or the build fails ("all
+  `generateStaticParams` functions must return at least one result"); that's why the
+  admin's placeholder page for unbuilt sections was deleted once all were built.
 - **Admin pages:** a client navigation inside `/admin` only re-renders below
   `app/admin/layout.tsx`, so the layout's `<Suspense>` and `requireAdmin()` don't run again.
   Every admin page puts its request-time work (params, session, database) in a component

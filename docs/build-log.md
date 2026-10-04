@@ -23,7 +23,7 @@ state; this file holds the detail. Newest phase last.
    lists every markdown feature.
 7. **README** with screenshots (`docs/screenshots/`), architecture notes and setup steps.
 
-## Phase 2 — Admin + content model
+## Phase 2 — Admin + content model (done 2026-10-04)
 
 ### 2.1 Admin sign-in (done, tested on laptop)
 Email code + link via Resend SMTP. `signInWithOtp` with `shouldCreateUser: false` on the
@@ -500,7 +500,7 @@ Steps: (1) definition + list change + unit tests; (2) form, list, pages, tab, ha
   7. Looks: the form and list in both themes; on the phone the rating is two rows of
      five, the status toggle and the list's buttons are easy to tap.
 
-#### 4e — Hobbies (in progress)
+#### 4e — Hobbies (done, tested by Ivan: checklist 1–7, laptop Firefox and phone)
 Plan (approved 2026-10-04). No database changes (table, publish rule, views and the
 `media/hobbies/` folder exist since 2.2). Form: the shared item fields plus **category**
 (suggestions: used ones, then `Learning`; the server stores an existing category's
@@ -539,6 +539,53 @@ Steps: (1) definition + image pipeline + tests; (2) form, list, pages, tab, harn
     without WebP encoding): cut-out → WebP 1200 px with see-through corners; without WebP
     → PNG 1200 px, still see-through; other images → WebP, and without WebP JPEG on white
     as before. 8/8.
+- **Step 2 (done):**
+  - `lib/admin/items/load-hobbies.ts`: `getEditableHobby`, `getHobbySuggestions` (badges and
+    categories from one query).
+  - `app/admin/hobbies/`: `actions.ts` (`saveHobby`: matches the category against the
+    stored ones, ignoring case, before `saveItem`), `hobby-form.tsx` (category with
+    `<datalist>` and the same matching when leaving the box; style toggle with a hint per
+    style; Caption only for PHOTO, its text kept across style changes; subtitle, note,
+    link; `imageFor` → `hobbyImageSettings`), `list-row.ts` (`hobbyListRow`: detail
+    `Category · Photo|Cut-out|Text card · No image · Link|Article`, `LEARNING` badge),
+    `page.tsx` (no quick steps), `new/`, `[id]/`. Hobbies tab on.
+  - **All six sections are built**, so `app/admin/[section]/page.tsx` (the placeholder for
+    unbuilt sections) is deleted and the `ready` flag is gone from `lib/admin/sections.ts`.
+    With Cache Components, `generateStaticParams` must return at least one result, so the
+    build failed once no section was left for it (gotcha noted in CLAUDE.md).
+  - Tested: harness (server-rendered + hydrated, fakes as for Games, a fake save that
+    matches categories and runs the real validation; real image preparation with the fake
+    upload), Edge and real Firefox, 27 each: PHOTO by default with Caption; CUT-OUT /
+    NONE hide it, PHOTO brings it back with its text; suggestions; `coffee` → `Coffee`,
+    `LEARNING` → `Learning`, `Board  games` → `Board games`; Publish without category or
+    image → both messages, nothing saved; a cut-out upload is WebP, 1200 px, see-through
+    corners, shown `object-contain` on a painted checkerboard; PHOTO switches the preview
+    to cropped; publishing a cut-out with `plants` stores `Plants` and keeps the caption; a
+    photo upload is 2400 px; list rows (text card, cut-out without image, LEARNING with
+    Article, photo with Link, no category); reload hydrates cleanly.
+  - Harness gotchas: the editor's **sticky Save bar covers buttons near the bottom of the
+    window**, and puppeteer still counts them as visible, so its click lands on the bar
+    (it saved a stray draft). Scroll the button to the centre before clicking. Reloading
+    with unsaved changes opens the "Leave page?" dialog: accept it in the driver. A fake
+    `mediaUrl` must not point at a host that doesn't resolve (broken previews shift the
+    layout, and `networkidle0` waits).
+- **Ivan's browser checklist** (laptop Firefox for adding images; phone: Samsung, no image
+  uploads; `[test] …` items, deleted afterwards with their images):
+  1. Hobbies tab → New hobby item: type category `coffee` and leave the box → `Coffee`.
+     Publish with no image as PHOTO → "Add an image, or choose the None style…".
+  2. Add a photo: it's cropped square in the preview. Type a caption; switch to CUT-OUT
+     (caption hidden) and back (caption still there).
+  3. CUT-OUT with a transparent PNG (e.g. a product cut-out): shown whole on a
+     checkerboard; after saving and reloading, the transparent parts are still
+     transparent.
+  4. NONE with category `learning` → saved as `Learning`; the list shows the LEARNING
+     badge. Publish it, then unpublish.
+  5. List: detail lines (`Coffee · Photo · Link`, `… · No image`), drag to reorder.
+  6. Edit the sample "Ethiopia Guji (sample)" and save. (The sample "Monstera" is a
+     published cut-out without an image: updating it as published now asks for an image
+     or NONE.)
+  7. Looks: the form and list in both themes; on the phone, the style toggle, category
+     box and list buttons.
 
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
