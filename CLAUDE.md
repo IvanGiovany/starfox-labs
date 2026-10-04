@@ -326,7 +326,7 @@ Track *active days* and *articles read* (one read per article per user), not raw
 - Use Supabase Row Level Security on every table.
 - Run `npm run build` and fix errors before saying a step is done.
 
-## Where we left off (updated 2026-10-04)
+## Where we left off (updated 2026-10-04, end of session)
 Everything built so far, with file maps, decisions and how it was tested:
 **`docs/build-log.md`**. Read the relevant part before changing that area.
 
@@ -347,42 +347,80 @@ Everything built so far, with file maps, decisions and how it was tested:
   - *Rule kept for similar work:* changes to routing or URL handling start with a probe
     shaped like the real pages, and **if anything flickers or loses focus, stop and tell
     Ivan before touching the real code.**
-- **Now: Phase 3, the public section pages** (plan approved 2026-10-04; progress:
-  `docs/build-log.md`, "Phase 3"). Steps: (1) shared pieces + motion + Projects: **done,
-  not yet committed**; (2) Reading; (3) Music + audio player (**propose a musical hover
-  effect for song cards to Ivan before building**); (4) Games (**spell out an adapted
-  "pop up" hover for the framed screenshots in the step plan**: chester has no games);
-  (5) Hobbies; (6) home grid from `home_feed` + status cards from data (+ the pixel-art
-  spot, see "Still open"). Decisions (Ivan): home order newest first; a short last row
-  gets a quiet "more" card; section intros are `TODO(Ivan)` placeholders. Ivan wants the
-  pages to look and feel a lot like chester.how: **re-read every chester screenshot in
-  `design-refs/` before each step.**
-  - **Motion, as chester.how does it** (confirmed by Ivan from its recording, its CSS and
-    its scripts; recreated in our own CSS, no animation library):
-    1. Header tab bar drops in from 50 px above, 0.5 s spring (`header-in`); the right
-       side (socials, theme toggle) fades in after 1 s (`fade-in-late`).
-    2. Cards drop in from 10 px above, 0.15 s apart, chester's default spring (stiffness
-       100, damping 10 → `--spring-card`, 1.224 s) on page load / client navigation
-       (`card-in`, `--card-index`). No separate image fade (chester has none).
-    3. Card hover/focus: one step further from the page (`--bg-raised-hover`), and the ↗
-       sits in a circle that lights up (page colour + `--shadow-skeuo`). No purple tint.
-    4. Project (and game) screenshots grow to 105% on hover; book/song covers tilt −3°,
-       grow to 110% with a deeper shadow; photo cards: the photo slides down 48 px; cut-out
-       cards: text fades to 20%, the cut-out grows to 105% and comes forward. All 150 ms,
-       `cubic-bezier(0.4, 0, 0.2, 1)` (Tailwind's default), `motion-safe:` only.
-    5. A pill slides under the hovered header tab (mouse only); the header is sticky and
-       frosted; its right side fades out past 20 px of scroll (`inert` while hidden).
-    Reduced motion: no movement and no delays; colour changes and the sticky header stay.
-    Not used: chester's leaf→maple GIF and footer avatar (Ivan's own pixel art instead).
-  Things to carry in:
+- **Phase 3 (Section pages): in progress.** Plan approved 2026-10-04; details, file maps
+  and test methods: `docs/build-log.md`, "Phase 3". Steps:
+  1. Shared pieces + chester-style motion + **Projects: done** (tested by Ivan on laptop
+     and phone, pushed `a55f081`).
+  2. **Reading: next.** Ivan says when to start; build, test, give him the checklist.
+  3. Music + the custom audio player + the song "about this" panel. **Before building,
+     propose a hover effect for the song cards that feels musical but fits chester's
+     style, and wait for Ivan's OK.**
+  4. Games. **In the step plan, spell out exactly what the "pop up" hover does** (Ivan
+     wants one in the spirit of the book-cover tilt/grow/shadow, adapted to our framed
+     screenshots; chester has no games section), and wait for his OK.
+  5. Hobbies.
+  6. Home grid from `home_feed` + status cards from data, plus the migration (song cards
+     labelled `Music · <song title>`, `site.artist`) and **the spot for Ivan's pixel art:
+     build the spot, then ask Ivan for the art** (never placeholder art from elsewhere;
+     see "Still open").
+- **Rule for every Phase 3 step: re-read all the chester screenshots in `design-refs/`
+  first** (chester: `Screenshot 2026-09-26 184223` home, `234546` home grid, `234621`
+  projects, `234654` writing, `234716` hobbies, `2026-09-30 205309` reading; the other
+  three are other references), plus "Pages" and "Visual design" above. Ivan wants the
+  pages to look and feel a lot like chester.how. `design-refs/Chester Recording.mp4` shows
+  its motion (the watch plugin, Gemini engine, is set up; its key lives only in
+  `~/.config/watch/.env`). chester.how blocks plain fetches (HTTP 429) but loads in
+  headless Edge with `puppeteer-core` if its CSS/JS needs checking again.
+- **Decisions (Ivan):** home order newest first; a short last row gets a quiet "more" card
+  (widen a card first); section intros are `TODO(Ivan)` placeholders; earlier ones:
+  several songs can be in progress ("Now producing" = the top one in the Music order),
+  published photo/cut-out hobby cards always have an image, "Learning" = hobby items in
+  the `Learning` category, DROPPED games have no finish date.
+- **Motion and effects: chester's, exactly as confirmed by Ivan** (numbers as he confirmed
+  them; recreated in our own CSS, no animation library; all hover effects also on
+  keyboard focus via `group-focus-within`, transforms only `motion-safe:`):
+  1. Header tab bar drops in from 50 px above, 0.5 s spring (`header-in`); the right side
+     fades in after 1 s (`fade-in-late`). *Built.*
+  2. Cards drop in from 10 px above, 0.15 s apart, chester's default spring (`card-in`,
+     `--spring-card`, 1.224 s; `Card index`). *Built.*
+  3. (Images fading in: chester has no separate effect; it's the card drop-in.)
+  4. Card hover: **chester's plain one step further from the page** (`--bg-raised-hover`;
+     darker in light mode, lighter in dark), no purple tint or glow. *Built.*
+  5. **The ↗ in a small circle that lights up** on hover (page colour + `--shadow-skeuo`),
+     not a nudge. *Built.*
+  6. Project screenshots grow to 105% on hover (150 ms ease-out). *Built for projects.*
+     Games: Ivan's own "pop up" (step 4, above).
+  7. Book (and song) covers tilt −3°, grow to 110%, deeper shadow (`rotate-[-3deg]
+     scale-110` + bigger shadow, 150 ms). *Step 2 / 3* (songs: Ivan may pick a musical
+     effect instead, step 3).
+  8. Photo cards: the photo slides down 48 px (`mt-12`) revealing the label row; the white
+     caption gets a dark see-through background. *Step 5.*
+  9. Cut-out cards: the text block (gradient from the card colour) fades to 20%; the cut-out
+     grows to 105% and comes in front. *Step 5.*
+  10. A soft pill slides under the hovered header tab (mouse only). *Built.*
+  11. Sticky, frosted header; its right side fades out past 20 px of scroll (`inert`).
+     *Built.*
+  Reduced motion: no movement and no delays; colour changes and the sticky header stay.
+  Not used: chester's leaf→maple GIF and footer avatar (Ivan's own pixel art instead).
+- **Pieces to reuse** (step 1): `Card` (`index`, `links` for small extra links,
+  `playedMs`), `CardGrid` + `spanClass`, `fillGrid` (`lib/grid.ts`), `FramedScreenshot`,
+  `SectionHeader`, the cached-loader pattern in `lib/projects.ts` (`"use cache"`,
+  `cacheLife("hours")`, `cacheTag(section tag, "posts")`, `supabasePublic`, link only to
+  published articles), `getPostItem` + `AboutItem` (add a `case` per section).
+  Shared helpers: `lib/reading.ts` (`compareBooks`, `READING_STATUS_LABELS`),
+  `lib/games.ts`, `lib/hobbies.ts`. Remove each section from `app/not-found.tsx`'s
+  "still being built" line as it lands.
+- **Testing a step** (build log, Phase 3 step 1): unit tests with tsx for pure logic;
+  production build on :3124 driven by `puppeteer-core` in Edge and real Firefox (cards,
+  links, no holes at 390/800/1280/1920 px, no sideways scroll, hover values via computed
+  styles, `document.getAnimations()` for timings, reduced motion: Edge emulated, Firefox
+  via `extraPrefsFirefox: { "ui.prefersReducedMotion": 1 }`). Headless browsers run in
+  dark mode. Expected noise: 404s from the header prefetching the unbuilt section pages.
+  **No screenshots** for looks (Ivan checks them); give Ivan a checklist each step.
+- Things to carry in:
   - Pages use the cache tags the admin already updates (`projects`, `books`, `tracks`,
     `games`, `hobby_items`, plus `home` and `posts`); public pages stay static (Proxy
     only runs on `/admin`, `/login`, `/auth`).
-  - Read `design-refs/` (chester's projects, reading and hobbies pages) before each page,
-    and the "Cards" rules under Visual design. Ivan checks the looks himself; keep
-    screenshots to diagnosing specific bugs.
-  - Shared helpers already exist for the pages: `lib/reading.ts` (`compareBooks`, labels),
-    `lib/games.ts`, `lib/hobbies.ts` (`IMAGE_STYLES`, `LEARNING_CATEGORY`).
   - Music: the snippet length to show is `tracks.snippet_seconds` (decoded at upload; the
     player's own figure can be wrong, e.g. in Firefox); older rows fall back to the player.
   - Spektral is Ivan's artist name: move it into `lib/site.ts` (e.g. `site.artist`; today
@@ -391,8 +429,8 @@ Everything built so far, with file maps, decisions and how it was tested:
     of the hard-coded `'Music · Spektral'`.
   - Sample data: "Monstera (sample)" is a published cut-out without an image (from before
     the image rule); give it an image or NONE, or leave it for the pre-launch cleanup.
-  - The section links in the header stop being dead links as each page lands (see "Known
-    dead links" under "Still open").
+  - Live data has Ivan's own "Test Project" (published, with a screenshot) besides the
+    samples.
 
 ### How the admin is built (reference)
 - **Adding an item section** = a definition file in `lib/admin/items/` (schema + publish

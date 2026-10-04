@@ -600,7 +600,7 @@ Where Gemini and the code disagreed, the code won (cards come *down* 10 px, not 
 the tab highlight slides on hover only; project images grow 105% rather than lift).
 Ivan confirmed the effects list (CLAUDE.md, "Motion, as chester.how does it").
 
-- **Step 1 (done):**
+- **Step 1 (done, tested by Ivan on laptop and phone, pushed `a55f081`):**
   - `app/globals.css`: `--bg-raised-hover` (one step: light #e4dccf, dark #2f2c2a),
     `--frost`, `--shadow-skeuo` (light-dark per colour: `light-dark()` only takes
     colours, not whole shadows), `--cell-2` (square rows in the 2-column layout),
