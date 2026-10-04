@@ -356,12 +356,13 @@ Everything built so far, with file maps, decisions and how it was tested:
     in the future (`isNotInFuture`); the list has one-tap Finished / Dropped (admin lists
     now take several `quickSteps` per row). Ivan passed the checklist on laptop and phone
     (2026-10-04).
-- **Next: 2.4e Hobbies** (plan first; wait for approval). Then Phase 3.
-  Hobbies per this file: `hobby_items` with category (e.g. Coffee, Plants, `Learning`;
-  required to publish), subtitle, note, `image_style` (`photo` / `cutout` / `none`),
-  caption, url; cards labelled `Hobbies · <category>` (chester's hobbies page in
-  `design-refs/`). "Learning" items feed the home page's Learning status card in Phase 3.
-  Follow "How the admin is built" below (`projects.ts` / `games.ts` as models).
+- **Now: 2.4e Hobbies** (plan approved 2026-10-04; plan and progress: `docs/build-log.md`,
+  "4e — Hobbies"). No database changes. Card style PHOTO / CUT-OUT / NONE; publishing
+  needs a category and (unless NONE) an image; category spelling matched ignoring case;
+  "Learning" = learning now. Steps: (1) definition + image pipeline (cut-outs keep
+  transparency: PNG when WebP can't be encoded; `ItemEditor` `imageFor`) + tests: **done,
+  not yet committed**; (2) form, list, pages, tab, harness; (3) docs + Ivan's checklist.
+  Then Phase 3.
 - **For Phase 3:** Spektral is Ivan's artist name. Move it into `lib/site.ts` (e.g.
   `site.artist`; today it sits in the `now.producing` placeholder), and change the
   `home_feed` view (new migration) to label song cards `Music · <song title>` like the

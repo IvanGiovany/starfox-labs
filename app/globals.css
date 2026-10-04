@@ -542,3 +542,11 @@ body::before {
     scroll-behavior: auto !important;
   }
 }
+
+/* A soft checkerboard behind cut-out images in the admin, so their transparent
+   parts show as transparent (not as the page colour). */
+@utility checkerboard {
+  /* Both colours are in the pattern, so a background colour set elsewhere doesn't hide it. */
+  background-image: conic-gradient(var(--bg-raised) 25%, var(--bg) 0 50%, var(--bg-raised) 0 75%, var(--bg) 0);
+  background-size: 16px 16px;
+}

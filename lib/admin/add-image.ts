@@ -12,8 +12,8 @@ import { UploadError } from "./upload-media";
 
 export type AddedImage = UploadedImage;
 
-export async function addImageFile(file: Blob, use: ImageUse, folder: MediaFolder): Promise<AddedImage> {
-  return uploadImage(await prepareImage(file, use), folder);
+export async function addImageFile(file: Blob, use: ImageUse, folder: MediaFolder, options?: { keepTransparency?: boolean }): Promise<AddedImage> {
+  return uploadImage(await prepareImage(file, use, options), folder);
 }
 
 export function addImageFromUrl(url: string, use: ImageUse, folder: MediaFolder): Promise<AddedImage> {

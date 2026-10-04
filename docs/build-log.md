@@ -500,6 +500,46 @@ Steps: (1) definition + list change + unit tests; (2) form, list, pages, tab, ha
   7. Looks: the form and list in both themes; on the phone the rating is two rows of
      five, the status toggle and the list's buttons are easy to tap.
 
+#### 4e — Hobbies (in progress)
+Plan (approved 2026-10-04). No database changes (table, publish rule, views and the
+`media/hobbies/` folder exist since 2.2). Form: the shared item fields plus **category**
+(suggestions: used ones, then `Learning`; the server stores an existing category's
+spelling when it matches ignoring case), **card style** PHOTO / CUT-OUT / NONE (default
+photo), **caption** (photo only), **subtitle**, **note**, **link** (wins over the article,
+as in `home_feed`). Publishing needs a category, and an image unless the style is NONE
+(Ivan's decision). Photos: 2400 px, square cropped preview; cut-outs: 1200 px, shown whole
+on a checkerboard, transparency kept. "Learning" = what Ivan is learning now (no separate
+switch, no database change). List: drag to reorder, detail `Coffee · Photo · Link`, a
+`LEARNING` badge. Category suggestions: just the used ones plus Learning (Ivan gave no
+starting list). Ivan's phone is a Samsung and he doesn't upload images from it.
+Steps: (1) definition + image pipeline + tests; (2) form, list, pages, tab, harness;
+(3) docs + Ivan's checklist.
+- **Step 1 (done):**
+  - `lib/hobbies.ts`: `IMAGE_STYLES`, labels, `isImageStyle`, `LEARNING_CATEGORY` (shared
+    with Phase 3).
+  - `lib/admin/items/hobbies.ts`: schema, `hobbyPublishRules` (category; image unless
+    NONE), `matchCategory` (existing spelling ignoring case, spaces tidied, Learning
+    always known), `categorySuggestions`, `hobbyImageSettings(style)`, rows (unknown
+    style → photo).
+  - Images: `prepareImage(file, use, { keepTransparency })`: when the browser can't encode
+    WebP, cut-outs become **PNG** (other images keep the JPEG-on-white fallback). Passed
+    through `addImageFile` and `ImageField` (`keepTransparency`). URL imports already keep
+    transparency (sharp writes WebP with alpha). The bucket already allows PNG.
+  - `ItemEditor` takes `imageFor(fields)` → `{ use, frame, fit, keepTransparency }`,
+    overriding the fixed `imageFrame` / `imageFit` and the section's size, so the image
+    settings can follow a hobby card's style.
+  - `app/globals.css`: `checkerboard` utility (both colours in the gradient, so the
+    image frame's own `bg-bg-raised` can't hide the pattern).
+  - Note: the sample "Monstera (sample)" is a published cut-out without an image; with the
+    new rule it can't be updated as published until it gets an image or the NONE style.
+  - Tested: tsx 9 (styles; draft = title; publish rules; limits, link, own folder only;
+    `matchCategory`; suggestions; image settings; the four samples round-trip; unknown
+    style). Browser test in Edge and real Firefox (`prepareImage` on a 2000 px transparent
+    PNG, then again with `toBlob("image/webp")` forced to return PNG like a browser
+    without WebP encoding): cut-out → WebP 1200 px with see-through corners; without WebP
+    → PNG 1200 px, still see-through; other images → WebP, and without WebP JPEG on white
+    as before. 8/8.
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:

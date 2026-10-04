@@ -28,6 +28,7 @@ export function ImageField({
   folder,
   frameClassName = "aspect-[16/9]",
   fit = "cover",
+  keepTransparency = false,
   describedBy,
   onBusyChange,
 }: {
@@ -43,6 +44,8 @@ export function ImageField({
   frameClassName?: string;
   /** "cover" fills the frame (cropping); "contain" shows the whole image (book covers, cut-outs). */
   fit?: "cover" | "contain";
+  /** Save see-through pixels even where the browser can't encode WebP (PNG instead of JPEG on white): cut-outs. */
+  keepTransparency?: boolean;
   /** The field's error message, if any. */
   describedBy?: string;
   /** Tells the form an image is being prepared or uploaded, so it can hold off saving. */
@@ -81,7 +84,7 @@ export function ImageField({
     }
   }
 
-  const addFile = (file: File) => add("preparing", () => addImageFile(file, use, folder));
+  const addFile = (file: File) => add("preparing", () => addImageFile(file, use, folder, { keepTransparency }));
   const addLink = (url: string) => add("importing", () => addImageFromUrl(url.trim(), use, folder));
 
   function onPaste(event: ClipboardEvent) {

@@ -23,6 +23,7 @@ import {
 } from "@/lib/admin/items/item-form";
 import { useNewItemUrl } from "@/lib/admin/editor-url";
 import type { ArticleOption } from "@/lib/admin/items/article-options";
+import type { ImageUse } from "@/lib/admin/image-rules";
 import { statusAfter, type PostStatus, type SaveIntent } from "@/lib/admin/post-form";
 import { mediaUrl } from "@/lib/media";
 
@@ -69,6 +70,7 @@ export function ItemEditor<F extends BaseItemFields, D>({
   articles,
   imageFrame = "aspect-[16/10]",
   imageFit = "cover",
+  imageFor,
   header,
   children,
 }: {
@@ -82,6 +84,8 @@ export function ItemEditor<F extends BaseItemFields, D>({
   /** The image preview's shape and fit (book covers are tall and shown whole). */
   imageFrame?: string;
   imageFit?: "cover" | "contain";
+  /** Image settings that depend on the form (a hobby card's style); they override the ones above and the section's size. */
+  imageFor?: (fields: F) => { use?: ImageUse; frame?: string; fit?: "cover" | "contain"; keepTransparency?: boolean };
   /** Above the title, e.g. the Reading form's Open Library search. */
   header?: (form: ItemFormApi<F>) => ReactNode;
   children: (form: ItemFormApi<F>) => ReactNode;
@@ -239,6 +243,7 @@ export function ItemEditor<F extends BaseItemFields, D>({
     "aria-describedby": errors[key] ? `item-${key}-error` : undefined,
   });
   const fieldError = (key: keyof BaseItemFields & keyof F & string) => ({ error: errors[key], errorId: `item-${key}-error` });
+  const image = imageFor?.(fields) ?? {};
 
   if (reopening) return <p className="py-6 text-fg-muted">Opening the saved {section.singular}…</p>;
 
@@ -291,10 +296,11 @@ export function ItemEditor<F extends BaseItemFields, D>({
             imageUrl={fields.imagePath ? mediaUrl(fields.imagePath) : ""}
             onAdded={(image) => update("imagePath", image.path as F["imagePath"])}
             onRemove={() => update("imagePath", "" as F["imagePath"])}
-            use={section.imageUse}
+            use={image.use ?? section.imageUse}
             folder={section.folder}
-            frameClassName={imageFrame}
-            fit={imageFit}
+            frameClassName={image.frame ?? imageFrame}
+            fit={image.fit ?? imageFit}
+            keepTransparency={image.keepTransparency}
             describedBy={errors.imagePath ? "item-imagePath-error" : undefined}
             onBusyChange={(busy) => setUploading("image", busy)}
           />

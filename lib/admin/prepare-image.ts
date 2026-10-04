@@ -3,7 +3,8 @@ import { checkInputType, fitWithin, IMAGE_RULES, ImageError, type ImageUse } fro
 // Prepares a pasted or dropped image in the browser before it's uploaded:
 //   - turned the right way up (the photo's EXIF orientation is applied)
 //   - scaled down to the size for its use (never enlarged)
-//   - re-encoded as WebP, or JPEG where the browser can't encode WebP
+//   - re-encoded as WebP, or JPEG where the browser can't encode WebP (PNG
+//     instead when the transparency must be kept, as for cut-outs)
 //   - stripped of all metadata, GPS location included: drawing onto a canvas
 //     keeps only the pixels
 // Images imported from a URL get the same treatment on the server instead.
@@ -12,8 +13,8 @@ export type PreparedImage = {
   blob: Blob;
   width: number;
   height: number;
-  type: "image/webp" | "image/jpeg";
-  extension: "webp" | "jpg";
+  type: "image/webp" | "image/jpeg" | "image/png";
+  extension: "webp" | "jpg" | "png";
 };
 
 function canvasOf(width: number, height: number): HTMLCanvasElement {
@@ -55,10 +56,18 @@ function toBlob(canvas: HTMLCanvasElement, type: string): Promise<Blob | null> {
   return new Promise((resolve) => canvas.toBlob(resolve, type, IMAGE_RULES.quality));
 }
 
-/** WebP if the browser can encode it (it quietly returns PNG otherwise), else JPEG on white. */
-async function encode(canvas: HTMLCanvasElement): Promise<Pick<PreparedImage, "blob" | "type" | "extension">> {
+/**
+ * WebP if the browser can encode it (it quietly returns PNG otherwise), else
+ * JPEG on white, or PNG when the transparency must be kept (a cut-out on white
+ * would look like a white box).
+ */
+async function encode(canvas: HTMLCanvasElement, keepTransparency: boolean): Promise<Pick<PreparedImage, "blob" | "type" | "extension">> {
   const webp = await toBlob(canvas, "image/webp");
   if (webp?.type === "image/webp") return { blob: webp, type: "image/webp", extension: "webp" };
+  if (keepTransparency) {
+    const png = await toBlob(canvas, "image/png");
+    if (png) return { blob: png, type: "image/png", extension: "png" };
+  }
 
   // JPEG has no transparency: put see-through areas (PNG screenshots) on white, not black.
   const flat = canvasOf(canvas.width, canvas.height);
@@ -71,7 +80,7 @@ async function encode(canvas: HTMLCanvasElement): Promise<Pick<PreparedImage, "b
   return { blob: jpeg, type: "image/jpeg", extension: "jpg" };
 }
 
-export async function prepareImage(file: Blob, use: ImageUse): Promise<PreparedImage> {
+export async function prepareImage(file: Blob, use: ImageUse, { keepTransparency = false } = {}): Promise<PreparedImage> {
   checkInputType(file.type);
 
   let bitmap: ImageBitmap;
@@ -83,7 +92,7 @@ export async function prepareImage(file: Blob, use: ImageUse): Promise<PreparedI
 
   try {
     const size = fitWithin(bitmap.width, bitmap.height, use);
-    const encoded = await encode(scaleDown(bitmap, size.width, size.height));
+    const encoded = await encode(scaleDown(bitmap, size.width, size.height), keepTransparency);
     if (encoded.blob.size > IMAGE_RULES.maxUploadBytes) {
       throw new ImageError("This image is still over 5 MB after shrinking it. Try a simpler image.");
     }
