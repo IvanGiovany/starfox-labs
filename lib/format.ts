@@ -12,6 +12,19 @@ export function formatDate(iso: string): string {
   return dateFormat.format(new Date(iso));
 }
 
+const monthFormat = new Intl.DateTimeFormat("en", { year: "numeric", month: "long", timeZone: "UTC" });
+
+/** "2026-09-18" → "September 2026" */
+export function formatMonth(iso: string): string {
+  return monthFormat.format(new Date(iso));
+}
+
+/** 24.6 → "0:25", 95 → "1:35". */
+export function formatDuration(seconds: number): string {
+  const whole = Math.round(seconds);
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
+}
+
 /** Estimated reading time in minutes, at ~225 words per minute. */
 export function readingTime(markdown: string): number {
   const words = markdown.trim().split(/\s+/).filter(Boolean).length;

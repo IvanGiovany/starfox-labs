@@ -162,6 +162,36 @@ body::before {
   }
 }
 
+/* Music cards: the record that slides out of its sleeve spins at 33⅓ rpm
+   (one turn every 1.8 s) while the card is hovered. */
+@keyframes record-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+/* A vinyl record: fine grooves and a hairline edge (so it shows on the dark
+   card). The same in both themes, since records are black. */
+@utility vinyl {
+  background: repeating-radial-gradient(circle at center, #171615 0 1.5px, #23211f 1.5px 3px);
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.08),
+    0 8px 18px -6px rgb(0 0 0 / 0.45);
+}
+
+/* Light catching the grooves. It sits on a layer that doesn't turn, like a
+   real reflection while the record spins under it. */
+@utility vinyl-sheen {
+  background: conic-gradient(
+    from 20deg,
+    transparent 0 8%,
+    rgb(255 255 255 / 0.11) 14%,
+    transparent 21% 50%,
+    rgb(255 255 255 / 0.11) 64%,
+    transparent 71%
+  );
+}
+
 /*
  * Badge tones: soft pastels with a slightly darker outline (chester's
  * "NOW BREWING"). Light mode uses solid pastels; dark mode uses low-alpha

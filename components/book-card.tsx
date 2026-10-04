@@ -1,7 +1,8 @@
 import Image from "next/image";
-import { Badge, toneFor } from "@/components/badge";
+import { Badge } from "@/components/badge";
 import { Card } from "@/components/card";
 import { spanClass } from "@/components/card-grid";
+import { TypedCover } from "@/components/cover";
 import type { Book } from "@/lib/books";
 import type { Span } from "@/lib/grid";
 import { READING_STATUS_LABELS } from "@/lib/reading";
@@ -95,13 +96,7 @@ export function BookCover({
         // Nominal 2:3 size until the real cover loads; then it keeps its own shape.
         <Image src={coverUrl} alt={coverAlt} width={600} height={900} sizes={sizes} className="block h-auto w-full" />
       ) : (
-        <div
-          aria-hidden="true"
-          className={`${toneFor(title)} @container flex aspect-[2/3] w-full flex-col justify-between border border-(--tone-border) bg-(--tone-bg) p-[10%] text-(--tone-fg) shadow-[inset_0.3rem_0_0_var(--tone-border)]`}
-        >
-          <p className="line-clamp-5 font-serif text-[length:15cqw] leading-[1.1] break-words">{title}</p>
-          {author && <p className="line-clamp-2 text-[length:8cqw] leading-tight tracking-wide uppercase">{author}</p>}
-        </div>
+        <TypedCover title={title} byline={author} shape="book" />
       )}
     </div>
   );

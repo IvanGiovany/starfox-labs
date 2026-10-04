@@ -716,6 +716,77 @@ Ivan confirmed the effects list (CLAUDE.md, "Motion, as chester.how does it").
   7. Phone: cards readable (titles up to 2 lines), nothing spills out; both themes.
   8. /reading in the header is no longer a 404.
 
+- **Step 3 — Music (done 2026-10-04, tested by Ivan: checklist 1–7, laptop Firefox and phone).** Ivan's choices: the record
+  hover as proposed; the filler is a quiet non-link "More on the way." (to-do: link it to
+  his Spektral profile once his music is public); songs show only once their article is
+  published; build and test with the sample songs only (his music isn't public yet; he
+  unpublishes "speki" himself).
+  - `lib/tracks.ts`: `getPublishedSongs()` (cached, tags `tracks` + `posts`; published, not
+    in progress, Ivan's order; drops songs whose article isn't published, via `songHref`,
+    which also covers drafts hidden by RLS), `TRACK_LINK_LABELS` (typed by the admin's
+    `TrackLinkKey`, so the keys stay in step).
+  - `components/song-card.tsx`: `SongCard` (`Music · Songs`; sleeve 45% of a small card, 21%
+    of a wide one, so both come out the same size; extra badges and the wide card's note
+    from `sm`, the note one line at `lg`, three from `xl`) and `RecordSleeve`. **The record
+    hover:** a record (`vinyl` grooves + a non-turning `vinyl-sheen`, centre label = the
+    cover art or the typed cover) sits behind the sleeve; on `group-hover` /
+    `group-focus-within` it slides up 40% (`translate`, 300 ms ease-out) and spins
+    (`record-spin`, 1.8 s = 33⅓ rpm). The spin is paused **inside the `animate-[…]`
+    shorthand** (a separate `[animation-play-state:paused]` could be reset by the
+    shorthand, depending on CSS order); hover sets it running with a more specific rule, so
+    leaving stops it where it is. Movement and spin are `motion-safe:` only; the sleeve's
+    shadow deepens either way.
+  - `components/cover.tsx`: `TypedCover` (book 2:3 with spine, or square), moved out of
+    `book-card.tsx`.
+  - `components/audio-player.tsx` (client): play/pause key (44 px, `--shadow-skeuo`), a
+    `role="slider"` bar (click, drag with pointer capture, arrows ±5 s, Home/End,
+    `aria-valuetext` "0:05 of 0:10"), time. Length: `snippet_seconds` first, then the
+    player's (`shownLength`). `preload="metadata"`; a requestAnimationFrame loop follows the
+    playhead while playing. The file starts loading before hydration, so an early error or
+    length is read once on mount. Never toggles `disabled`; a file that can't play shows
+    "The preview can't be played right now." `formatDuration` moved to `lib/format.ts`
+    (re-exported from `snippet-rules.ts`); new `formatMonth` ("September 2026", UTC).
+  - "About this song" panel: sleeve (no record), title, "Spektral · September 2026", the
+    player, "Listen to the full track ↗" and the platform links. `site.artist` added
+    (`now.producing` uses it); the `home_feed` label change stays in step 6.
+  - `app/music/page.tsx` (static `○`), `TODO(Ivan)` intro. 404: Music removed.
+  - Tested: tsx 12 (`songHref`, `shownLength`, `timeAtPoint`, `formatDuration`,
+    `formatMonth`) + the 9 book tests. **Player harness** (server-rendered with
+    `react-dom/server`, hydrated, real 10 s MP3 from lamejs, served with range requests on
+    :3125), Edge and real Firefox 23 each: saved length / player's length / saved wins,
+    missing file → message, play (playhead and bar move), pause, click to 0:05 with
+    aria values, drag to 0:08, hover without pressing doesn't seek, Home / arrows / End,
+    plays to the end → Play and 0:00, tab order, 44 px targets, no hydration warnings.
+    (Headless Edge starts audio slowly: wait for `currentTime`, not a fixed delay.)
+    `/music` on the production build, Edge and Firefox 41 each: cards and filler, the
+    in-progress sample and "speki" not listed, hover (translate `0px -40%`, running, rises
+    60 px above the sleeve, clear of the label, shadow, card tone), leave (paused at the
+    same `currentTime`, slides back), focus, full grid / no sideways scroll / text inside at
+    360–1920 px, the song article panel (bucket URL, missing-file message, full-track link),
+    reduced motion (no slide, no animation, shadow still deepens), 404 text; Reading rerun
+    41/41 both. Small / real-cover / wide song cards (live data has only one song, widened)
+    checked on `next dev` with a temporary page edit (reverted) at 9 widths 360–1920: all
+    inside the padding, record clear of the label, label art loaded.
+  - Noise to expect: Firefox logs `Cookie "__cf_bm" has been rejected` on Supabase Storage's
+    404 for the missing sample snippet.
+  - Live data note: a book "194" (TO READ, with a cover) is published, saved 2026-10-04
+    13:21 UTC; probably from Ivan's step-2 checklist.
+- **Ivan's browser checklist** for step 3 (laptop Firefox, then phone):
+  1. /music: `music.` header; "Night Drive (sample)" (wide) and a quiet "More on the way."
+     card (no arrow). The in-progress sketch and "speki" aren't there.
+  2. Hover Night Drive: a record slides up out of the sleeve and spins; move away: it stops
+     where it is and slides back. Tab to it with the keyboard: same.
+  3. Click it: the article shows "About this song" (Spektral · September 2026), says the
+     preview can't be played (the sample's file doesn't exist), and has the full-track link.
+  4. Real playback (optional): in the admin, upload a snippet to "Night Drive (sample)"
+     (it replaces the missing file); play it on the article: play/pause, click and drag
+     the bar, arrow keys, the time ends at the right length. Remove it again afterwards if
+     the sample should stay as it was.
+  5. Phone: cards and the record look right; a tap opens the article; the player's button
+     and bar are easy to hit.
+  6. Both themes; reduced motion (if used): nothing slides or spins.
+  7. /reading still looks right (its covers moved to a shared component).
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:

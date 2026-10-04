@@ -1,3 +1,4 @@
+import { formatDuration } from "@/lib/format";
 import { isMediaPath } from "@/lib/media";
 
 // What a song's audio snippet may be, wherever it's checked: the snippet field
@@ -130,11 +131,8 @@ export function storedSnippetProblem(path: string, file: StoredFile): string | n
   return null;
 }
 
-/** 24.6 → "0:25", 95 → "1:35". */
-export function formatDuration(seconds: number): string {
-  const whole = Math.round(seconds);
-  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
-}
+// Lives in lib/format.ts (the public audio player uses it too); re-exported for the admin.
+export { formatDuration };
 
 /** 421_888 → "412 KB", 2_400_000 → "2.3 MB". */
 export function formatBytes(bytes: number): string {

@@ -1,8 +1,13 @@
 // Site-wide settings in one place, so links and names aren't scattered
 // through components. Leave a link empty to hide it everywhere.
+
+/** Ivan's artist name for his music. */
+const artist = "Spektral";
+
 export const site = {
   name: "Starfox Labs",
   author: "Ivan",
+  artist,
   // Canonical address, used for link previews and canonical URLs.
   // NEXT_PUBLIC_SITE_URL can override it (e.g. for a staging deployment).
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://starfoxlabs.org",
@@ -27,7 +32,7 @@ export const site = {
   now: {
     // TODO(Ivan): real track name and a line about it.
     producing: {
-      artist: "Spektral",
+      artist,
       title: "Untitled track",
       note: "Placeholder: a line about what you're working on.",
       href: "",

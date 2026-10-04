@@ -354,10 +354,10 @@ Everything built so far, with file maps, decisions and how it was tested:
   2. **Reading: done** (tested by Ivan, checklist 1–8, pushed). Book titles in the sans,
      `Reading · Shelf` filler, ratings only on wide cards and in the "about this" panel
      (Ivan's choices).
-  3. **Music: next.** Music + the custom audio player + the song "about this" panel. **Before building,
-     propose a hover effect for the song cards that feels musical but fits chester's
-     style, and wait for Ivan's OK.**
-  4. Games. **In the step plan, spell out exactly what the "pop up" hover does** (Ivan
+  3. **Music: done** (tested by Ivan, checklist 1–7, pushed). Record hover as proposed;
+     non-link "More on the way." filler; songs show once their article is published;
+     sample songs only (Ivan's music isn't public yet).
+  4. **Games: next.** **In the step plan, spell out exactly what the "pop up" hover does** (Ivan
      wants one in the spirit of the book-cover tilt/grow/shadow, adapted to our framed
      screenshots; chester has no games section), and wait for his OK.
   5. Hobbies.
@@ -411,7 +411,10 @@ Everything built so far, with file maps, decisions and how it was tested:
   published articles), `getPostItem` + `AboutItem` (add a `case` per section).
   Step 2 added `lib/books.ts` (`getPublishedBooks`, `bookLinks`) and
   `components/book-card.tsx` (`BookCard`, `BookCover` with the typed cover and `tilt`,
-  `Stars`) for the home grid in step 6.
+  `Stars`) for the home grid in step 6. Step 3 added `lib/tracks.ts`
+  (`getPublishedSongs`, `songHref`, `TRACK_LINK_LABELS`), `components/song-card.tsx`
+  (`SongCard`, `RecordSleeve` with the record), `components/cover.tsx` (`TypedCover`, shared
+  by books and songs) and `components/audio-player.tsx`.
   Shared helpers: `lib/reading.ts` (`compareBooks`, `READING_STATUS_LABELS`),
   `lib/games.ts`, `lib/hobbies.ts`. Remove each section from `app/not-found.tsx`'s
   "still being built" line as it lands.
@@ -428,10 +431,10 @@ Everything built so far, with file maps, decisions and how it was tested:
     only runs on `/admin`, `/login`, `/auth`).
   - Music: the snippet length to show is `tracks.snippet_seconds` (decoded at upload; the
     player's own figure can be wrong, e.g. in Firefox); older rows fall back to the player.
-  - Spektral is Ivan's artist name: move it into `lib/site.ts` (e.g. `site.artist`; today
-    it sits in the `now.producing` placeholder) and change the `home_feed` view (new
-    migration) to label song cards `Music · <song title>` like the other sections, instead
-    of the hard-coded `'Music · Spektral'`.
+  - Spektral is Ivan's artist name: now `site.artist` in `lib/site.ts` (step 3). Still to
+    do in step 6: change the `home_feed` view (new migration) to label song cards
+    `Music · <song title>` like the other sections, instead of the hard-coded
+    `'Music · Spektral'`.
   - Sample data: "Monstera (sample)" is a published cut-out without an image (from before
     the image rule); give it an image or NONE, or leave it for the pre-launch cleanup.
   - Live data has Ivan's own "Test Project" (published, with a screenshot) besides the
@@ -462,9 +465,9 @@ Everything built so far, with file maps, decisions and how it was tested:
 - **Vercel** (Ivan to confirm it's done): Production Branch = `main`; env vars
   `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (the publishable
   key, NOT `..._ANON_KEY` as first suggested); check the latest deploy succeeded.
-- **Known dead links** until later steps: the public Music / Games / Hobbies
+- **Known dead links** until later steps: the public Games / Hobbies
   pages show the 404 page (it says they're still being built) until their Phase 3 step
-  (Projects and Reading are live; remove each from `app/not-found.tsx` as it lands); the newsletter
+  (Projects, Reading and Music are live; remove each from `app/not-found.tsx` as it lands); the newsletter
   line is plain text until Phase 6.
 - UQ palette beyond purple is still a TODO (see Colors).
 - **Two-factor sign-in for the admin** before the newsletter goes live (see Phase 6).
@@ -481,6 +484,10 @@ Everything built so far, with file maps, decisions and how it was tested:
 - **Redirects for changed slugs** (to-do): changing a published article's slug breaks old
   links. Fix: a `post_redirects` table (`old_slug` → `post_id`) filled when a published
   slug changes, checked by the article page before `notFound()` (permanent redirect).
+- **Music filler → Spektral profile** (to-do, decided 2026-10-04): the Music page's
+  filler is a quiet non-link "More on the way." card while Ivan's music isn't public. Once
+  it is, link it to his Spektral profile (`MoreCard` in `app/music/page.tsx`, marked
+  `TODO(Ivan)`; the profile URL belongs in `lib/site.ts`).
 - **Ivan's pixel art** (to-do, decided 2026-10-04): Ivan's own animated pixel art in the
   spot where chester.how has its leaf → maple GIF (a small image in the home intro that
   swaps to the animated version on hover, 0.5 s cross-fade), and possibly an animated
