@@ -347,11 +347,34 @@ Everything built so far, with file maps, decisions and how it was tested:
   - *Rule kept for similar work:* changes to routing or URL handling start with a probe
     shaped like the real pages, and **if anything flickers or loses focus, stop and tell
     Ivan before touching the real code.**
-- **Next: Phase 3, the public section pages** (plan first; wait for approval). Per "Build
-  phases" and "Pages" above: one step per section, Projects, Reading, Music (with the
-  custom audio player and the "about this" panel on song articles), Games, Hobbies; then
-  the home grid from `home_feed` and the status cards from data (the placeholders in
-  `lib/site.ts` go away). Things to carry in:
+- **Now: Phase 3, the public section pages** (plan approved 2026-10-04; progress:
+  `docs/build-log.md`, "Phase 3"). Steps: (1) shared pieces + motion + Projects: **done,
+  not yet committed**; (2) Reading; (3) Music + audio player (**propose a musical hover
+  effect for song cards to Ivan before building**); (4) Games (**spell out an adapted
+  "pop up" hover for the framed screenshots in the step plan**: chester has no games);
+  (5) Hobbies; (6) home grid from `home_feed` + status cards from data (+ the pixel-art
+  spot, see "Still open"). Decisions (Ivan): home order newest first; a short last row
+  gets a quiet "more" card; section intros are `TODO(Ivan)` placeholders. Ivan wants the
+  pages to look and feel a lot like chester.how: **re-read every chester screenshot in
+  `design-refs/` before each step.**
+  - **Motion, as chester.how does it** (confirmed by Ivan from its recording, its CSS and
+    its scripts; recreated in our own CSS, no animation library):
+    1. Header tab bar drops in from 50 px above, 0.5 s spring (`header-in`); the right
+       side (socials, theme toggle) fades in after 1 s (`fade-in-late`).
+    2. Cards drop in from 10 px above, 0.15 s apart, chester's default spring (stiffness
+       100, damping 10 → `--spring-card`, 1.224 s) on page load / client navigation
+       (`card-in`, `--card-index`). No separate image fade (chester has none).
+    3. Card hover/focus: one step further from the page (`--bg-raised-hover`), and the ↗
+       sits in a circle that lights up (page colour + `--shadow-skeuo`). No purple tint.
+    4. Project (and game) screenshots grow to 105% on hover; book/song covers tilt −3°,
+       grow to 110% with a deeper shadow; photo cards: the photo slides down 48 px; cut-out
+       cards: text fades to 20%, the cut-out grows to 105% and comes forward. All 150 ms,
+       `cubic-bezier(0.4, 0, 0.2, 1)` (Tailwind's default), `motion-safe:` only.
+    5. A pill slides under the hovered header tab (mouse only); the header is sticky and
+       frosted; its right side fades out past 20 px of scroll (`inert` while hidden).
+    Reduced motion: no movement and no delays; colour changes and the sticky header stay.
+    Not used: chester's leaf→maple GIF and footer avatar (Ivan's own pixel art instead).
+  Things to carry in:
   - Pages use the cache tags the admin already updates (`projects`, `books`, `tracks`,
     `games`, `hobby_items`, plus `home` and `posts`); public pages stay static (Proxy
     only runs on `/admin`, `/login`, `/auth`).
@@ -396,9 +419,10 @@ Everything built so far, with file maps, decisions and how it was tested:
 - **Vercel** (Ivan to confirm it's done): Production Branch = `main`; env vars
   `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (the publishable
   key, NOT `..._ANON_KEY` as first suggested); check the latest deploy succeeded.
-- **Known dead links** until later steps: the public Projects / Reading / Music / Games /
-  Hobbies pages show the 404 page (it says they're still being built) until Phase 3; the
-  newsletter line is plain text until Phase 6.
+- **Known dead links** until later steps: the public Reading / Music / Games / Hobbies
+  pages show the 404 page (it says they're still being built) until their Phase 3 step
+  (Projects is live; remove each from `app/not-found.tsx` as it lands); the newsletter
+  line is plain text until Phase 6.
 - UQ palette beyond purple is still a TODO (see Colors).
 - **Two-factor sign-in for the admin** before the newsletter goes live (see Phase 6).
 - **Browser tests must stop publishing on the shared database** before the newsletter goes
@@ -414,6 +438,11 @@ Everything built so far, with file maps, decisions and how it was tested:
 - **Redirects for changed slugs** (to-do): changing a published article's slug breaks old
   links. Fix: a `post_redirects` table (`old_slug` → `post_id`) filled when a published
   slug changes, checked by the article page before `notFound()` (permanent redirect).
+- **Ivan's pixel art** (to-do, decided 2026-10-04): Ivan's own animated pixel art in the
+  spot where chester.how has its leaf → maple GIF (a small image in the home intro that
+  swaps to the animated version on hover, 0.5 s cross-fade), and possibly an animated
+  footer avatar. Build the spot when doing the home page (Phase 3, step 6), then **ask
+  Ivan for the art**. Never use placeholder art from anywhere else.
 
 ### Notes for the next session (gotchas — keep these)
 **Next.js 16**

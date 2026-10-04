@@ -8,11 +8,11 @@ import { Card } from "./card";
 // Bar heights and timings are fixed (not random) so server and browser agree.
 const BARS = [0.9, 0.55, 1, 0.7, 0.85, 0.45, 0.95, 0.6, 0.8, 0.5, 0.75, 1, 0.65, 0.85];
 
-export function NowProducingCard({ className }: { className?: string }) {
+export function NowProducingCard({ index, className }: { index?: number; className?: string }) {
   const { artist, title, note, href } = site.now.producing;
 
   return (
-    <Card label={`Music · ${artist}`} href={href || undefined} className={className}>
+    <Card label={`Music · ${artist}`} href={href || undefined} index={index} className={className}>
       <div aria-hidden="true" className="mb-4 flex h-7 items-end gap-[3px]">
         {BARS.map((height, i) => (
           <span
@@ -32,11 +32,11 @@ export function NowProducingCard({ className }: { className?: string }) {
   );
 }
 
-export function CurrentlyLearningCard({ className }: { className?: string }) {
+export function CurrentlyLearningCard({ index, className }: { index?: number; className?: string }) {
   const { topic, items } = site.now.learning;
 
   return (
-    <Card label="Hobbies · Learning" className={className}>
+    <Card label="Hobbies · Learning" index={index} className={className}>
       <Badges items={["Learning"]} />
       <p className="mt-2 line-clamp-2 font-serif text-[1.75rem] leading-[1.05] sm:text-3xl xl:text-4xl">{topic}</p>
       <p className="mt-2 line-clamp-3 text-sm text-fg-muted">{items.join(" · ")}</p>

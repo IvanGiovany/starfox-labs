@@ -587,6 +587,83 @@ Steps: (1) definition + image pipeline + tests; (2) form, list, pages, tab, harn
   7. Looks: the form and list in both themes; on the phone, the style toggle, category
      box and list buttons.
 
+## Phase 3 — Section pages (in progress)
+Plan approved 2026-10-04 (Ivan's answers: home newest first, a quiet "more" card for a
+short last row, `TODO(Ivan)` intros). Steps: 1 shared pieces + Projects, 2 Reading, 3
+Music + audio player, 4 Games, 5 Hobbies, 6 home grid + status cards.
+
+**Research (before step 1).** Ivan recorded chester.how (`design-refs/Chester Recording.mp4`).
+The watch plugin (Gemini engine; key in `~/.config/watch/.env`, never in the repo) described
+the motion; chester.how blocks plain fetches (HTTP 429), but headless Edge with
+`puppeteer-core` loads it, so its HTML, CSS and scripts were read to get exact values.
+Where Gemini and the code disagreed, the code won (cards come *down* 10 px, not up;
+the tab highlight slides on hover only; project images grow 105% rather than lift).
+Ivan confirmed the effects list (CLAUDE.md, "Motion, as chester.how does it").
+
+- **Step 1 (done):**
+  - `app/globals.css`: `--bg-raised-hover` (one step: light #e4dccf, dark #2f2c2a),
+    `--frost`, `--shadow-skeuo` (light-dark per colour: `light-dark()` only takes
+    colours, not whole shadows), `--cell-2` (square rows in the 2-column layout),
+    springs as CSS `linear()` curves computed from the spring equation (`--spring-card`:
+    stiffness 100 / damping 10, 1.224 s, 16% overshoot; `--spring-header`: 0.5 s, ~3%),
+    `card-in` / `header-in` / `fade-in-late`. The reduced-motion rule now also zeroes
+    `animation-delay` (staggered cards would otherwise still wait).
+  - Header: `components/site-header.tsx` sticky (`pointer-events-none`, only the bar and
+    the right side take clicks), `tab-bar.tsx` (frosted bar, drop-in, the hover pill moved
+    by writing its width/transform directly; mouse only), `header-extras.tsx` (fade-in
+    after 1 s; past 20 px of scroll: opacity 0 and `inert`), `nav-link.tsx` (`TAB_CLASS`:
+    chester's `px-2 py-1` tabs).
+  - `components/card.tsx`: plain hover tone, `ArrowCircle`, `card-in` with `index` and
+    `playedMs`; `links` mode: a covering link underneath, small links on top (links
+    can't nest); hover effects keyed to `group-hover` and `group-focus-within`.
+  - `lib/grid.ts`: `gridHoles` simulates CSS dense auto-placement; `fillGrid` widens 1–3
+    small cards (latest first), then tries one/two/three fillers with as few widenings as
+    possible. `components/card-grid.tsx`: 4 columns from `lg`, 2 below, square rows.
+  - `components/framed-screenshot.tsx` (frame + slim title bar, top 30%, cut off by the
+    card; `motion-safe:group-hover:scale-105`: Tailwind 4 uses the CSS `scale` property).
+  - `lib/projects.ts` (cached, tags `projects` + `posts`; `projectLinks`: live → repo
+    ("GitHub" or "Code") → article, only published ones; the rest become small links),
+    `app/projects/page.tsx` (screenshot cards, text cards without a screenshot, "Projects ·
+    More" → GitHub as the filler). Static (`○`).
+  - "About this" panel: `lib/post-items.ts` (`getPostItem(postId)`, one query to
+    `post_items`, tagged `posts` + every section tag), `components/about-item.tsx`
+    (projects version; other sections return null until their step), `ArticleView` takes
+    `about`; `lib/posts.ts` now selects `id`.
+  - Home and Writing cards got their drop-in order. **Writing gotcha:** the page first shows
+    its prerendered copy (the `<Suspense>` fallback) and the interactive grid replaces it
+    ~0.3 s later, which restarted the drop-in (the first card jumped back). Fix: the
+    interactive grid reads the prerendered first card's animation `currentTime` and
+    continues from there (`--card-offset`, `playedMs`), only for the cards it took over.
+  - 404 page: Projects no longer "still being built".
+  - Tested: tsx 7 (`gridHoles`, `fillGrid`, every arrangement of up to 9 cards comes out
+    full). Production build on :3124 driven with `puppeteer-core`, Edge and real Firefox,
+    28 checks each: header drop-in (500 ms), late fade (1 s / 300 ms), card stagger (0,
+    150, 300 ms…, 1224 ms); projects cards and links; no holes and no sideways scroll at
+    390 / 800 / 1280 / 1920 px; hover tone (dark mode in headless), arrow circle, screenshot
+    scale 1.05; tab pill under the hovered tab and fading on leave; sticky bar at 16 px
+    after scrolling, right side hidden and `inert`, back at the top; Writing: the first
+    card's opacity sampled every frame never drops (190 frames); home stagger; reduced
+    motion (Edge emulated, Firefox via `ui.prefersReducedMotion`): no delays, no scale,
+    colour still changes; no console errors apart from the header's prefetches of the
+    unbuilt section pages.
+  - Not tested with data: the "about this" panel (no project is linked to a published
+    article yet): on Ivan's checklist.
+- **Ivan's browser checklist** (laptop Firefox, then phone):
+  1. Load any page: the tab bar drops in from above; the links on the right appear a
+     second later. Hover the tabs: a soft pill slides under them.
+  2. Scroll: the tab bar stays at the top, frosted; the right side fades away and comes
+     back at the top.
+  3. /projects: `projects.` header, cards drop in one after another; hover: the card goes
+     one step darker (lighter in dark mode), the arrow's circle lights up, a screenshot
+     grows a little. Small "GitHub" links work on their own.
+  4. Widen and narrow the window: no gaps in the grid (a "More on GitHub" card may fill one).
+  5. /writing and home: cards drop in once (no jump back), Load more drops the new ones in.
+  6. "About this": link a project (e.g. Test Project) to one of the published sample
+     articles in the admin, open the article: the panel shows its screenshot, stack and
+     links. Unlink it afterwards.
+  7. Phone: the tab bar still scrolls sideways; cards and header look right; nothing jumps.
+  8. Looks overall, both themes.
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:

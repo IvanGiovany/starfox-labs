@@ -4,9 +4,9 @@ import { Badges } from "./badge";
 import { Card } from "./card";
 
 // An article as a card: used on the home grid and the Writing page.
-export function WritingCard({ post, maxTags = 1 }: { post: PostSummary; maxTags?: number }) {
+export function WritingCard({ post, maxTags = 1, index, playedMs }: { post: PostSummary; maxTags?: number; index?: number; playedMs?: number }) {
   return (
-    <Card label="Writing · Article" href={`/writing/${post.slug}`}>
+    <Card label="Writing · Article" href={`/writing/${post.slug}`} index={index} playedMs={playedMs}>
       <Badges items={post.tags.slice(0, maxTags)} />
       <h2 className="mt-2 line-clamp-3 font-serif text-xl leading-tight sm:text-2xl xl:text-[1.75rem]">{post.title}</h2>
       <PostDate post={post} />

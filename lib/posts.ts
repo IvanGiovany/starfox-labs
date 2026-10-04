@@ -5,6 +5,8 @@ import { supabasePublic } from "./supabase/public";
 // so the database shape (snake_case columns) stays out of the UI.
 
 export type Post = {
+  /** The database id: what items link to (the "about this" panel looks it up). */
+  id: string;
   slug: string;
   title: string;
   summary: string;
@@ -24,9 +26,10 @@ export type TagCount = { tag: string; count: number };
 // (phase 2) will refresh the "posts" tag so new articles appear at once.
 const POSTS_TAG = "posts";
 
-const SUMMARY_COLUMNS = "slug, title, summary, tags, cover_image_url, youtube_url, published_at";
+const SUMMARY_COLUMNS = "id, slug, title, summary, tags, cover_image_url, youtube_url, published_at";
 
 type PostRow = {
+  id: string;
   slug: string;
   title: string;
   summary: string;
@@ -39,6 +42,7 @@ type PostRow = {
 
 function toSummary(row: PostRow): PostSummary {
   return {
+    id: row.id,
     slug: row.slug,
     title: row.title,
     summary: row.summary,

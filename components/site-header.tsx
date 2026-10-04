@@ -1,11 +1,15 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { site } from "@/lib/site";
-import { NavLink } from "./nav-link";
+import { HeaderExtras } from "./header-extras";
+import { NavLink, TAB_CLASS } from "./nav-link";
+import { TabBar } from "./tab-bar";
 import { ThemeToggle } from "./theme-toggle";
 
-// Chester-style header: every section in one small tab bar on the left
-// ("Gvan" is home), quiet social links on the right. RSS joins in the polish
+// Chester-style header: every section in one small frosted tab bar on the
+// left ("Gvan" is home), quiet social links on the right. It sticks to the
+// top while the page scrolls; only the tab bar takes clicks, so the space
+// around it doesn't block the content underneath. RSS joins in the polish
 // phase, the account menu / "Sign in" link with reader accounts.
 export function SiteHeader() {
   const socials = [
@@ -14,12 +18,8 @@ export function SiteHeader() {
   ].filter((link) => link.href);
 
   return (
-    <header className="flex items-center justify-between gap-3 py-6 text-sm">
-      {/* On narrow phones the tab bar scrolls sideways instead of wrapping. */}
-      <nav
-        aria-label="Main"
-        className="relative flex min-w-0 items-center gap-3 overflow-x-auto rounded-lg border border-rule bg-bg px-3 py-1.5 whitespace-nowrap shadow-[0_1px_3px_rgb(0_0_0/0.06)] [scrollbar-width:none] sm:gap-4 sm:px-3.5"
-      >
+    <header className="pointer-events-none sticky top-0 z-20 flex items-center justify-between gap-3 py-4 text-sm">
+      <TabBar>
         {/*
           NavLink reads the URL to highlight the current tab. On pages whose
           URL isn't known at build time (e.g. /admin/writing/<id>), Next.js
@@ -28,7 +28,7 @@ export function SiteHeader() {
         */}
         <Suspense
           fallback={site.nav.map((item) => (
-            <Link key={item.href} href={item.href} className="text-fg-muted no-underline hover:text-fg">
+            <Link key={item.href} href={item.href} className={TAB_CLASS}>
               {item.label}
             </Link>
           ))}
@@ -39,22 +39,22 @@ export function SiteHeader() {
             </NavLink>
           ))}
         </Suspense>
-      </nav>
+      </TabBar>
 
-      <div className="flex shrink-0 items-center gap-4">
+      <HeaderExtras>
         {socials.map((link) => (
           <a
             key={link.label}
             href={link.href}
             target="_blank"
             rel="noreferrer"
-            className="hidden text-fg-muted no-underline hover:text-fg md:inline"
+            className="hidden text-fg-muted no-underline transition-colors hover:text-fg md:inline"
           >
             {link.label}
           </a>
         ))}
         <ThemeToggle />
-      </div>
+      </HeaderExtras>
     </header>
   );
 }

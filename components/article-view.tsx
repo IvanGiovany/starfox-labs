@@ -19,10 +19,12 @@ type ArticleViewProps = {
   tags: string[];
   coverImageUrl: string | null;
   youtubeUrl: string | null;
+  /** The "about this" panel when an item (a project, book, song…) links to this article. */
+  about?: ReactNode;
   body: ReactNode;
 };
 
-export function ArticleView({ title, publishedAt, minutes, tags, coverImageUrl, youtubeUrl, body }: ArticleViewProps) {
+export function ArticleView({ title, publishedAt, minutes, tags, coverImageUrl, youtubeUrl, about, body }: ArticleViewProps) {
   const videoId = youtubeUrl ? youtubeId(youtubeUrl) : null;
 
   return (
@@ -49,6 +51,12 @@ export function ArticleView({ title, publishedAt, minutes, tags, coverImageUrl, 
         )}
         <hr className="mt-8 w-24 border-rule" />
       </header>
+
+      {about && (
+        <div className="reveal mt-8" style={{ "--reveal-delay": "40ms" } as React.CSSProperties}>
+          {about}
+        </div>
+      )}
 
       {/* Cover and video are slightly wider than the text on large screens. */}
       {coverImageUrl && (

@@ -42,6 +42,11 @@ export function WritingBrowser({ posts, tags }: Props) {
 
   const results = useFilteredPosts(posts, { tag, query, index });
 
+  // The page first shows its prerendered copy (the fallback below), whose cards
+  // start dropping in; this replaces it a moment later with identical cards.
+  // They continue the drop-in where it had got to instead of starting again.
+  const [takeover] = useState(() => ({ playedMs: prerenderedPlayedMs(), slugs: new Set(results.slice(0, PAGE_SIZE).map((p) => p.slug)) }));
+
   function onQueryChange(value: string) {
     setQuery(value);
     setLimit(PAGE_SIZE);
@@ -72,8 +77,17 @@ export function WritingBrowser({ posts, tags }: Props) {
       onTagChange={onTagChange}
       onLoadMore={() => setLimit((n) => n + PAGE_SIZE)}
       onClear={clearAll}
+      playedMsFor={(slug) => (takeover.slugs.has(slug) ? takeover.playedMs : 0)}
     />
   );
+}
+
+/** How far the prerendered cards' drop-in has played (the first card starts at once), or 0 if they aren't there. */
+function prerenderedPlayedMs(): number {
+  if (typeof document === "undefined") return 0;
+  const first = document.querySelector("[data-writing-grid] > *");
+  const animation = first?.getAnimations().find((a) => a instanceof CSSAnimation && a.animationName === "card-in");
+  return typeof animation?.currentTime === "number" ? Math.round(animation.currentTime) : 0;
 }
 
 /**
@@ -152,6 +166,8 @@ type ViewProps = {
   onTagChange?: (tag: string | null) => void;
   onLoadMore?: () => void;
   onClear?: () => void;
+  /** Milliseconds of a card's drop-in already played by the prerendered copy. */
+  playedMsFor?: (slug: string) => number;
 };
 
 function WritingView({
@@ -165,6 +181,7 @@ function WritingView({
   onTagChange,
   onLoadMore,
   onClear,
+  playedMsFor,
 }: ViewProps) {
   const visible = posts.slice(0, limit);
   const isFiltered = Boolean(tag || query);
@@ -214,9 +231,10 @@ function WritingView({
       </div>
 
       {visible.length > 0 ? (
-        <div className="grid grid-cols-2 gap-(--grid-gap) sm:auto-rows-[minmax(11rem,auto)] lg:grid-cols-4 lg:auto-rows-(--cell)">
-          {visible.map((post) => (
-            <WritingCard key={post.slug} post={post} maxTags={2} />
+        <div data-writing-grid className="grid grid-cols-2 gap-(--grid-gap) sm:auto-rows-[minmax(11rem,auto)] lg:grid-cols-4 lg:auto-rows-(--cell)">
+          {visible.map((post, i) => (
+            // Cards drop in one after another; each "Load more" batch starts again from the first.
+            <WritingCard key={post.slug} post={post} maxTags={2} index={i % PAGE_SIZE} playedMs={playedMsFor?.(post.slug)} />
           ))}
         </div>
       ) : (

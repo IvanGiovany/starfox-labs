@@ -16,6 +16,14 @@
   --bg: light-dark(#f7f3ec, #1c1b1a);
   /* Cards: a very light lift off the page, like chester.how's light grey. */
   --bg-raised: light-dark(#ebe4d8, #282624);
+  /* A hovered card: one step further from the page (chester: neutral-50 → neutral-100). */
+  --bg-raised-hover: light-dark(#e4dccf, #2f2c2a);
+  /* The floating tab bar: the page colour, see-through and blurred (chester: white/70). */
+  --frost: light-dark(rgb(247 243 236 / 0.7), rgb(28 27 26 / 0.7));
+  /* A hairline ring and a 1px bottom edge, like a pressed key (chester's "skeuo"). */
+  --shadow-skeuo:
+    0 0 0 1px light-dark(rgb(0 0 0 / 0.05), rgb(255 255 255 / 0.06)),
+    0 1px 0 0 light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
   --fg: light-dark(#2a2521, #e8e1d6);
   --fg-muted: light-dark(#6e655c, #a39a8e);
   --rule: light-dark(#ddd5c8, #36322e);
@@ -41,6 +49,8 @@
   --page-pad: 1rem;
   --grid-gap: 0.5rem;
   --cell: calc((min(100vw - 2 * var(--page-pad), var(--page-max)) - 3 * var(--grid-gap)) / 4);
+  /* The same for the 2-column layout (phones and tablets). */
+  --cell-2: calc((min(100vw - 2 * var(--page-pad), var(--page-max)) - var(--grid-gap)) / 2);
 }
 @media (width >= 40rem) {
   :root {
@@ -80,6 +90,7 @@
 @theme inline {
   --color-bg: var(--bg);
   --color-bg-raised: var(--bg-raised);
+  --color-bg-raised-hover: var(--bg-raised-hover);
   --color-fg: var(--fg);
   --color-fg-muted: var(--fg-muted);
   --color-rule: var(--rule);
@@ -203,6 +214,58 @@ body::before {
 @utility reveal {
   animation: reveal 380ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
   animation-delay: var(--reveal-delay, 0ms);
+}
+
+/*
+ * Springs, as chester.how's motion library would move things, written as CSS
+ * easing curves (linear() through points of the spring's path; values above 1
+ * are the overshoot). Worked out once from the spring's equation.
+ *   --spring-card:   its default spring (stiffness 100, damping 10): settles in
+ *                    about 1.2 s, overshooting by 16% (1.6px on a 10px move).
+ *   --spring-header: a 0.5 s spring with a little bounce (about 3%).
+ */
+:root {
+  --spring-card: linear(0, 0.0421, 0.1497, 0.297, 0.4618, 0.6262, 0.7772, 0.9062, 1.0087, 1.0835, 1.1319, 1.157, 1.1629, 1.1542, 1.1354, 1.1108, 1.0838, 1.0572, 1.033, 1.0126, 0.9965, 0.985, 0.9777, 0.9741, 0.9735, 0.9752, 0.9785, 0.9826, 0.987, 0.9913, 0.9951, 0.9984, 1.0009, 1.0027, 1.0038, 1.0043, 1.0043, 1.004, 1.0034, 1.0027, 1);
+  --spring-header: linear(0, 0.044, 0.149, 0.2831, 0.4242, 0.5582, 0.6768, 0.7764, 0.856, 0.9169, 0.9612, 0.9918, 1.0113, 1.0224, 1.0274, 1.0283, 1.0265, 1.0233, 1.0194, 1.0154, 1.0117, 1.0084, 1.0058, 1.0036, 1);
+}
+
+/*
+ * Cards drop into place (chester's grids): each fades in from 10px above,
+ * 0.15 s after the one before it (--card-index, set by the grid). They animate
+ * whenever they appear: on page load, on a client navigation, or when "Load
+ * more" adds cards. Pure CSS, so cards show even without JavaScript.
+ */
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+@utility card-in {
+  animation: card-in 1224ms var(--spring-card) both;
+  /* --card-offset: time already played, when a card takes over from an identical one (see writing-browser.tsx). */
+  animation-delay: calc(var(--card-index, 0) * 150ms - var(--card-offset, 0ms));
+}
+
+/* The header's tab bar drops in from 50px above when the site first loads. */
+@keyframes header-in {
+  from {
+    opacity: 0;
+    transform: translateY(-50px);
+  }
+}
+@utility header-in {
+  animation: header-in 500ms var(--spring-header) both;
+}
+
+/* The social links on the right fade in a second after the page loads. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@utility fade-in-late {
+  animation: fade-in 300ms ease-out 1s both;
 }
 
 /* Form controls (login, admin). 16px text so phones don't zoom in on focus,
@@ -537,6 +600,8 @@ body::before {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    /* Staggered entrances would otherwise still wait before appearing. */
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;

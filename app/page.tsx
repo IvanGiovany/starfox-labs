@@ -31,16 +31,17 @@ export default async function Home() {
   return (
     <div className="grid grid-flow-dense grid-cols-2 gap-(--grid-gap) pt-2 pb-8 sm:auto-rows-[minmax(11rem,auto)] lg:grid-cols-4 lg:auto-rows-(--cell)">
       <Intro className="col-span-2 lg:row-span-2" />
-      {latest && <FeaturedWritingCard post={latest} className="col-span-2" />}
-      <NowProducingCard />
-      {small[0] && <WritingCard post={small[0]} />}
-      <CurrentlyLearningCard />
-      {small.slice(1, 4).map((post) => (
-        <WritingCard key={post.slug} post={post} />
+      {/* index: the order the cards drop in, 0.15 s apart. */}
+      {latest && <FeaturedWritingCard post={latest} index={0} className="col-span-2" />}
+      <NowProducingCard index={1} />
+      {small[0] && <WritingCard post={small[0]} index={2} />}
+      <CurrentlyLearningCard index={3} />
+      {small.slice(1, 4).map((post, i) => (
+        <WritingCard key={post.slug} post={post} index={4 + i} />
       ))}
-      <YouTubeCard />
-      {small[4] && <WritingCard post={small[4]} />}
-      <ArchiveCard postCount={posts.length} tags={countTags(posts)} className="col-span-2" />
+      <YouTubeCard index={7} />
+      {small[4] && <WritingCard post={small[4]} index={8} />}
+      <ArchiveCard postCount={posts.length} tags={countTags(posts)} index={9} className="col-span-2" />
     </div>
   );
 }
@@ -85,9 +86,9 @@ function Intro({ className }: { className?: string }) {
 
 const writingHref = (post: PostSummary) => `/writing/${post.slug}`;
 
-function FeaturedWritingCard({ post, className }: { post: PostSummary; className?: string }) {
+function FeaturedWritingCard({ post, index, className }: { post: PostSummary; index: number; className?: string }) {
   return (
-    <Card label="Writing · Latest" href={writingHref(post)} className={className}>
+    <Card label="Writing · Latest" href={writingHref(post)} index={index} className={className}>
       <Badges items={post.tags} />
       <h2 className="mt-3 line-clamp-2 font-serif text-3xl leading-[1.1] sm:text-[2.5rem] xl:text-5xl">{post.title}</h2>
       <PostDate post={post} />
@@ -97,10 +98,10 @@ function FeaturedWritingCard({ post, className }: { post: PostSummary; className
 }
 
 // Links to the channel for now. The polish phase replaces this with live video cards.
-function YouTubeCard() {
+function YouTubeCard({ index }: { index: number }) {
   const handle = site.links.youtube.split("/").pop();
   return (
-    <Card label={`YouTube · ${handle}`} href={site.links.youtube}>
+    <Card label={`YouTube · ${handle}`} href={site.links.youtube} index={index}>
       <span className="flex size-11 items-center justify-center rounded-full bg-accent text-bg shadow-[0_0_24px_var(--accent-glow)]">
         <svg viewBox="0 0 24 24" className="ml-0.5 size-4" fill="currentColor" aria-hidden="true">
           <path d="M8 5.5v13l10.5-6.5z" />
@@ -111,9 +112,9 @@ function YouTubeCard() {
   );
 }
 
-function ArchiveCard({ postCount, tags, className }: { postCount: number; tags: TagCount[]; className?: string }) {
+function ArchiveCard({ postCount, tags, index, className }: { postCount: number; tags: TagCount[]; index: number; className?: string }) {
   return (
-    <Card label="Writing · Archive" href="/writing" className={className}>
+    <Card label="Writing · Archive" href="/writing" index={index} className={className}>
       <p className="font-serif text-5xl leading-none xl:text-6xl">
         {postCount}
         <span className="ml-2 font-sans text-sm text-fg-muted">{postCount === 1 ? "article" : "articles"}</span>

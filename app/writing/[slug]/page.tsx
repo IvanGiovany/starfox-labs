@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AboutItem } from "@/components/about-item";
 import { ArticleView } from "@/components/article-view";
 import { readingTime } from "@/lib/format";
 import { renderMarkdown } from "@/lib/markdown";
+import { getPostItem } from "@/lib/post-items";
 import { articleStaticParams, getPostBySlug, getPublishedPosts, type PostSummary } from "@/lib/posts";
 import { openGraphDefaults, site } from "@/lib/site";
 
@@ -55,7 +57,7 @@ export default async function ArticlePage({ params }: PageProps<"/writing/[slug]
   const post = await getPostBySlug(slug);
   if (!post) notFound();
 
-  const [body, { older, newer }] = await Promise.all([renderMarkdown(post.bodyMd), neighbours(slug)]);
+  const [body, { older, newer }, item] = await Promise.all([renderMarkdown(post.bodyMd), neighbours(slug), getPostItem(post.id)]);
 
   return (
     <article className="mx-auto max-w-[42rem] pt-6 pb-8 sm:pt-10">
@@ -70,6 +72,7 @@ export default async function ArticlePage({ params }: PageProps<"/writing/[slug]
         tags={post.tags}
         coverImageUrl={post.coverImageUrl}
         youtubeUrl={post.youtubeUrl}
+        about={item && <AboutItem item={item} />}
         body={body}
       />
 
