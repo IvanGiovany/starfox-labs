@@ -357,9 +357,46 @@ Everything built so far, with file maps, decisions and how it was tested:
   3. **Music: done** (tested by Ivan, checklist 1–7, pushed). Record hover as proposed;
      non-link "More on the way." filler; songs show once their article is published;
      sample songs only (Ivan's music isn't public yet).
-  4. **Games: next.** **In the step plan, spell out exactly what the "pop up" hover does** (Ivan
-     wants one in the spirit of the book-cover tilt/grow/shadow, adapted to our framed
-     screenshots; chester has no games section), and wait for his OK.
+  4. **Games: next. Plan approved 2026-10-04, not built yet.** First thing next session:
+     **propose the exact "PRESS START" details (below) and wait for Ivan's OK**, then build.
+     - **Pop-up hover** (approved exactly as written; hover and keyboard focus): the framed
+       screenshot (1) lifts 12 px (8 px on phones), (2) grows to 104% from its bottom
+       centre, (3) tilts −1.5° (wide cards −1°), (4) its shadow deepens to
+       `0 22px 40px -12px rgb(0 0 0 / 0.45)`, (5) the three title-bar dots light up in soft
+       peach / yellow / green (grey at rest, as on Projects). Up: 250 ms with a slight
+       overshoot (e.g. `cubic-bezier(0.34, 1.56, 0.64, 1)`); back: 200 ms ease-out, no
+       overshoot (set the hover timing on the hover rule, the return timing on the base).
+       Reduced motion: no lift, grow or tilt; shadow and dots still change. Text cards
+       (no screenshot) don't pop.
+     - **Plus "PRESS START"** (Ivan, 2026-10-04): on hover or focus, a small pixel-style
+       "PRESS START" label blinks in the game window (title bar or a corner). **Propose the
+       exact font, position, blink speed and colours in both themes before building.**
+       Reduced motion: it shows without blinking. (No pixel font is loaded yet; whatever
+       is proposed must be our own or properly licensed, loaded with `next/font`.)
+     - **Card:** label `Games · <title>`, always opens the review article; under the
+       label the status badge (`PLAYING` / `FINISHED` / `DROPPED`) + extra badges and a
+       muted line `Platform · 62.5 h · 9/10` (empty parts left out; may shorten to hours
+       on phones: measure the 175 px cells first); the framed screenshot below, cut off
+       by the card's bottom edge. No screenshot → a text card (serif title, badge,
+       details). Order: Ivan's drag order. Shown: published games whose review is
+       published (same rule as songs).
+     - **Filler:** a `Games · Hours` data card (like Reading's Shelf), e.g. "62.5 hours
+       across 1 game, 1 finished." No external link.
+     - **"About this game" panel:** small framed screenshot, title, status badge,
+       `Platform · hours · rating`; all in `post_items` already (no migration).
+     - **Files:** `lib/games.ts` (cached loader, tags `games` + `posts`, `gameHref`, the
+       details line), `components/game-card.tsx`, `components/framed-screenshot.tsx`
+       (`hover: "grow"` for Projects, unchanged, or `"pop"` + the lit dots),
+       `components/about-item.tsx` (games branch), `app/games/page.tsx`,
+       `app/not-found.tsx` (only Hobbies left).
+     - **Testing:** tsx (links, details line: 62.5 h / 12 h / no hours / no rating);
+       production build, Edge + real Firefox (cards, links, text card, no holes at
+       360–1920 px, the panel on `sample-review-hollow-knight`, 404 text, Projects' hover
+       unchanged). The only published game (Hollow Knight sample) has no screenshot, so
+       the framed card, the pop and PRESS START are checked on `next dev` with a temporary
+       page edit, reverted after (as in steps 2 and 3): lift / scale / rotate, both timing
+       curves, dots, shadow, the blink, reduced motion, 9 widths. Nothing published on the
+       live database. Then Ivan's checklist.
   5. Hobbies.
   6. Home grid from `home_feed` + status cards from data, plus the migration (song cards
      labelled `Music · <song title>`, `site.artist`) and **the spot for Ivan's pixel art:
