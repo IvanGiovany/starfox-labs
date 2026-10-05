@@ -31,9 +31,10 @@ export function GameCard({ game, span, index }: { game: Game; span: Span; index:
         <FramedScreenshot src={game.imageUrl} alt={game.imageAlt} wide={span === 2} hover="pop" className="top-[max(30%,6.625rem)] sm:top-[max(30%,7.75rem)]" />
       ) : (
         <>
+          {/* Sized to the cell (measured): phones show the badge and title only. */}
           <GameBadges game={game} />
-          <h2 className="mt-2 line-clamp-2 font-serif text-3xl leading-[1.05] sm:text-4xl">{game.title}</h2>
-          <DetailsLine game={game} className="mt-2" />
+          <h2 className="mt-2 line-clamp-2 shrink-0 font-serif text-xl leading-[1.05] sm:text-4xl lg:text-3xl xl:text-4xl">{game.title}</h2>
+          <DetailsLine game={game} className="mt-2 hidden sm:block" />
         </>
       )}
     </Card>

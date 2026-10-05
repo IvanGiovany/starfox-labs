@@ -587,7 +587,7 @@ Steps: (1) definition + image pipeline + tests; (2) form, list, pages, tab, harn
   7. Looks: the form and list in both themes; on the phone, the style toggle, category
      box and list buttons.
 
-## Phase 3 — Section pages (in progress)
+## Phase 3 — Section pages (done 2026-10-06)
 Plan approved 2026-10-04 (Ivan's answers: home newest first, a quiet "more" card for a
 short last row, `TODO(Ivan)` intros). Steps: 1 shared pieces + Projects, 2 Reading, 3
 Music + audio player, 4 Games, 5 Hobbies, 6 home grid + status cards.
@@ -935,6 +935,83 @@ Ivan confirmed the effects list (CLAUDE.md, "Motion, as chester.how does it").
      open links. Both themes; reduced motion (if used): nothing slides or grows.
   7. The 404 page no longer mentions anything still being built; /hobbies in the header
      works. Undo the test changes afterwards (or keep real ones).
+
+- **Step 6 — Home grid + status cards (done 2026-10-06, tested by Ivan: checklist 1–8, laptop Firefox and phone).**
+  Ivan's choices: home from the **section loaders**, `home_feed` dropped; status cards
+  automatic (no "Show on home" needed), never twice; the latest article + 4 more; the
+  pixel-art spot with **his own Shinx fan art** (CLAUDE.md's rule updated: allowed there
+  only), using the animation's own first frame as the still.
+  - **Why loaders, not the view:** `home_feed` lacked what the section cards show (a book's
+    author and rating, a game's platform and hours, a hobby's subtitle, a project's extra
+    links, a song's month). Reusing the loaders makes a home card exactly the section
+    card. Migration `20261005130000_drop_home_feed.sql` (dry-run, then applied with Ivan's
+    direct OK; `db:types` removed the view's 19 lines); `rls-check.sql` lost its
+    `home_feed` check (loaders' link rules are unit-tested).
+  - Loaders gained `showOnHome` + `homeDate` (projects / hobbies: added; books / games:
+    finished, else added; songs: released, else added); `getNowProducing()` in
+    `lib/tracks.ts` (published, in progress, top of the Music order).
+  - `lib/home.ts` (`homeLayout`, `MORE_ARTICLES = 4`, `isLearning`): featured = latest
+    article; status = every book being read + every Learning item; feed = the next 4
+    articles + items marked "Show on home" (minus status ones), newest first, ties by key.
+  - `lib/grid.ts`: `gridHoles(spans, columns, block)` and `fillGrid(spans, { intro })`:
+    the intro's 2 × 2 block at the top-left on 4 columns (on 2 columns it's its own row).
+  - `app/page.tsx`: one grid, `grid-rows-[auto]` (the intro's own row below `lg`, then
+    square `--cell-2` rows) / `lg:grid-rows-none` + square `--cell` rows; slots (featured,
+    Now producing, books, Learning, feed, YouTube, archive) → `fillGrid({ intro: true })`,
+    fillers "Writing · More". Song cards on home: `Music · <title>`.
+    `components/project-card.tsx` (moved out of /projects), `SongCard`'s `label`,
+    `WritingCard`'s `className` + `square`, `status-cards.tsx` (`NowProducingCard` from
+    data; the Learning card is gone, Learning items are hobby cards), `lib/site.ts` lost
+    `now`.
+  - **Pixel art:** `GIFS/` held a pixel-art still and an MP4 (two different drawings;
+    the MP4 on white). Frames taken in Edge (seek every 1/240 s, keep changed frames: 8,
+    87–92 ms each), white removed by a flood fill from the edges (so the light-blue fill
+    stays) with white-to-alpha on the outline's edge, trimmed to one box, 120 px tall, with
+    `sharp`: `public/art/shinx-wag.webp` (29 KB, animated, loops), `shinx-still.webp`
+    (6.4 KB, frame 1), `shinx-pixel.png` (3.2 KB, kept for later). `components/pixel-art.tsx`:
+    inline after the intro's first sentence (1.15 em tall), animation fades in over 0.5 s
+    on hover, never shown with reduced motion (`unoptimized`: next/image would flatten it).
+  - **Card text must fit its cell (found by measuring):** home now has square cells on
+    phones too, which writing/status cards never had; and several cards were squeezed
+    already: the Projects and Games **text** cards at 360–390 px on their own pages, and
+    `/writing` at 1024–1279 px (square cells there). Budgets (160 px phone cell ≈ 100 px
+    under the label; 230 px at 1024 ≈ 162 px): phones show title + one line (writing:
+    no tag badge, 2-line title, date; latest article: title + date; Now producing: badge +
+    title, bars from `sm`; project text: title; game text: badge + title; YouTube: button
+    beside the words); `lg` hides or shortens summaries and steps titles down. Titles are
+    `shrink-0`. Check: `fit.mjs` (scratchpad) on all seven card pages.
+  - Tested: tsx 17 (home layout 5: featured + 4, status marked or not, never twice, only
+    marked items, newest first with date-only strings, empty; `gridHoles` with the block;
+    `fillGrid({ intro })` full for every arrangement of up to 9 cards; section pages
+    unchanged) + hobbies 4 + games 5. Production build, Edge and real Firefox: home 21 each
+    (order, Now producing without link, both books being read, Learning items, no
+    duplicates, 4 articles newest first, marked items, YouTube then archive, drop-in 0.15 s
+    apart, pixel art loaded / hover cross-fade 0.5 s, console clean, 9 widths: full grid,
+    no sideways scroll, intro fits, every card fits) + reduced motion 2 each (no animation,
+    no delays); fit check on `/`, `/writing`, `/projects`, `/reading`, `/music`, `/games`,
+    `/hobbies` at 9 widths: 7/7 each; Games 23 each (made data-driven). The step-5 Hobbies
+    check now fails on its "four samples" assumptions only (live data changed by Ivan's
+    checklist); `/hobbies` passes the fit check.
+- **Ivan's browser checklist** for step 6 (laptop Firefox, then phone):
+  1. Home: the intro top-left with Shinx after the first sentence; hover Shinx: it fades
+     into the wagging animation (and back). Both themes: no white box around it.
+  2. Beside the intro the latest article (wide); then "Now producing" (the in-progress
+     sample sketch), both books being read, the Learning items (your "coffee" photo is in
+     the Learning category, so it's here: change its category if that's not wanted).
+  3. Then newest first: 4 more articles mixed with the items marked "Show on home"
+     (Pixel Racer, Hollow Knight (sample), Ethiopia Guji); YouTube and the archive last.
+  4. Admin: tick "Show on home" on a book or song → it appears in date order; untick → gone.
+     Mark a second song in progress and drag it to the top of Music → it becomes "Now
+     producing". Undo afterwards.
+  5. Cards behave as on their pages (book tilt, record, game pop and PRESS START, hobby
+     photo/cut-out effects); song cards on home are labelled `Music · <title>`.
+  6. Widen and narrow the window: no gaps (a "Writing · More" card may fill one); text
+     never cut off mid-line.
+  7. Phone: the intro on its own, then square cards; writing cards show title and date;
+     everything readable; taps open the right pages. Reduced motion (if used): Shinx stays
+     still.
+  8. /writing, /projects and /games still look right (their text cards got phone/laptop
+     sizes).
 
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so

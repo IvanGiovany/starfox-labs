@@ -1,49 +1,117 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Badge, Badges } from "@/components/badge";
+import { Fragment, type ReactNode } from "react";
+import { Badge, BadgeRow } from "@/components/badge";
+import { BookCard } from "@/components/book-card";
 import { Card } from "@/components/card";
-import { CurrentlyLearningCard, NowProducingCard } from "@/components/status-cards";
+import { spanClass } from "@/components/card-grid";
+import { GameCard } from "@/components/game-card";
+import { HobbyCard } from "@/components/hobby-card";
+import { PixelArt } from "@/components/pixel-art";
+import { ProjectCard } from "@/components/project-card";
+import { SongCard } from "@/components/song-card";
+import { NowProducingCard } from "@/components/status-cards";
 import { PostDate, WritingCard } from "@/components/writing-card";
+import { getPublishedBooks } from "@/lib/books";
+import { getPublishedGames } from "@/lib/games-loader";
+import { fillGrid, type Span } from "@/lib/grid";
+import { getPublishedHobbies } from "@/lib/hobbies-loader";
+import { homeLayout, type HomeEntry } from "@/lib/home";
 import { countTags, getPublishedPosts, type PostSummary, type TagCount } from "@/lib/posts";
+import { getPublishedProjects } from "@/lib/projects";
 import { openGraphDefaults, site } from "@/lib/site";
+import { getNowProducing, getPublishedSongs } from "@/lib/tracks";
 
 // Home: a chester.how-style "digital garden". The intro sits in the top-left
-// of one dense card grid that mixes every section. For now the grid holds
-// writing and status cards; projects, books, music and hobbies join in the
-// Sections phase.
+// of one dense grid that mixes every section: the latest article, the status
+// cards (now producing, reading, learning), then the next articles and every
+// item marked "Show on home", newest first; the YouTube and archive cards
+// close it. Each card is the same card as on its section page.
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
   openGraph: { ...openGraphDefaults, url: "/" },
 };
 
-export default async function Home() {
-  const posts = await getPublishedPosts();
-  const [latest, ...rest] = posts;
+/** A card waiting for its place: its width, and how to draw it there. */
+type Slot = { key: string; span: Span; render: (span: Span, index: number) => ReactNode };
 
-  // Keep the grid free of holes. Counting cells on the 4-column layout:
-  // intro 4 + featured 2 + producing 1 + learning 1 + YouTube 1 + archive 2 = 11,
-  // so the small writing cards must number 1, 5, 9, ... to fill whole rows.
-  // An odd count also keeps the 2-column mobile layout even.
-  const smallCount = rest.length >= 5 ? 5 : Math.min(rest.length, 1);
-  const small = rest.slice(0, smallCount);
+const sizeSpan = (size: "small" | "wide"): Span => (size === "wide" ? 2 : 1);
+
+export default async function Home() {
+  const [posts, projects, books, songs, games, hobbies, producing] = await Promise.all([
+    getPublishedPosts(),
+    getPublishedProjects(),
+    getPublishedBooks(),
+    getPublishedSongs(),
+    getPublishedGames(),
+    getPublishedHobbies(),
+    getNowProducing(),
+  ]);
+  const { featured, reading, learning, feed } = homeLayout({ posts, projects, books, songs, games, hobbies });
+
+  const slots: Slot[] = [
+    ...(featured ? [{ key: "featured", span: 2 as Span, render: (_: Span, i: number) => <FeaturedWritingCard post={featured} index={i} /> }] : []),
+    ...(producing ? [{ key: "producing", span: 1 as Span, render: (s: Span, i: number) => <NowProducingCard song={producing} index={i} className={spanClass(s)} /> }] : []),
+    ...reading.map((book) => ({ key: `book-${book.id}`, span: sizeSpan(book.cardSize), render: (s: Span, i: number) => <BookCard book={book} span={s} index={i} /> })),
+    ...learning.map((hobby) => ({ key: `hobby-${hobby.id}`, span: sizeSpan(hobby.cardSize), render: (s: Span, i: number) => <HobbyCard hobby={hobby} span={s} index={i} /> })),
+    ...feed.map((entry) => ({ key: entry.key, span: entrySpan(entry), render: (s: Span, i: number) => <EntryCard entry={entry} span={s} index={i} /> })),
+    { key: "youtube", span: 1, render: (s, i) => <YouTubeCard index={i} className={spanClass(s)} /> },
+    { key: "archive", span: 2, render: (_, i) => <ArchiveCard postCount={posts.length} tags={countTags(posts)} index={i} /> },
+  ];
+  const { spans, fillers } = fillGrid(
+    slots.map((slot) => slot.span),
+    { intro: true },
+  );
 
   return (
-    <div className="grid grid-flow-dense grid-cols-2 gap-(--grid-gap) pt-2 pb-8 sm:auto-rows-[minmax(11rem,auto)] lg:grid-cols-4 lg:auto-rows-(--cell)">
+    // Phones and tablets: the intro is a row of its own (as tall as its text),
+    // then square cells. Desktop: the intro takes the top-left 2 × 2 cells.
+    <div className="grid grid-flow-dense auto-rows-(--cell-2) grid-cols-2 grid-rows-[auto] gap-(--grid-gap) pt-2 pb-8 lg:auto-rows-(--cell) lg:grid-cols-4 lg:grid-rows-none">
       <Intro className="col-span-2 lg:row-span-2" />
-      {/* index: the order the cards drop in, 0.15 s apart. */}
-      {latest && <FeaturedWritingCard post={latest} index={0} className="col-span-2" />}
-      <NowProducingCard index={1} />
-      {small[0] && <WritingCard post={small[0]} index={2} />}
-      <CurrentlyLearningCard index={3} />
-      {small.slice(1, 4).map((post, i) => (
-        <WritingCard key={post.slug} post={post} index={4 + i} />
+      {slots.map((slot, i) => (
+        <Fragment key={slot.key}>{slot.render(spans[i], i)}</Fragment>
       ))}
-      <YouTubeCard index={7} />
-      {small[4] && <WritingCard post={small[4]} index={8} />}
-      <ArchiveCard postCount={posts.length} tags={countTags(posts)} index={9} className="col-span-2" />
+      {fillers.map((span, i) => (
+        <MoreCard key={i} index={slots.length + i} className={spanClass(span)} />
+      ))}
     </div>
   );
+}
+
+function entrySpan(entry: HomeEntry): Span {
+  switch (entry.kind) {
+    case "post":
+      return 1;
+    case "project":
+      return sizeSpan(entry.project.cardSize);
+    case "book":
+      return sizeSpan(entry.book.cardSize);
+    case "song":
+      return sizeSpan(entry.song.cardSize);
+    case "game":
+      return sizeSpan(entry.game.cardSize);
+    case "hobby":
+      return sizeSpan(entry.hobby.cardSize);
+  }
+}
+
+/** A dated card, drawn by its section's own card. */
+function EntryCard({ entry, span, index }: { entry: HomeEntry; span: Span; index: number }) {
+  switch (entry.kind) {
+    case "post":
+      return <WritingCard post={entry.post} index={index} className={spanClass(span)} square />;
+    case "project":
+      return <ProjectCard project={entry.project} span={span} index={index} />;
+    case "book":
+      return <BookCard book={entry.book} span={span} index={index} />;
+    case "song":
+      return <SongCard song={entry.song} span={span} index={index} label={`Music · ${entry.song.title}`} />;
+    case "game":
+      return <GameCard game={entry.game} span={span} index={index} />;
+    case "hobby":
+      return <HobbyCard hobby={entry.hobby} span={span} index={index} />;
+  }
 }
 
 function Intro({ className }: { className?: string }) {
@@ -57,7 +125,7 @@ function Intro({ className }: { className?: string }) {
       {/* TODO(Ivan): rewrite in your own words. */}
       <p>
         Hi, I&apos;m <span className="text-fg">Ivan</span>. Welcome to{" "}
-        <span className="text-fg">Starfox Labs</span>, my small corner of the internet. I{" "}
+        <span className="text-fg">Starfox Labs</span>, my small corner of the internet. <PixelArt /> I{" "}
         <Link href="/projects" className={key}>
           build things
         </Link>
@@ -86,45 +154,61 @@ function Intro({ className }: { className?: string }) {
 
 const writingHref = (post: PostSummary) => `/writing/${post.slug}`;
 
-function FeaturedWritingCard({ post, index, className }: { post: PostSummary; index: number; className?: string }) {
+function FeaturedWritingCard({ post, index }: { post: PostSummary; index: number }) {
   return (
-    <Card label="Writing · Latest" href={writingHref(post)} index={index} className={className}>
-      <Badges items={post.tags} />
-      <h2 className="mt-3 line-clamp-2 font-serif text-3xl leading-[1.1] sm:text-[2.5rem] xl:text-5xl">{post.title}</h2>
+    <Card label="Writing · Latest" href={writingHref(post)} index={index} className="col-span-2">
+      {/* Sized to the cell (measured): phones show the title and date only. */}
+      <div className="hidden sm:block">
+        <BadgeRow items={post.tags} />
+      </div>
+      <h2 className="line-clamp-2 shrink-0 font-serif text-xl leading-[1.1] sm:mt-3 sm:text-[2.5rem] lg:text-3xl xl:text-5xl">{post.title}</h2>
       <PostDate post={post} />
-      <p className="mt-2 line-clamp-2 max-w-prose text-sm text-fg-muted sm:text-base">{post.summary}</p>
+      <p className="mt-2 hidden max-w-prose text-sm text-fg-muted sm:line-clamp-2 lg:hidden xl:line-clamp-1 2xl:line-clamp-2">{post.summary}</p>
     </Card>
   );
 }
 
 // Links to the channel for now. The polish phase replaces this with live video cards.
-function YouTubeCard({ index }: { index: number }) {
+function YouTubeCard({ index, className }: { index: number; className?: string }) {
   const handle = site.links.youtube.split("/").pop();
   return (
-    <Card label={`YouTube · ${handle}`} href={site.links.youtube} index={index}>
-      <span className="flex size-11 items-center justify-center rounded-full bg-accent text-bg shadow-[0_0_24px_var(--accent-glow)]">
-        <svg viewBox="0 0 24 24" className="ml-0.5 size-4" fill="currentColor" aria-hidden="true">
-          <path d="M8 5.5v13l10.5-6.5z" />
-        </svg>
-      </span>
-      <p className="mt-3 font-serif text-xl leading-tight sm:text-2xl xl:text-[1.75rem]">New videos on the channel</p>
+    <Card label={`YouTube · ${handle}`} href={site.links.youtube} index={index} className={className}>
+      {/* Phone cells are short: the play button sits beside the words there. */}
+      <div className="flex items-end gap-3 sm:block">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-bg shadow-[0_0_24px_var(--accent-glow)] sm:size-11">
+          <svg viewBox="0 0 24 24" className="ml-0.5 size-4" fill="currentColor" aria-hidden="true">
+            <path d="M8 5.5v13l10.5-6.5z" />
+          </svg>
+        </span>
+        <p className="shrink-0 font-serif text-base leading-tight sm:mt-3 sm:text-2xl xl:text-[1.75rem]">New videos on the channel</p>
+      </div>
     </Card>
   );
 }
 
-function ArchiveCard({ postCount, tags, index, className }: { postCount: number; tags: TagCount[]; index: number; className?: string }) {
+function ArchiveCard({ postCount, tags, index }: { postCount: number; tags: TagCount[]; index: number }) {
   return (
-    <Card label="Writing · Archive" href="/writing" index={index} className={className}>
-      <p className="font-serif text-5xl leading-none xl:text-6xl">
+    <Card label="Writing · Archive" href="/writing" index={index} className="col-span-2">
+      <p className="shrink-0 font-serif text-5xl leading-none xl:text-6xl">
         {postCount}
         <span className="ml-2 font-sans text-sm text-fg-muted">{postCount === 1 ? "article" : "articles"}</span>
       </p>
-      <div className="mt-4 flex flex-wrap gap-1.5">
+      {/* As many tags as fit: up to two rows (one on phones); the rest drop out whole. */}
+      <div className="mt-4 flex h-6 flex-wrap gap-1.5 overflow-hidden sm:h-[3.375rem]">
         {tags.map(({ tag, count }) => (
           // toneKey keeps each tag's color the same as its badge elsewhere.
           <Badge key={tag} toneKey={tag}>{`${tag} ${count}`}</Badge>
         ))}
       </div>
+    </Card>
+  );
+}
+
+/** Fills a short last row (after widening a card didn't do it): a quiet pointer to the writing. */
+function MoreCard({ index, className }: { index: number; className?: string }) {
+  return (
+    <Card label="Writing · More" href="/writing" index={index} className={className}>
+      <p className="font-serif text-2xl leading-tight text-fg-muted sm:text-3xl">More in writing</p>
     </Card>
   );
 }

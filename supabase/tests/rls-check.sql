@@ -52,12 +52,8 @@ begin
   end;
   if public.is_admin() then raise exception 'FAIL: a visitor counts as admin'; end if;
   raise notice 'PASS visitor: admins table hidden, is_admin() is false';
-
-  if exists (select 1 from public.home_feed where href like '/writing/%' and href not in (
-      select '/writing/' || slug from public.posts)) then
-    raise exception 'FAIL: home_feed links to an article visitors cannot see';
-  end if;
-  raise notice 'PASS visitor: home_feed only links to published articles';
+  -- (The home_feed check went with the view, 20261005130000. The home page's
+  -- loaders link only to published articles; that's covered by unit tests.)
 end;
 $$;
 

@@ -170,7 +170,8 @@ section.
 has an author and reading status, a song has an audio snippet and a full-track link, a game
 has a platform and hours played). Separate tables give real columns with database checks,
 exact TypeScript types, simple per-table RLS, and admin forms that map 1:1 to a table.
-The two places that need everything together read from Postgres **views** instead.
+Articles' "about this" panels read one Postgres **view** (`post_items`); the home grid
+reads each section's own loader (step 6), so its cards are the section pages' cards.
 
 Items don't have their own pages (they link to an article, a live site or a repo), so
 item tables have no slug; only `posts` does.
@@ -179,7 +180,7 @@ Shared columns on every item table: `id`, `title`, `status` (`draft` | `publishe
 `post_id` (→ `posts.id`, unique, `on delete set null`), `image_path` (Storage path),
 `image_alt`, `badges text[]`, `show_on_home` (bool), `card_size` (`small` | `wide`),
 `sort_order` (int, set by drag-to-reorder), `created_at`, `updated_at`.
-Built in migrations `20260930100000`–`20260930140000` (plus `20261002100000`: `tracks.snippet_seconds`, also in `post_items`); `lib/database.types.ts` is generated
+Built in migrations `20260930100000`–`20260930140000` (plus `20261002100000`: `tracks.snippet_seconds`, also in `post_items`; `20261005120000`: hobby `image_style` + `note` in `post_items`; `20261005130000`: `home_feed` dropped); `lib/database.types.ts` is generated
 from the live schema (`npm run db:types`) — regenerate it after every migration.
 
 | Table | Extra columns | Rules |
@@ -195,18 +196,18 @@ from the live schema (`npm run db:types`) — regenerate it after every migratio
   an article can be linked from only one item across all tables (trigger); deleting an
   article that a published song/game needs is refused until the item is unpublished;
   books: rating 1–5, ISBN 10/13 digits, finished ≥ started; URLs must be `http(s)://`.
-- **`home_feed` view** (`security_invoker = true`, so RLS still applies): published items
-  with `show_on_home` from every table (not posts — the home page queries those itself),
-  as one card shape: `section, id, title, label, href, image_path, image_alt, image_style,
-  caption, state, badges, card_size, sort_order, sort_date`. Links to an article only once
-  it's published; songs/games appear only when their article is live.
+- **Home grid** (no view since step 6; `home_feed` was dropped): `lib/home.ts` merges the
+  section loaders' items marked `show_on_home` with the latest articles, newest first.
+  Dates: projects and hobbies when added, books and games when finished (else added),
+  songs when released (else added). Links to an article only once it's published.
 - **`reorder_items(section, ids)`**: saves a section's drag-and-drop order in one call
   (admin only, runs with the caller's rights).
 - **`post_items` view**: for each article, the item that links to it (if any), so the
   article page can show its "about this" panel with one query.
 - **Status cards come from data, not code:** "Now producing" = a track with
   `in_progress = true`; "Reading" = books with `reading_status = 'reading'`; "Learning" =
-  hobby items in the `Learning` category. The placeholders in `lib/site.ts` go away.
+  hobby items in the `Learning` category. They show on home whether or not "Show on
+  home" is ticked, never twice (Ivan, 2026-10-05). Built in step 6.
 - **Access:** an `admins` table (`user_id`) + `public.is_admin()` function. Every table
   gets two kinds of policy: "anyone reads published rows" and "admin does everything".
 - **Storage:** one public-read `media` bucket, admin-only writes, folders per section
@@ -279,7 +280,10 @@ from the live schema (`npm run db:types`) — regenerate it after every migratio
   Subtle and fast (200–400ms). Respect `prefers-reduced-motion`.
 - Fully responsive; must look good on mobile.
 - Screenshots of references live in `/design-refs/` (git-ignored).
-- Do not use any Nintendo / Star Fox artwork or logos.
+- Do not use any Nintendo / Star Fox artwork or logos. **One exception (Ivan, 2026-10-05):
+  Ivan's own fan art is allowed in the home page's pixel-art spot** (his Shinx still and
+  animation; he made them himself and accepts that the character belongs to Nintendo).
+  Nowhere else, and never art made by someone else.
 
 ## Build phases (build ONE phase at a time)
 1. **Foundation** — *done.* Design system, header/footer, Supabase + `posts`, home grid,
@@ -289,8 +293,8 @@ from the live schema (`npm run db:types`) — regenerate it after every migratio
    forms (one step per section). Everything in `/admin` must work well on a phone.
 3. **Section pages** — showing that content, one step per section: Projects, Reading,
    Music (including the custom audio player and the "about this" panel on song
-   articles), Games, Hobbies; then the home grid from `home_feed` and status cards from
-   data.
+   articles), Games, Hobbies; then the home grid (from the section loaders) and status
+   cards from data.
 4. **Accounts + Settings** — reader sign-in (Google + email), profiles, profile pictures,
    Settings tabs, delete account.
 5. **Comments** — comments and replies on articles, moderation.
@@ -326,7 +330,7 @@ Track *active days* and *articles read* (one read per article per user), not raw
 - Use Supabase Row Level Security on every table.
 - Run `npm run build` and fix errors before saying a step is done.
 
-## Where we left off (updated 2026-10-05, step 5 pushed)
+## Where we left off (updated 2026-10-06, Phase 3 done)
 Everything built so far, with file maps, decisions and how it was tested:
 **`docs/build-log.md`**. Read the relevant part before changing that area.
 
@@ -347,7 +351,7 @@ Everything built so far, with file maps, decisions and how it was tested:
   - *Rule kept for similar work:* changes to routing or URL handling start with a probe
     shaped like the real pages, and **if anything flickers or loses focus, stop and tell
     Ivan before touching the real code.**
-- **Phase 3 (Section pages): in progress.** Plan approved 2026-10-04; details, file maps
+- **Phase 3 (Section pages): done** (2026-10-06, every step tested by Ivan, pushed). Plan approved 2026-10-04; details, file maps
   and test methods: `docs/build-log.md`, "Phase 3". Steps:
   1. Shared pieces + chester-style motion + **Projects: done** (tested by Ivan on laptop
      and phone, pushed `a55f081`).
@@ -368,14 +372,15 @@ Everything built so far, with file maps, decisions and how it was tested:
      (Ivan's OK, 2026-10-05; `db:types` unchanged, the fields are inside `details`). Effects use chester's
      real CSS (read in headless Edge); the photo slide is a `translate`, so reduced motion
      can skip it.
-  6. Home grid from `home_feed` + status cards from data, plus the migration (song cards
-     labelled `Music · <song title>`, `site.artist`) and **the spot for Ivan's pixel art:
-     build the spot, then ask Ivan for the art** (never placeholder art from elsewhere;
-     see "Still open"). **Ivan's art is in `GIFS/`** (project root, untracked; Ivan,
-     2026-10-05: "my pixel art for step 6"). Leave it alone until step 6, then use it from
-     there. As of 2026-10-05 it holds one file, `62-625470_shiny-shinx-sprite-hd-png-download.png`
-     (a still PNG, not a GIF); its name looks like a downloaded Pokémon sprite, so confirm
-     with Ivan before using it (rule: no Nintendo artwork) and ask for the animated version.
+  6. **Home grid + status cards: done** (tested by Ivan, checklist 1–8, pushed). Ivan's choices: home is built from
+     the **section loaders**; `home_feed` dropped (migration `20261005130000`, **applied**
+     with Ivan's direct OK); status cards automatic, never twice; the latest article + 4
+     more. **Pixel-art spot:** Ivan's own Shinx fan art (allowed, see "Visual design").
+     Ivan chose the animation with its own first frame as the still: `public/art/
+     shinx-still.webp` + `shinx-wag.webp` (190 × 120, white background removed, 8 frames,
+     0.72 s loop); the pixel-art still is kept as `public/art/shinx-pixel.png` for later
+     (e.g. the footer avatar). Originals stay in `GIFS/` (untracked, Ivan's; he can delete
+     it).
 - **Rule for every Phase 3 step: re-read all the chester screenshots in `design-refs/`
   first** (chester: `Screenshot 2026-09-26 184223` home, `234546` home grid, `234621`
   projects, `234654` writing, `234716` hobbies, `2026-09-30 205309` reading; the other
@@ -450,14 +455,14 @@ Everything built so far, with file maps, decisions and how it was tested:
     only runs on `/admin`, `/login`, `/auth`).
   - Music: the snippet length to show is `tracks.snippet_seconds` (decoded at upload; the
     player's own figure can be wrong, e.g. in Firefox); older rows fall back to the player.
-  - Spektral is Ivan's artist name: now `site.artist` in `lib/site.ts` (step 3). Still to
-    do in step 6: change the `home_feed` view (new migration) to label song cards
-    `Music · <song title>` like the other sections, instead of the hard-coded
-    `'Music · Spektral'`.
-  - Sample data: "Monstera (sample)" is a published cut-out without an image (from before
-    the image rule); give it an image or NONE, or leave it for the pre-launch cleanup.
-  - Live data has Ivan's own "Test Project" (published, with a screenshot) besides the
-    samples.
+  - Spektral is Ivan's artist name: `site.artist` in `lib/site.ts`. Song cards on home are
+    labelled `Music · <song title>` (`SongCard`'s `label`); "Now producing" keeps
+    `Music · Spektral`.
+  - Live test data from Ivan's checklists, besides the samples: "Test Project" (published,
+    screenshot), the game "Hollow Knight" (PS5, screenshot, linked to
+    `sample-git-glossary`), the hobby "coffee" (**Learning** category, photo, linked to
+    `sample-tailwind-v4-tokens`, so it shows on home as a Learning card) and Monstera's
+    cut-out image. Checks that assume only the samples must follow the live data.
 
 ### How the admin is built (reference)
 - **Adding an item section** = a definition file in `lib/admin/items/` (schema + publish
@@ -476,9 +481,8 @@ Everything built so far, with file maps, decisions and how it was tested:
   site only (no email).
 
 ### Still open
-- **Placeholders for Ivan** (all marked `TODO(Ivan)`): home intro (`app/page.tsx`),
-  Writing intro (`app/writing/page.tsx`), "Now producing" and "Learning" cards
-  (`lib/site.ts`).
+- **Placeholders for Ivan** (all marked `TODO(Ivan)`): home intro (`app/page.tsx`), the
+  section intros (`app/*/page.tsx`). (The status-card placeholders are gone: data now.)
 - **Sample content**: delete before launch — section items first (the statements at the top
   of `supabase/seed-sections.sql`), then `delete from public.posts where slug like 'sample-%';`
 - **Vercel** (Ivan to confirm it's done): Production Branch = `main`; env vars
@@ -505,11 +509,9 @@ Everything built so far, with file maps, decisions and how it was tested:
   filler is a quiet non-link "More on the way." card while Ivan's music isn't public. Once
   it is, link it to his Spektral profile (`MoreCard` in `app/music/page.tsx`, marked
   `TODO(Ivan)`; the profile URL belongs in `lib/site.ts`).
-- **Ivan's pixel art** (to-do, decided 2026-10-04; his files are in `GIFS/`, see Phase 3 step 6): Ivan's own animated pixel art in the
-  spot where chester.how has its leaf → maple GIF (a small image in the home intro that
-  swaps to the animated version on hover, 0.5 s cross-fade), and possibly an animated
-  footer avatar. Build the spot when doing the home page (Phase 3, step 6), then **ask
-  Ivan for the art**. Never use placeholder art from anywhere else.
+- **Footer avatar** (maybe, decided 2026-10-04): an animated footer avatar from Ivan's own
+  art; `public/art/shinx-pixel.png` (his pixel-art Shinx) is kept for it. The intro's
+  pixel-art spot is built (step 6).
 
 ### Notes for the next session (gotchas — keep these)
 **Next.js 16**

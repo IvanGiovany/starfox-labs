@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Card } from "@/components/card";
 import { CardGrid, spanClass } from "@/components/card-grid";
-import { FramedScreenshot } from "@/components/framed-screenshot";
+import { ProjectCard } from "@/components/project-card";
 import { SectionHeader } from "@/components/section-header";
 import { fillGrid, type Span } from "@/lib/grid";
-import { getPublishedProjects, type Project } from "@/lib/projects";
+import { getPublishedProjects } from "@/lib/projects";
 import { openGraphDefaults, site } from "@/lib/site";
 
 const description = "Things I've built, mostly for fun.";
@@ -43,30 +43,6 @@ export default async function ProjectsPage() {
         </CardGrid>
       )}
     </>
-  );
-}
-
-function ProjectCard({ project, span, index }: { project: Project; span: Span; index: number }) {
-  return (
-    <Card
-      label={`Projects · ${project.title}`}
-      href={project.href ?? undefined}
-      links={project.links}
-      linkLabel={project.title}
-      index={index}
-      className={spanClass(span)}
-    >
-      {project.imageUrl ? (
-        <FramedScreenshot src={project.imageUrl} alt={project.imageAlt} wide={span === 2} />
-      ) : (
-        // No screenshot yet: the project as a text card.
-        <>
-          <h2 className="line-clamp-2 font-serif text-3xl leading-[1.05] sm:text-4xl">{project.title}</h2>
-          {project.summary && <p className="mt-2 line-clamp-3 text-sm text-fg-muted">{project.summary}</p>}
-          {project.stack.length > 0 && <p className="mt-2 truncate text-xs text-fg-muted">{project.stack.join(" · ")}</p>}
-        </>
-      )}
-    </Card>
   );
 }
 

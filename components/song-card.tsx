@@ -11,10 +11,11 @@ import type { Song } from "@/lib/tracks";
 // A song card, in the style of the book cards: the cover art as a square
 // record sleeve at the bottom left, and beside it the title and release
 // month. On hover or focus a record slides up out of the sleeve and spins.
-export function SongCard({ song, span, index }: { song: Song; span: Span; index: number }) {
+// Labelled `Music · Songs` on /music and `Music · <title>` on home.
+export function SongCard({ song, span, index, label = "Music · Songs" }: { song: Song; span: Span; index: number; label?: string }) {
   const wide = span === 2;
   return (
-    <Card label="Music · Songs" href={song.href} index={index} className={spanClass(span)}>
+    <Card label={label} href={song.href} index={index} className={spanClass(span)}>
       <div className="flex items-end gap-3 sm:gap-4">
         <div className={`shrink-0 ${wide ? "w-[21%]" : "w-[45%]"}`}>
           <RecordSleeve title={song.title} coverUrl={song.coverUrl} coverAlt={song.coverAlt} sizes="(min-width: 1024px) 11vw, 22vw" record />

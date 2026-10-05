@@ -25,6 +25,10 @@ export type Hobby = {
   cardSize: "small" | "wide";
   /** Ivan's link, else the published article; null: the card isn't a link. */
   href: string | null;
+  /** Marked "Show on home" in the admin. */
+  showOnHome: boolean;
+  /** Where it sorts on home (newest first): when it was added. */
+  homeDate: string;
 };
 
 type HobbyRow = {
@@ -40,6 +44,8 @@ type HobbyRow = {
   badges: string[];
   card_size: string;
   url: string | null;
+  show_on_home: boolean;
+  created_at: string;
   post: { slug: string; status: string } | null;
 };
 
@@ -51,7 +57,7 @@ export async function getPublishedHobbies(): Promise<Hobby[]> {
 
   const { data, error } = await supabasePublic
     .from("hobby_items")
-    .select("id, title, category, subtitle, note, image_style, image_path, image_alt, caption, badges, card_size, url, post:posts(slug, status)")
+    .select("id, title, category, subtitle, note, image_style, image_path, image_alt, caption, badges, card_size, url, show_on_home, created_at, post:posts(slug, status)")
     .eq("status", "published")
     .order("sort_order")
     .order("created_at", { ascending: false })
@@ -74,6 +80,8 @@ export async function getPublishedHobbies(): Promise<Hobby[]> {
       badges: hobbyBadges(row.category, row.badges),
       cardSize: row.card_size === "wide" ? "wide" : "small",
       href: hobbyHref(row),
+      showOnHome: row.show_on_home,
+      homeDate: row.created_at,
     };
   });
 }

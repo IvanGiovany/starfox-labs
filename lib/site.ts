@@ -26,23 +26,9 @@ export const site = {
     { label: "Games", href: "/games" },
     { label: "Hobbies", href: "/hobbies" },
   ],
-
-  // Home status cards. Temporary: in the Sections phase these come from the
-  // database ("Now producing" = a release in progress, "Learning" = a hobby item).
-  now: {
-    // TODO(Ivan): real track name and a line about it.
-    producing: {
-      artist,
-      title: "Untitled track",
-      note: "Placeholder: a line about what you're working on.",
-      href: "",
-    },
-    // TODO(Ivan): what you're learning right now.
-    learning: {
-      topic: "Next.js 16",
-      items: ["Cache Components", "Row Level Security", "Placeholder"],
-    },
-  },
+  // The home status cards come from the database: "Now producing" is a track
+  // marked in progress, "Reading" the books being read, "Learning" the hobby
+  // items in the Learning category (see lib/home.ts).
 } as const;
 
 /**

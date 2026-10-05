@@ -25,6 +25,10 @@ export type Book = {
   href: string | null;
   /** The book's link as a small extra link, when the card already goes to the article. */
   links: BookLink[];
+  /** Marked "Show on home" in the admin. */
+  showOnHome: boolean;
+  /** Where it sorts on home (newest first): when it was finished, else when it was added. */
+  homeDate: string;
 };
 
 type BookRow = {
@@ -41,6 +45,7 @@ type BookRow = {
   card_size: string;
   finished_on: string | null;
   created_at: string;
+  show_on_home: boolean;
   post: { slug: string; status: string } | null;
 };
 
@@ -73,7 +78,7 @@ export async function getPublishedBooks(): Promise<Book[]> {
 
   const { data, error } = await supabasePublic
     .from("books")
-    .select("id, title, author, reading_status, badges, note, rating, url, image_path, image_alt, card_size, finished_on, created_at, post:posts(slug, status)")
+    .select("id, title, author, reading_status, badges, note, rating, url, image_path, image_alt, card_size, finished_on, created_at, show_on_home, post:posts(slug, status)")
     .eq("status", "published")
     .order("id")
     .returns<BookRow[]>();
@@ -99,5 +104,7 @@ export async function getPublishedBooks(): Promise<Book[]> {
       coverAlt: row.image_alt ?? "",
       cardSize: row.card_size === "wide" ? "wide" : "small",
       ...bookLinks(row),
+      showOnHome: row.show_on_home,
+      homeDate: row.finished_on ?? row.created_at,
     }));
 }

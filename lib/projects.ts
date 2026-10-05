@@ -20,6 +20,10 @@ export type Project = {
   href: string | null;
   /** The other places, shown as small links on the card. */
   links: ProjectLink[];
+  /** Marked "Show on home" in the admin. */
+  showOnHome: boolean;
+  /** Where it sorts on home (newest first): when it was added. */
+  homeDate: string;
 };
 
 type ProjectRow = {
@@ -32,6 +36,8 @@ type ProjectRow = {
   image_path: string | null;
   image_alt: string | null;
   card_size: string;
+  show_on_home: boolean;
+  created_at: string;
   post: { slug: string; status: string } | null;
 };
 
@@ -58,7 +64,7 @@ export async function getPublishedProjects(): Promise<Project[]> {
 
   const { data, error } = await supabasePublic
     .from("projects")
-    .select("id, title, summary, stack, url, repo_url, image_path, image_alt, card_size, post:posts(slug, status)")
+    .select("id, title, summary, stack, url, repo_url, image_path, image_alt, card_size, show_on_home, created_at, post:posts(slug, status)")
     .eq("status", "published")
     .order("sort_order")
     .order("created_at", { ascending: false })
@@ -75,5 +81,7 @@ export async function getPublishedProjects(): Promise<Project[]> {
     imageAlt: row.image_alt ?? "",
     cardSize: row.card_size === "wide" ? "wide" : "small",
     ...projectLinks(row),
+    showOnHome: row.show_on_home,
+    homeDate: row.created_at,
   }));
 }

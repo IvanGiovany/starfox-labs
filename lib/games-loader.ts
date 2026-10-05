@@ -23,6 +23,10 @@ export type Game = {
   cardSize: "small" | "wide";
   /** Ivan's review: every card opens it. */
   href: string;
+  /** Marked "Show on home" in the admin. */
+  showOnHome: boolean;
+  /** Where it sorts on home (newest first): when it was finished, else when it was added. */
+  homeDate: string;
 };
 
 type GameRow = {
@@ -36,6 +40,9 @@ type GameRow = {
   image_path: string | null;
   image_alt: string | null;
   card_size: string;
+  show_on_home: boolean;
+  finished_on: string | null;
+  created_at: string;
   post: { slug: string; status: string } | null;
 };
 
@@ -47,7 +54,7 @@ export async function getPublishedGames(): Promise<Game[]> {
 
   const { data, error } = await supabasePublic
     .from("games")
-    .select("id, title, play_status, badges, platform, hours_played, rating, image_path, image_alt, card_size, post:posts(slug, status)")
+    .select("id, title, play_status, badges, platform, hours_played, rating, image_path, image_alt, card_size, show_on_home, finished_on, created_at, post:posts(slug, status)")
     .eq("status", "published")
     .order("sort_order")
     .order("created_at", { ascending: false })
@@ -72,6 +79,8 @@ export async function getPublishedGames(): Promise<Game[]> {
         imageAlt: row.image_alt ?? "",
         cardSize: row.card_size === "wide" ? ("wide" as const) : ("small" as const),
         href,
+        showOnHome: row.show_on_home,
+        homeDate: row.finished_on ?? row.created_at,
       },
     ];
   });

@@ -443,25 +443,6 @@ export type Database = {
       }
     }
     Views: {
-      home_feed: {
-        Row: {
-          badges: string[] | null
-          caption: string | null
-          card_size: string | null
-          href: string | null
-          id: string | null
-          image_alt: string | null
-          image_path: string | null
-          image_style: string | null
-          label: string | null
-          section: string | null
-          sort_date: string | null
-          sort_order: number | null
-          state: string | null
-          title: string | null
-        }
-        Relationships: []
-      }
       post_items: {
         Row: {
           details: Json | null
