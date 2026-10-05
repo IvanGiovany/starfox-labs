@@ -1,4 +1,4 @@
-import { Badge } from "@/components/badge";
+import { BadgeRow } from "@/components/badge";
 import { Card } from "@/components/card";
 import { spanClass } from "@/components/card-grid";
 import { FramedScreenshot } from "@/components/framed-screenshot";
@@ -40,18 +40,9 @@ export function GameCard({ game, span, index }: { game: Game; span: Span; index:
   );
 }
 
-/** The status badge, then Ivan's badges from `sm` up, on one row: badges that don't fit drop out whole. */
+/** The status badge, then Ivan's badges from `sm` up. */
 function GameBadges({ game }: { game: Game }) {
-  return (
-    <div className="flex h-6 flex-wrap gap-1.5 overflow-hidden">
-      <Badge>{PLAY_STATUS_LABELS[game.playStatus]}</Badge>
-      {game.badges.map((badge) => (
-        <span key={badge} className="hidden sm:flex">
-          <Badge>{badge}</Badge>
-        </span>
-      ))}
-    </div>
-  );
+  return <BadgeRow items={[PLAY_STATUS_LABELS[game.playStatus], ...game.badges]} phoneFirstOnly />;
 }
 
 /** "PC · 62.5 h · 9/10"; phone cards are narrow, so there only hours and rating. */

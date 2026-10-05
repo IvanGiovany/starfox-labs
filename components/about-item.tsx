@@ -13,9 +13,8 @@ import { site } from "@/lib/site";
 import { TRACK_LINK_LABELS } from "@/lib/tracks";
 
 // The "about this" panel near the top of an article that an item links to: a
-// quiet raised box with the item's picture and its key facts. Each section
-// gets its own version as its public page is built (Phase 3); sections
-// without one show nothing yet.
+// quiet raised box with the item's picture and its key facts, one version per
+// section.
 export function AboutItem({ item }: { item: PostItem }) {
   switch (item.section) {
     case "projects":
@@ -26,8 +25,8 @@ export function AboutItem({ item }: { item: PostItem }) {
       return <AboutSong item={item} />;
     case "games":
       return <AboutGame item={item} />;
-    default:
-      return null;
+    case "hobby_items":
+      return <AboutHobby item={item} />;
   }
 }
 
@@ -170,6 +169,40 @@ function AboutGame({ item }: { item: PostItem }) {
           {status && isPlayStatus(status) && <Badge>{PLAY_STATUS_LABELS[status]}</Badge>}
           {details && <span className="text-fg-muted">{details}</span>}
         </div>
+      </div>
+    </aside>
+  );
+}
+
+// A hobby item: its picture as on its card (a photo cropped square, a cut-out
+// whole, nothing for a text card), category, title, subtitle, note and link.
+function AboutHobby({ item }: { item: PostItem }) {
+  const category = detailText(item.details, "category");
+  const subtitle = detailText(item.details, "subtitle");
+  const note = detailText(item.details, "note");
+  const url = detailText(item.details, "url");
+  const style = detailText(item.details, "image_style") ?? "photo";
+  const image = style !== "none" ? item.imageUrl : null;
+
+  return (
+    <aside aria-label="About this hobby" className="flex items-center gap-4 rounded-xl bg-bg-raised p-4 sm:gap-5 sm:p-5">
+      {image && (
+        <div className={`relative aspect-square w-20 shrink-0 sm:w-24 ${style === "cutout" ? "" : "overflow-hidden rounded-md"}`}>
+          <Image src={image} alt={item.imageAlt} fill sizes="96px" className={style === "cutout" ? "object-contain" : "object-cover"} />
+        </div>
+      )}
+      <div className="min-w-0">
+        <p className="text-xs text-fg-muted">{category ? `Hobbies · ${category}` : "Hobbies"}</p>
+        <p className="mt-1 font-serif text-2xl leading-tight">{item.title}</p>
+        {subtitle && <p className="mt-0.5 text-sm text-fg-muted">{subtitle}</p>}
+        {note && <p className="mt-1 text-sm">{note}</p>}
+        {url && (
+          <p className="mt-2 text-sm">
+            <a href={url} target="_blank" rel="noreferrer">
+              Visit ↗
+            </a>
+          </p>
+        )}
       </div>
     </aside>
   );

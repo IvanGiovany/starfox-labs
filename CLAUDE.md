@@ -326,7 +326,7 @@ Track *active days* and *articles read* (one read per article per user), not raw
 - Use Supabase Row Level Security on every table.
 - Run `npm run build` and fix errors before saying a step is done.
 
-## Where we left off (updated 2026-10-05, step 4 pushed)
+## Where we left off (updated 2026-10-05, step 5 pushed)
 Everything built so far, with file maps, decisions and how it was tested:
 **`docs/build-log.md`**. Read the relevant part before changing that area.
 
@@ -362,8 +362,12 @@ Everything built so far, with file maps, decisions and how it was tested:
      (`components/press-start.tsx`, no font), cream `#fff4dc` with a hard `#1c1b1a`
      shadow, same in both themes, centred at 60% of the visible screen, appears 250 ms in,
      blinks 1 s (0.6 on / 0.4 off, hard cuts), steady with reduced motion.
-  5. **Hobbies: next.** Plan it in the same detail (re-read the chester screenshots first,
-     especially `234716`), propose, wait for Ivan's OK.
+  5. **Hobbies: done** (tested by Ivan, checklist 1–7, pushed). Ivan's choices: automatic LEARNING badge (never
+     twice), `Hobbies · All` filler, cut-outs `object-contain`; the migration
+     `20261005120000_post_items_hobby_style.sql` is **applied** to the live database
+     (Ivan's OK, 2026-10-05; `db:types` unchanged, the fields are inside `details`). Effects use chester's
+     real CSS (read in headless Edge); the photo slide is a `translate`, so reduced motion
+     can skip it.
   6. Home grid from `home_feed` + status cards from data, plus the migration (song cards
      labelled `Music · <song title>`, `site.artist`) and **the spot for Ivan's pixel art:
      build the spot, then ask Ivan for the art** (never placeholder art from elsewhere;
@@ -403,9 +407,9 @@ Everything built so far, with file maps, decisions and how it was tested:
      scale-110` + bigger shadow, 150 ms). *Step 2 / 3* (songs: Ivan may pick a musical
      effect instead, step 3).
   8. Photo cards: the photo slides down 48 px (`mt-12`) revealing the label row; the white
-     caption gets a dark see-through background. *Step 5.*
+     caption gets a dark see-through background. *Built (step 5).*
   9. Cut-out cards: the text block (gradient from the card colour) fades to 20%; the cut-out
-     grows to 105% and comes in front. *Step 5.*
+     grows to 105% and comes in front. *Built (step 5).*
   10. A soft pill slides under the hovered header tab (mouse only). *Built.*
   11. Sticky, frosted header; its right side fades out past 20 px of scroll (`inert`).
      *Built.*
@@ -424,17 +428,21 @@ Everything built so far, with file maps, decisions and how it was tested:
   by books and songs) and `components/audio-player.tsx`. Step 4 added
   `lib/games-loader.ts` (`getPublishedGames`), `components/game-card.tsx` (`GameCard`),
   `components/press-start.tsx`, `FramedScreenshot`'s `hover="pop"` + `TitleBar`, and
-  `Card`'s `meta` slot (lines right under the label).
+  `Card`'s `meta` slot (lines right under the label). Step 5 added `lib/hobbies-loader.ts`
+  (`getPublishedHobbies`), `components/hobby-card.tsx` (`HobbyCard`, all three styles) and
+  `BadgeRow` (`components/badge.tsx`). **Card text must fit its cell:** titles are
+  `shrink-0` (a `line-clamp` element can otherwise be squeezed by the flex column and
+  clipped silently); measure titles against their line count at 360–1920 px.
   Shared helpers: `lib/reading.ts` (`compareBooks`, `READING_STATUS_LABELS`),
-  `lib/games.ts` (`gameDetails`, `gameHref`, `hoursSummary`; the admin form loads it in
-  the browser, so keep server-only code out: loaders go in their own file), `lib/hobbies.ts`. Remove each section from `app/not-found.tsx`'s
-  "still being built" line as it lands.
+  `lib/games.ts` (`gameDetails`, `gameHref`, `hoursSummary`) and `lib/hobbies.ts`
+  (`hobbyHref`, `hobbyBadges`, `hobbyCaption`, `hobbiesSummary`): the admin forms load
+  these in the browser, so keep server-only code out; loaders go in their own file.
 - **Testing a step** (build log, Phase 3 step 1): unit tests with tsx for pure logic;
   production build on :3124 driven by `puppeteer-core` in Edge and real Firefox (cards,
   links, no holes at 390/800/1280/1920 px, no sideways scroll, hover values via computed
   styles, `document.getAnimations()` for timings, reduced motion: Edge emulated, Firefox
   via `extraPrefsFirefox: { "ui.prefersReducedMotion": 1 }`). Headless browsers run in
-  dark mode. Expected noise: 404s from the header prefetching the unbuilt section pages.
+  dark mode. Console noise to expect: none since step 5 (every section page exists).
   **No screenshots** for looks (Ivan checks them); give Ivan a checklist each step.
 - Things to carry in:
   - Pages use the cache tags the admin already updates (`projects`, `books`, `tracks`,
@@ -476,9 +484,7 @@ Everything built so far, with file maps, decisions and how it was tested:
 - **Vercel** (Ivan to confirm it's done): Production Branch = `main`; env vars
   `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (the publishable
   key, NOT `..._ANON_KEY` as first suggested); check the latest deploy succeeded.
-- **Known dead links** until later steps: the public Hobbies page shows the 404 page (it
-  says it's still being built) until its Phase 3 step (Projects, Reading, Music and Games
-  are live; remove it from `app/not-found.tsx` when it lands); the newsletter
+- **Known dead links**: none among the sections (all live since step 5); the newsletter
   line is plain text until Phase 6.
 - UQ palette beyond purple is still a TODO (see Colors).
 - **Two-factor sign-in for the admin** before the newsletter goes live (see Phase 6).

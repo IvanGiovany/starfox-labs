@@ -47,3 +47,21 @@ export function Badges({ items, className = "" }: { items: string[]; className?:
     </div>
   );
 }
+
+/**
+ * Badges on a single row: any that don't fit drop out whole (they wrap onto a
+ * hidden second row) instead of being cut. With `phoneFirstOnly`, phones show
+ * only the first one (e.g. a game's status).
+ */
+export function BadgeRow({ items, phoneFirstOnly = false, className = "" }: { items: string[]; phoneFirstOnly?: boolean; className?: string }) {
+  if (items.length === 0) return null;
+  return (
+    <div className={`flex h-6 flex-wrap gap-1.5 overflow-hidden ${className}`}>
+      {items.map((item, i) => (
+        <span key={`${i}-${item}`} className={phoneFirstOnly && i > 0 ? "hidden sm:flex" : "flex"}>
+          <Badge>{item}</Badge>
+        </span>
+      ))}
+    </div>
+  );
+}

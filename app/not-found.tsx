@@ -5,7 +5,6 @@ export default function NotFound() {
   return (
     <NotFoundPage>
       There&apos;s no page at this address. The link may have a typo, or the page may have moved.
-      The Hobbies page is still being built.
     </NotFoundPage>
   );
 }
