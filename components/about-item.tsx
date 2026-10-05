@@ -2,8 +2,10 @@ import Image from "next/image";
 import { AudioPlayer } from "@/components/audio-player";
 import { Badge } from "@/components/badge";
 import { BookCover, Stars } from "@/components/book-card";
+import { TitleBar } from "@/components/framed-screenshot";
 import { RecordSleeve } from "@/components/song-card";
 import { formatMonth } from "@/lib/format";
+import { gameDetails, isPlayStatus, PLAY_STATUS_LABELS } from "@/lib/games";
 import { mediaUrl } from "@/lib/media";
 import { detailList, detailText, type PostItem } from "@/lib/post-items";
 import { READING_STATUS_LABELS, READING_STATUSES, type ReadingStatus } from "@/lib/reading";
@@ -22,6 +24,8 @@ export function AboutItem({ item }: { item: PostItem }) {
       return <AboutBook item={item} />;
     case "tracks":
       return <AboutSong item={item} />;
+    case "games":
+      return <AboutGame item={item} />;
     default:
       return null;
   }
@@ -133,6 +137,40 @@ function AboutSong({ item }: { item: PostItem }) {
           ))}
         </p>
       )}
+    </aside>
+  );
+}
+
+// A game's review: Ivan's screenshot in a small window, the status, and
+// platform · hours · rating.
+function AboutGame({ item }: { item: PostItem }) {
+  const status = detailText(item.details, "play_status");
+  const hours = item.details.hours_played;
+  const details = gameDetails({
+    platform: detailText(item.details, "platform"),
+    // numeric may come back as a number or (for big values) a string.
+    hoursPlayed: typeof hours === "number" || (typeof hours === "string" && hours !== "") ? Number(hours) : null,
+    rating: detailNumber(item.details, "rating"),
+  });
+
+  return (
+    <aside aria-label="About this game" className="flex flex-col gap-4 rounded-xl bg-bg-raised p-4 sm:flex-row sm:items-center sm:p-5">
+      {item.imageUrl && (
+        <div className="w-full shrink-0 overflow-hidden rounded-md border border-rule bg-bg shadow-[0_6px_16px_-8px_rgb(0_0_0/0.3)] sm:w-48">
+          <TitleBar className="h-3.5 px-1.5" />
+          <div className="relative aspect-[16/10]">
+            <Image src={item.imageUrl} alt={item.imageAlt} fill sizes="(min-width: 640px) 192px, 90vw" className="object-cover object-top" />
+          </div>
+        </div>
+      )}
+      <div className="min-w-0">
+        <p className="text-xs text-fg-muted">About this game</p>
+        <p className="mt-1 font-serif text-2xl leading-tight">{item.title}</p>
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+          {status && isPlayStatus(status) && <Badge>{PLAY_STATUS_LABELS[status]}</Badge>}
+          {details && <span className="text-fg-muted">{details}</span>}
+        </div>
+      </div>
     </aside>
   );
 }

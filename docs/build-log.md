@@ -787,6 +787,80 @@ Ivan confirmed the effects list (CLAUDE.md, "Motion, as chester.how does it").
   6. Both themes; reduced motion (if used): nothing slides or spins.
   7. /reading still looks right (its covers moved to a shared component).
 
+- **Step 4 — Games (done 2026-10-05, tested by Ivan: checklist 1–8, laptop Firefox and phone).** PRESS START as
+  proposed and approved by Ivan (our own SVG pixel letters, not a font).
+  - `lib/games.ts` (also loaded by the admin's form in the browser, so nothing
+    server-only): `formatHours` ("62.5 h"), `gameDetails` (`PC · 62.5 h · 9/10`, empty
+    parts left out; `short` for phones drops the platform unless it's all there is),
+    `gameHref` (published review only), `hoursSummary` (the filler's text pieces).
+    `lib/games-loader.ts`: `getPublishedGames()` (cached, tags `games` + `posts`, Ivan's
+    order, only games whose review is published).
+  - `components/game-card.tsx`: label `Games · <title>`; under it (Card's new `meta`
+    slot) the status badge + Ivan's badges on one 24 px row (badges that don't fit drop
+    out whole; extra badges from `sm`) and the details line (phones: hours and rating
+    only; measured cells are 160–186 px at 360–412 px). The window sits at
+    `top-[max(30%,6.625rem)]` (`7.75rem` from `sm`) so it clears those lines at rest
+    (20 px phones, 34 px up) and at the top of the pop (5–23 px). No screenshot → a text
+    card (badges, serif title, details).
+  - `components/framed-screenshot.tsx`: `hover: "grow"` (Projects, unchanged) or `"pop"`:
+    `origin-bottom`, lift 8 px / 12 px from `sm`, `scale-104`, −1.5° (wide −1°), shadow
+    `0 22px 40px -12px rgb(0 0 0/0.45)`. The hover rule carries 250 ms
+    `cubic-bezier(0.34,1.56,0.64,1)`, the base rule 200 ms ease-out (a transition uses the
+    timing of the state it goes *to*). Movement `motion-safe:` only. `TitleBar` (exported,
+    reused by the panel): dots grey, lit peach `#f0a983` / yellow `#e8c95c` / green
+    `#9ccc78` with `lit`.
+  - `components/press-start.tsx`: 5×7 letters as strings → one SVG path (each run of
+    pixels one rectangle), `crispEdges`, cream `#fff4dc` over a `#1c1b1a` copy shifted one
+    pixel down-right; same in both themes (it sits on the screenshot). 99×12 px on phones,
+    132×16 px from `sm`, centred at 60% of the screen part above the card's edge
+    (`top-[calc(60%-1.2rem)]`: the bottom 2rem is cut off). `press-start-blink` in
+    `globals.css`: 1 s, `step-end`, on until 60%, 250 ms delay, infinite; the element is
+    `opacity-0` until the animation starts, so it shows as the pop lands and vanishes at
+    once on leave; reduced motion: `opacity-100`, no animation.
+  - `Badge`: fixed tones PLAYING yellow, FINISHED green, DROPPED pink (the admin list
+    follows). `Card`: `meta` prop (lines right under the label).
+  - `app/games/page.tsx` (static `○`), `TODO(Ivan)` intro; fillers: `Games · Hours`
+    ("62.5 hours across 1 game, 1 finished."), any further one "More in writing".
+    "About this game" panel in `about-item.tsx`: small window (title bar + 16:10
+    screenshot), title, status badge, details line. 404: only Hobbies left.
+  - Tested: tsx 5 tests / 18 checks (`formatHours`, `gameDetails` full and short,
+    `gameHref`, `hoursSummary` incl. 0.1 + 0.2 and singulars). Production build on :3124,
+    Edge and real Firefox, live data, 23 each: title, card, link, text card, FINISHED
+    green, details line, Hours filler, drop-in 0/150 ms, console clean, full grid / no
+    sideways scroll / text inside at 9 widths 360–1920 (phones show `62.5 h · 9/10`), the
+    panel on `sample-review-hollow-knight`, 404 text, Projects' hover unchanged (1.05,
+    150 ms, no tilt, no PRESS START). **Framed cards** (live data has none) with a
+    temporary page edit adding four fake games using Test Project's screenshot (separate
+    build, reverted, nothing in the database), Edge and Firefox 29 each: rest state, both
+    timings, the overshoot (scale peaks 1.0438), lift / 1.04 / −1.5° / bottom origin, wide
+    −1°, shadow, lit dots, PRESS START hidden for the first 250 ms then blinking on ~60%
+    with no in-between values, placement and size, gone at once on leave, keyboard focus,
+    badges never cut, **the letters read back from a canvas exactly as designed** (this
+    caught a bug: `M${x}${y}` ran the numbers together, so nothing was drawn), window
+    clear of the lines at rest and popped at 9 widths. Reduced motion (Edge emulated,
+    Firefox pref) 4 each: no movement, shadow and dots still change, PRESS START steady,
+    no delays.
+  - Not tested with data: the panel with a screenshot (the sample game has none): on
+    Ivan's checklist.
+- **Ivan's browser checklist** for step 4 (laptop Firefox, then phone):
+  1. /games: `games.` header; "Hollow Knight (sample)" as a text card (FINISHED in green,
+     serif title, "Nintendo Switch · 62.5 h · 9/10") and a `Games · Hours` card ("62.5
+     hours across 1 game, 1 finished."). Clicking the game opens its review.
+  2. The review shows "About this game": title, FINISHED, the details line.
+  3. Admin: give Hollow Knight (sample) a screenshot (laptop) and save. The card now shows
+     the badge and details under the label and the screenshot in a window below them.
+  4. Hover it: the window pops up (lifts, grows, tilts a little, with a small bounce), its
+     dots turn peach / yellow / green, and "PRESS START" appears on the screen as it
+     lands, then blinks. Move away: it settles back and PRESS START is gone at once. Tab
+     to it with the keyboard: the same.
+  5. The review's panel now shows the screenshot in a small window.
+  6. Make the game wide: it tilts a little less. Add a few badges: the ones that don't fit
+     on one row disappear whole. Undo the changes afterwards (or keep the screenshot).
+  7. Phone: details show only hours and rating; the window and PRESS START fit; a tap
+     opens the review. Both themes; reduced motion (if used): nothing moves, PRESS START
+     stays on.
+  8. /projects hover still just grows the screenshot; /games in the header isn't a 404.
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:

@@ -20,6 +20,8 @@ type CardProps = {
   links?: CardLink[];
   /** The covering link's name for screen readers when `links` are used: the card's title. */
   linkLabel?: string;
+  /** Lines right under the label (e.g. a game's status and details), above content pushed to the bottom. */
+  meta?: ReactNode;
   className?: string;
   children: ReactNode;
 };
@@ -30,7 +32,7 @@ type CardProps = {
 // (lighter in dark mode). Content is pushed to the bottom of the card; images
 // can be placed against the card itself (it's `relative`). The grid sets size
 // and placement through `className`.
-export function Card({ label, href, index = 0, playedMs = 0, links, linkLabel, className = "", children }: CardProps) {
+export function Card({ label, href, index = 0, playedMs = 0, links, linkLabel, meta, className = "", children }: CardProps) {
   const style = { "--card-index": index, ...(playedMs ? { "--card-offset": `${playedMs}ms` } : {}) } as CSSProperties;
   const base = `card-in group relative isolate flex min-w-0 flex-col overflow-hidden rounded-xl bg-bg-raised p-4 text-fg no-underline sm:p-5 ${className}`;
   const interactive = `${base} transition-colors hover:bg-bg-raised-hover focus-within:bg-bg-raised-hover`;
@@ -41,12 +43,14 @@ export function Card({ label, href, index = 0, playedMs = 0, links, linkLabel, c
       {href && <ArrowCircle />}
     </div>
   );
+  const metaBlock = meta && <div className="-mt-0.5">{meta}</div>;
   const content = <div className="mt-auto flex min-h-0 flex-col pt-6">{children}</div>;
 
   if (!href) {
     return (
       <div className={base} style={style}>
         {header}
+        {metaBlock}
         {content}
       </div>
     );
@@ -65,6 +69,7 @@ export function Card({ label, href, index = 0, playedMs = 0, links, linkLabel, c
               </CardAnchor>
             ))}
           </div>
+          {metaBlock}
           {content}
         </div>
       </div>
@@ -74,6 +79,7 @@ export function Card({ label, href, index = 0, playedMs = 0, links, linkLabel, c
   return (
     <CardAnchor href={href} className={interactive} style={style}>
       {header}
+      {metaBlock}
       {content}
     </CardAnchor>
   );

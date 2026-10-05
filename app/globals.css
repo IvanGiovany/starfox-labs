@@ -193,6 +193,26 @@ body::before {
 }
 
 /*
+ * Game cards: "PRESS START" on the screen of a hovered game, blinking like an
+ * arcade title screen: it appears 250 ms in (as the window's pop lands), then
+ * 0.6 s on, 0.4 s off, with hard cuts. Before it starts it's hidden by the
+ * element's own opacity-0; with reduced motion it isn't used (the label just
+ * shows).
+ */
+@keyframes press-start-blink {
+  0% {
+    opacity: 1;
+  }
+  60%,
+  100% {
+    opacity: 0;
+  }
+}
+@utility press-start-blink {
+  animation: press-start-blink 1s step-end 250ms infinite;
+}
+
+/*
  * Badge tones: soft pastels with a slightly darker outline (chester's
  * "NOW BREWING"). Light mode uses solid pastels; dark mode uses low-alpha
  * tints with light text so they glow gently instead of glaring.

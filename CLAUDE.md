@@ -326,7 +326,7 @@ Track *active days* and *articles read* (one read per article per user), not raw
 - Use Supabase Row Level Security on every table.
 - Run `npm run build` and fix errors before saying a step is done.
 
-## Where we left off (updated 2026-10-04, end of session)
+## Where we left off (updated 2026-10-05, step 4 pushed)
 Everything built so far, with file maps, decisions and how it was tested:
 **`docs/build-log.md`**. Read the relevant part before changing that area.
 
@@ -357,51 +357,21 @@ Everything built so far, with file maps, decisions and how it was tested:
   3. **Music: done** (tested by Ivan, checklist 1–7, pushed). Record hover as proposed;
      non-link "More on the way." filler; songs show once their article is published;
      sample songs only (Ivan's music isn't public yet).
-  4. **Games: next. Plan approved 2026-10-04, not built yet.** First thing next session:
-     **propose the exact "PRESS START" details (below) and wait for Ivan's OK**, then build.
-     - **Pop-up hover** (approved exactly as written; hover and keyboard focus): the framed
-       screenshot (1) lifts 12 px (8 px on phones), (2) grows to 104% from its bottom
-       centre, (3) tilts −1.5° (wide cards −1°), (4) its shadow deepens to
-       `0 22px 40px -12px rgb(0 0 0 / 0.45)`, (5) the three title-bar dots light up in soft
-       peach / yellow / green (grey at rest, as on Projects). Up: 250 ms with a slight
-       overshoot (e.g. `cubic-bezier(0.34, 1.56, 0.64, 1)`); back: 200 ms ease-out, no
-       overshoot (set the hover timing on the hover rule, the return timing on the base).
-       Reduced motion: no lift, grow or tilt; shadow and dots still change. Text cards
-       (no screenshot) don't pop.
-     - **Plus "PRESS START"** (Ivan, 2026-10-04): on hover or focus, a small pixel-style
-       "PRESS START" label blinks in the game window (title bar or a corner). **Propose the
-       exact font, position, blink speed and colours in both themes before building.**
-       Reduced motion: it shows without blinking. (No pixel font is loaded yet; whatever
-       is proposed must be our own or properly licensed, loaded with `next/font`.)
-     - **Card:** label `Games · <title>`, always opens the review article; under the
-       label the status badge (`PLAYING` / `FINISHED` / `DROPPED`) + extra badges and a
-       muted line `Platform · 62.5 h · 9/10` (empty parts left out; may shorten to hours
-       on phones: measure the 175 px cells first); the framed screenshot below, cut off
-       by the card's bottom edge. No screenshot → a text card (serif title, badge,
-       details). Order: Ivan's drag order. Shown: published games whose review is
-       published (same rule as songs).
-     - **Filler:** a `Games · Hours` data card (like Reading's Shelf), e.g. "62.5 hours
-       across 1 game, 1 finished." No external link.
-     - **"About this game" panel:** small framed screenshot, title, status badge,
-       `Platform · hours · rating`; all in `post_items` already (no migration).
-     - **Files:** `lib/games.ts` (cached loader, tags `games` + `posts`, `gameHref`, the
-       details line), `components/game-card.tsx`, `components/framed-screenshot.tsx`
-       (`hover: "grow"` for Projects, unchanged, or `"pop"` + the lit dots),
-       `components/about-item.tsx` (games branch), `app/games/page.tsx`,
-       `app/not-found.tsx` (only Hobbies left).
-     - **Testing:** tsx (links, details line: 62.5 h / 12 h / no hours / no rating);
-       production build, Edge + real Firefox (cards, links, text card, no holes at
-       360–1920 px, the panel on `sample-review-hollow-knight`, 404 text, Projects' hover
-       unchanged). The only published game (Hollow Knight sample) has no screenshot, so
-       the framed card, the pop and PRESS START are checked on `next dev` with a temporary
-       page edit, reverted after (as in steps 2 and 3): lift / scale / rotate, both timing
-       curves, dots, shadow, the blink, reduced motion, 9 widths. Nothing published on the
-       live database. Then Ivan's checklist.
-  5. Hobbies.
+  4. **Games: done** (tested by Ivan, checklist 1–8, pushed). Pop-up hover as approved;
+     **PRESS START as approved by Ivan:** our own 5×7 SVG pixel letters
+     (`components/press-start.tsx`, no font), cream `#fff4dc` with a hard `#1c1b1a`
+     shadow, same in both themes, centred at 60% of the visible screen, appears 250 ms in,
+     blinks 1 s (0.6 on / 0.4 off, hard cuts), steady with reduced motion.
+  5. **Hobbies: next.** Plan it in the same detail (re-read the chester screenshots first,
+     especially `234716`), propose, wait for Ivan's OK.
   6. Home grid from `home_feed` + status cards from data, plus the migration (song cards
      labelled `Music · <song title>`, `site.artist`) and **the spot for Ivan's pixel art:
      build the spot, then ask Ivan for the art** (never placeholder art from elsewhere;
-     see "Still open").
+     see "Still open"). **Ivan's art is in `GIFS/`** (project root, untracked; Ivan,
+     2026-10-05: "my pixel art for step 6"). Leave it alone until step 6, then use it from
+     there. As of 2026-10-05 it holds one file, `62-625470_shiny-shinx-sprite-hd-png-download.png`
+     (a still PNG, not a GIF); its name looks like a downloaded Pokémon sprite, so confirm
+     with Ivan before using it (rule: no Nintendo artwork) and ask for the animated version.
 - **Rule for every Phase 3 step: re-read all the chester screenshots in `design-refs/`
   first** (chester: `Screenshot 2026-09-26 184223` home, `234546` home grid, `234621`
   projects, `234654` writing, `234716` hobbies, `2026-09-30 205309` reading; the other
@@ -428,7 +398,7 @@ Everything built so far, with file maps, decisions and how it was tested:
   5. **The ↗ in a small circle that lights up** on hover (page colour + `--shadow-skeuo`),
      not a nudge. *Built.*
   6. Project screenshots grow to 105% on hover (150 ms ease-out). *Built for projects.*
-     Games: Ivan's own "pop up" (step 4, above).
+     Games: Ivan's own "pop up" + PRESS START (step 4, built).
   7. Book (and song) covers tilt −3°, grow to 110%, deeper shadow (`rotate-[-3deg]
      scale-110` + bigger shadow, 150 ms). *Step 2 / 3* (songs: Ivan may pick a musical
      effect instead, step 3).
@@ -451,9 +421,13 @@ Everything built so far, with file maps, decisions and how it was tested:
   `Stars`) for the home grid in step 6. Step 3 added `lib/tracks.ts`
   (`getPublishedSongs`, `songHref`, `TRACK_LINK_LABELS`), `components/song-card.tsx`
   (`SongCard`, `RecordSleeve` with the record), `components/cover.tsx` (`TypedCover`, shared
-  by books and songs) and `components/audio-player.tsx`.
+  by books and songs) and `components/audio-player.tsx`. Step 4 added
+  `lib/games-loader.ts` (`getPublishedGames`), `components/game-card.tsx` (`GameCard`),
+  `components/press-start.tsx`, `FramedScreenshot`'s `hover="pop"` + `TitleBar`, and
+  `Card`'s `meta` slot (lines right under the label).
   Shared helpers: `lib/reading.ts` (`compareBooks`, `READING_STATUS_LABELS`),
-  `lib/games.ts`, `lib/hobbies.ts`. Remove each section from `app/not-found.tsx`'s
+  `lib/games.ts` (`gameDetails`, `gameHref`, `hoursSummary`; the admin form loads it in
+  the browser, so keep server-only code out: loaders go in their own file), `lib/hobbies.ts`. Remove each section from `app/not-found.tsx`'s
   "still being built" line as it lands.
 - **Testing a step** (build log, Phase 3 step 1): unit tests with tsx for pure logic;
   production build on :3124 driven by `puppeteer-core` in Edge and real Firefox (cards,
@@ -502,9 +476,9 @@ Everything built so far, with file maps, decisions and how it was tested:
 - **Vercel** (Ivan to confirm it's done): Production Branch = `main`; env vars
   `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (the publishable
   key, NOT `..._ANON_KEY` as first suggested); check the latest deploy succeeded.
-- **Known dead links** until later steps: the public Games / Hobbies
-  pages show the 404 page (it says they're still being built) until their Phase 3 step
-  (Projects, Reading and Music are live; remove each from `app/not-found.tsx` as it lands); the newsletter
+- **Known dead links** until later steps: the public Hobbies page shows the 404 page (it
+  says it's still being built) until its Phase 3 step (Projects, Reading, Music and Games
+  are live; remove it from `app/not-found.tsx` when it lands); the newsletter
   line is plain text until Phase 6.
 - UQ palette beyond purple is still a TODO (see Colors).
 - **Two-factor sign-in for the admin** before the newsletter goes live (see Phase 6).
@@ -525,7 +499,7 @@ Everything built so far, with file maps, decisions and how it was tested:
   filler is a quiet non-link "More on the way." card while Ivan's music isn't public. Once
   it is, link it to his Spektral profile (`MoreCard` in `app/music/page.tsx`, marked
   `TODO(Ivan)`; the profile URL belongs in `lib/site.ts`).
-- **Ivan's pixel art** (to-do, decided 2026-10-04): Ivan's own animated pixel art in the
+- **Ivan's pixel art** (to-do, decided 2026-10-04; his files are in `GIFS/`, see Phase 3 step 6): Ivan's own animated pixel art in the
   spot where chester.how has its leaf → maple GIF (a small image in the home intro that
   swaps to the animated version on hover, 0.5 s cross-fade), and possibly an animated
   footer avatar. Build the spot when doing the home page (Phase 3, step 6), then **ask

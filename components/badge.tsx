@@ -11,6 +11,9 @@ const STATUS_TONES: Record<string, Tone> = {
   read: "tone-green",
   "to read": "tone-blue",
   learning: "tone-lavender",
+  playing: "tone-yellow",
+  finished: "tone-green",
+  dropped: "tone-pink",
 };
 
 /** The tone class for a text (also colours books' typed covers). */
