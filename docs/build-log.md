@@ -1046,6 +1046,52 @@ Ivan's choices: the line "Made in the lab by Gvan"; no copyright line and no foo
      mode.
   5. Phone: centred and sized well; reduced motion (if used): Shinx stays still.
 
+## Demo content + favicon (2026-10-06)
+For showing the site to an engineer: a polished demo set in every section, and the
+browser-tab icon made from Ivan's pixel Shinx. Plan approved by Ivan; run with the service
+key from `.env.local`.
+- **Found first:** every content table was already empty (0 rows, drafts included), so
+  nothing needed deleting; Ivan's song "speki" was gone too (noted in CLAUDE.md).
+- `scripts/demo-content.mjs` (`remove`; `add <assets-dir>`) and
+  `scripts/demo-content-data.mjs` (the content). Ids `de300000-0000-4000-8000-…` (posts
+  101+, projects 201+, books 301+, tracks 401+, games 501+, hobbies 601+); files in
+  `<section>/demo/`. `remove` deletes by id range (uuid columns can't use `LIKE`), items
+  before posts, then every file in the `demo/` folders. `npm run demo:remove`.
+- Images go through the admin's rules (EXIF rotation, longest edge 2400 / covers 1200,
+  WebP 85%, no metadata); article image URLs carry `#WxH` like the editor's.
+  - Photos: Unsplash, free licence only (`images.unsplash.com/photo-…`, never `premium_`),
+    found by reading the public search page in headless Edge (the API needs a key).
+  - Book covers: Open Library by ISBN.
+  - Projects: Ivan's real projects. LoL Voice Coach and Brainrot Authenticator are screenshots
+    of their live sites; AI Player Finder (no live site) is a mock screen drawn from its
+    README. PixelForge left out (its repo is empty).
+  - Games: mood photos, not game screenshots (those are the studios' copyright).
+  - Music: covers drawn as SVG; two original 26-second synth loops rendered sample by sample
+    and encoded with the project's lamejs (192 kbps, 0.5 s / 2 s fades); no samples used.
+  - Cut-outs: a green key (monstera on beige) and a flood fill over a black background
+    (haworthia in a white pot); plain white-key flood fills failed on shadows and gradients.
+- Content: 16 articles over 7 Sep – 5 Oct (code titles, highlighted lines, line numbers,
+  captioned images, a table, task lists, footnotes, quotes, a cover image, Ivan's YouTube
+  video), 2 book reviews, 4 game reviews, 2 song articles, a project article (from the AI
+  Player Finder README). No quotes attributed to real books or games.
+- **Book covers taller than 2:3 broke phone cards** (Dune 1:1.8: author line 16 px out of
+  the card at 360 px). `BookCover` now caps a cover at 1.5 × its column's width
+  (`@container` + `max-h-[150cqw]`, `w-auto max-w-full`, the shadow box `w-fit`): taller
+  covers keep their shape and get narrower.
+- **Favicon:** the pixel Shinx was drawn in 12 px blocks on a checkerboard baked into the
+  PNG; flood fill removes the checkerboard, one sample per block gives the native 51 × 36
+  sprite, scaled by whole numbers only where it fits. `app/favicon.ico` (16/32/48, PNG
+  inside), `app/icon.png` (32), `app/apple-icon.png` (180, on the page colour). Branding
+  sweep: nothing default left (public/ holds only the art; titles and link previews are
+  the site's own).
+- Tested: production build, Edge and real Firefox, 26 each: every section page (cards,
+  images load, console clean), home (full without a filler, Now producing = Static Bloom),
+  every article's features (code titles, line numbers, highlighted lines, images and
+  captions, table, footnotes, task lists, quotes, YouTube only where set, the cover only
+  where set), each "about this" panel, both audio players (0:26), the three icons linked
+  and served. Fit check on all seven card pages at 9 widths: 7/7 each. Firefox's
+  `__cf_bm` cookie messages from Supabase Storage are expected noise.
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:

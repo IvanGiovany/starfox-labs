@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:types": "supabase gen types typescript --linked --schema public > lib/database.types.ts"
+    "db:types": "supabase gen types typescript --linked --schema public > lib/database.types.ts",
+    "demo:remove": "node --env-file=.env.local scripts/demo-content.mjs remove"
   },
   "dependencies": {
     "@breezystack/lamejs": "^1.2.7",

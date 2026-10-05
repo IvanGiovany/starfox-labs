@@ -285,9 +285,10 @@ from the live schema (`npm run db:types`) — regenerate it after every migratio
 - Fully responsive; must look good on mobile.
 - Screenshots of references live in `/design-refs/` (git-ignored).
 - Do not use any Nintendo / Star Fox artwork or logos. **One exception (Ivan, 2026-10-05):
-  Ivan's own fan art is allowed in the footer's pixel-art spot** (his Shinx still and
-  animation; he made them himself and accepts that the character belongs to Nintendo).
-  Nowhere else, and never art made by someone else.
+  Ivan's own fan art is allowed in the footer's pixel-art spot and in the favicon** (his
+  Shinx still and animation, and the pixel Shinx for the browser-tab icons; he made them
+  himself and accepts that the character belongs to Nintendo). Nowhere else, and never
+  art made by someone else.
 
 ## Build phases (build ONE phase at a time)
 1. **Foundation** — *done.* Design system, header/footer, Supabase + `posts`, home grid,
@@ -471,11 +472,9 @@ Everything built so far, with file maps, decisions and how it was tested:
   - Spektral is Ivan's artist name: `site.artist` in `lib/site.ts`. Song cards on home are
     labelled `Music · <song title>` (`SongCard`'s `label`); "Now producing" keeps
     `Music · Spektral`.
-  - Live test data from Ivan's checklists, besides the samples: "Test Project" (published,
-    screenshot), the game "Hollow Knight" (PS5, screenshot, linked to
-    `sample-git-glossary`), the hobby "coffee" (**Learning** category, photo, linked to
-    `sample-tailwind-v4-tokens`, so it shows on home as a Learning card) and Monstera's
-    cut-out image. Checks that assume only the samples must follow the live data.
+  - **Live data is the demo set** (2026-10-06; see "Demo content" in "Still open"). The
+    old samples and Ivan's checklist items are gone. Checks must follow the live data, not
+    assume particular items.
 
 ### How the admin is built (reference)
 - **Adding an item section** = a definition file in `lib/admin/items/` (schema + publish
@@ -496,8 +495,23 @@ Everything built so far, with file maps, decisions and how it was tested:
 ### Still open
 - **Placeholders for Ivan** (all marked `TODO(Ivan)`): home intro (`app/page.tsx`), the
   section intros (`app/*/page.tsx`). (The status-card placeholders are gone: data now.)
-- **Sample content**: delete before launch — section items first (the statements at the top
-  of `supabase/seed-sections.sql`), then `delete from public.posts where slug like 'sample-%';`
+- **Demo content** (live since 2026-10-06, for showing the site): 16 articles, 3 projects
+  (Ivan's real ones), 7 books, 2 songs + 1 in progress, 4 games, 7 hobby items, all
+  published. Every demo row's id starts `de300000-`; every demo file is in a `demo/`
+  folder in its section's Storage folder. **Remove it all with `npm run demo:remove`**
+  (needs `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`). Made by `scripts/demo-content.mjs`
+  (`add` needs the generated assets; content in `scripts/demo-content-data.mjs`; build
+  log, "Demo content"). The writing is placeholder text in Ivan's voice.
+- **Before the demo content went in, every content table was already empty** (0 rows,
+  drafts included, checked 2026-10-06 with the service key): the samples, Ivan's checklist
+  items and his own song "speki" were deleted outside this session. If "speki" wasn't
+  meant to go, Supabase backups may restore it. Its uploaded files (and the old samples'
+  files) are still in Storage, outside the `demo/` folders (see "Unused media").
+- **Rotate the Supabase secret key** (Ivan, after the demo): it was pasted into a chat on
+  2026-10-06. Create a new secret key in the dashboard, put it in `.env.local` as
+  `SUPABASE_SERVICE_ROLE_KEY`, delete the old one. Never in the repo or Vercel.
+- `supabase/seed.sql` and `seed-sections.sql` (the old samples) still exist for a local
+  database; the live one doesn't use them.
 - **Vercel** (Ivan to confirm it's done): Production Branch = `main`; env vars
   `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (the publishable
   key, NOT `..._ANON_KEY` as first suggested); check the latest deploy succeeded.

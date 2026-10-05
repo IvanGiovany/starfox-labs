@@ -91,13 +91,18 @@ export function BookCover({
     ? "group-hover:shadow-[0_16px_32px_-8px_rgb(0_0_0/0.45)] group-focus-within:shadow-[0_16px_32px_-8px_rgb(0_0_0/0.45)] motion-safe:group-hover:rotate-[-3deg] motion-safe:group-hover:scale-110 motion-safe:group-focus-within:rotate-[-3deg] motion-safe:group-focus-within:scale-110"
     : "";
   return (
-    <div className={`overflow-hidden rounded-[3px] shadow-[0_6px_16px_-6px_rgb(0_0_0/0.35)] transition duration-150 ease-out ${hover}`}>
-      {coverUrl ? (
-        // Nominal 2:3 size until the real cover loads; then it keeps its own shape.
-        <Image src={coverUrl} alt={coverAlt} width={600} height={900} sizes={sizes} className="block h-auto w-full" />
-      ) : (
-        <TypedCover title={title} byline={author} shape="book" />
-      )}
+    // The column it stands in. A cover is never taller than a 2:3 cover of the
+    // column's width (150cqw): taller ones (e.g. 1:1.8) keep their shape and get
+    // narrower instead of pushing the card's text out of the bottom.
+    <div className="@container">
+      <div className={`w-fit max-w-full overflow-hidden rounded-[3px] shadow-[0_6px_16px_-6px_rgb(0_0_0/0.35)] transition duration-150 ease-out ${hover}`}>
+        {coverUrl ? (
+          // Nominal 2:3 size until the real cover loads; then it keeps its own shape.
+          <Image src={coverUrl} alt={coverAlt} width={600} height={900} sizes={sizes} className="block h-auto max-h-[150cqw] w-auto max-w-full" />
+        ) : (
+          <TypedCover title={title} byline={author} shape="book" />
+        )}
+      </div>
     </div>
   );
 }
