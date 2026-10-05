@@ -330,7 +330,7 @@ Track *active days* and *articles read* (one read per article per user), not raw
 - Use Supabase Row Level Security on every table.
 - Run `npm run build` and fix errors before saying a step is done.
 
-## Where we left off (updated 2026-10-06, Phase 3 done)
+## Where we left off (updated 2026-10-06, Phase 3 done; next: Shinx to the footer)
 Everything built so far, with file maps, decisions and how it was tested:
 **`docs/build-log.md`**. Read the relevant part before changing that area.
 
@@ -381,6 +381,19 @@ Everything built so far, with file maps, decisions and how it was tested:
      0.72 s loop); the pixel-art still is kept as `public/art/shinx-pixel.png` for later
      (e.g. the footer avatar). Originals stay in `GIFS/` (untracked, Ivan's; he can delete
      it).
+- **Next (Ivan, 2026-10-06): move the Shinx art from the intro to the footer**, before
+  Phase 4. Like chester.how's footer: its leaf drawing centred above a short line,
+  "Planted by Chester". Ours: Shinx centred above a short line (wording to propose to
+  Ivan, e.g. "Planted by Gvan"), **keeping the still → animation hover** (0.5 s
+  cross-fade, never animated with reduced motion; `components/pixel-art.tsx` already does
+  this). Remove it from the intro (`app/page.tsx`, after the first sentence). The footer
+  today (`components/site-footer.tsx`, on every page, `"use cache"` for the year) is
+  "© year Starfox Labs" left and YouTube / GitHub right, under a rule; propose how the
+  centred art + line sits with that. **Reference:** Ivan pointed to a screenshot in
+  `design-refs/`, but none of the nine shows chester's footer (checked 2026-10-06). First
+  ask Ivan for it, or read chester's footer markup in headless Edge (as for the hobby
+  cards, build log step 5) or watch the end of `Chester Recording.mp4`. Plan first, wait
+  for Ivan's OK, then build. Nothing else was started.
 - **Rule for every Phase 3 step: re-read all the chester screenshots in `design-refs/`
   first** (chester: `Screenshot 2026-09-26 184223` home, `234546` home grid, `234621`
   projects, `234654` writing, `234716` hobbies, `2026-09-30 205309` reading; the other
@@ -509,9 +522,9 @@ Everything built so far, with file maps, decisions and how it was tested:
   filler is a quiet non-link "More on the way." card while Ivan's music isn't public. Once
   it is, link it to his Spektral profile (`MoreCard` in `app/music/page.tsx`, marked
   `TODO(Ivan)`; the profile URL belongs in `lib/site.ts`).
-- **Footer avatar** (maybe, decided 2026-10-04): an animated footer avatar from Ivan's own
-  art; `public/art/shinx-pixel.png` (his pixel-art Shinx) is kept for it. The intro's
-  pixel-art spot is built (step 6).
+- **Shinx in the footer**: next task, see "Where we left off" ("Next"). The animation
+  (`shinx-still.webp` / `shinx-wag.webp`) moves there from the intro;
+  `public/art/shinx-pixel.png` (his pixel-art Shinx) is kept, unused, in case it's wanted.
 
 ### Notes for the next session (gotchas — keep these)
 **Next.js 16**
