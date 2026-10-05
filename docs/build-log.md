@@ -1013,6 +1013,39 @@ Ivan confirmed the effects list (CLAUDE.md, "Motion, as chester.how does it").
   8. /writing, /projects and /games still look right (their text cards got phone/laptop
      sizes).
 
+## After Phase 3: Shinx in the footer (done 2026-10-06, tested by Ivan: checklist 1–5)
+Ivan's choices: the line "Made in the lab by Gvan"; no copyright line and no footer links
+(like chester; the links are in the header); Shinx 60 px tall.
+- **Reference:** Ivan's screenshot `design-refs/Screenshot 2026-10-06 060359` plus chester's
+  live footer read in headless Edge (`chester-footer.mjs` in the scratchpad): `<footer
+  class="flex justify-center pt-36 pb-20">`, one `group` holding the art (an animated GIF
+  131 × 70 in the flow at `opacity-0`, the still 40 × 40 centred over it) and the line
+  (`text-sm tracking-tight text-neutral-400`, 14 px, −0.35 px); hover anywhere in the group:
+  `opacity` 0.5 s, Tailwind's default curve.
+- `components/site-footer.tsx`: that layout with our muted colour; no `"use cache"` any more
+  (it no longer reads the clock for the year). `components/pixel-art.tsx`: 95 × 60 (the
+  190 × 120 files at exactly 2×), still and animation stacked, hover on the parent
+  `group/art`, the animation `motion-reduce:hidden`. `app/page.tsx`: the art is out of the
+  intro.
+- The art is lazy-loaded (`next/image` default), so it's only fetched as the footer nears
+  the screen; Firefox waits until then, Edge starts a little earlier.
+- Tested: production build, Edge and real Firefox, 24 each: the footer on `/`, `/projects`,
+  an article, the 404 page and `/login` (only the art and "Made in the lab by Gvan", no
+  links, art 95 × 60 and line centred to the pixel, padding 144 / 80, no border, 14 px Inter
+  −0.35 px, both images loaded once in view, console clean); the intro has no art; hovering
+  the art and hovering the line each cross-fade in 0.5 s and back; centred with no sideways
+  scroll at 9 widths. Reduced motion 1 each: the still stays, the animation never shows.
+  (The step-6 home check's pixel-art items are retired: the art isn't in the intro now.)
+- **Ivan's browser checklist** (laptop Firefox, then phone):
+  1. Any page: at the bottom, Shinx centred above "Made in the lab by Gvan", lots of space
+     around, nothing else (no ©, no links, no line above).
+  2. Hover Shinx, then hover the words: either one makes Shinx fade into the wagging
+     animation, and back when you move away.
+  3. Home: the intro reads normally without the art.
+  4. Both themes: Shinx has no white box; check the thin tail line is visible enough in dark
+     mode.
+  5. Phone: centred and sized well; reduced motion (if used): Shinx stays still.
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:

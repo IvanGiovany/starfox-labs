@@ -1,31 +1,15 @@
-import { cacheLife } from "next/cache";
-import { site } from "@/lib/site";
+import { PixelArt } from "@/components/pixel-art";
 
-export async function SiteFooter() {
-  // The year comes from the clock, so it's cached (refreshed daily) and can
-  // still be part of the prerendered page.
-  "use cache";
-  cacheLife("days");
-
-  const links = [
-    { label: "YouTube", href: site.links.youtube },
-    { label: "GitHub", href: site.links.github },
-  ].filter((link) => link.href);
-
+// The footer on every page, like chester.how's ("Planted by Chester" under its
+// leaf): Ivan's Shinx centred above one short line, nothing else (the social
+// links are in the header). Hovering the art or the line wakes Shinx up.
+export function SiteFooter() {
   return (
-    <footer className="mt-24 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-t border-rule py-8 text-sm text-fg-muted">
-      <p>
-        © {new Date().getFullYear()} {site.name}
-      </p>
-      <ul className="flex gap-5">
-        {links.map((link) => (
-          <li key={link.label}>
-            <a href={link.href} className="text-fg-muted no-underline hover:text-fg">
-              {link.label}
-            </a>
-          </li>
-        ))}
-      </ul>
+    <footer className="flex justify-center pt-36 pb-20">
+      <div className="group/art flex flex-col items-center gap-2">
+        <PixelArt />
+        <p className="text-sm tracking-tight text-fg-muted">Made in the lab by Gvan</p>
+      </div>
     </footer>
   );
 }

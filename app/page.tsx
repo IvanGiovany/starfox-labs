@@ -7,7 +7,6 @@ import { Card } from "@/components/card";
 import { spanClass } from "@/components/card-grid";
 import { GameCard } from "@/components/game-card";
 import { HobbyCard } from "@/components/hobby-card";
-import { PixelArt } from "@/components/pixel-art";
 import { ProjectCard } from "@/components/project-card";
 import { SongCard } from "@/components/song-card";
 import { NowProducingCard } from "@/components/status-cards";
@@ -125,7 +124,7 @@ function Intro({ className }: { className?: string }) {
       {/* TODO(Ivan): rewrite in your own words. */}
       <p>
         Hi, I&apos;m <span className="text-fg">Ivan</span>. Welcome to{" "}
-        <span className="text-fg">Starfox Labs</span>, my small corner of the internet. <PixelArt /> I{" "}
+        <span className="text-fg">Starfox Labs</span>, my small corner of the internet. I{" "}
         <Link href="/projects" className={key}>
           build things
         </Link>

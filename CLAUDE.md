@@ -54,7 +54,7 @@ command palette, and the **warm dark mode** (`#1C1B1A`, not cold blue-black).
 Header tab bar: **Gvan · Projects · Writing · Reading · Music · Games · Hobbies**
 ("Gvan" is the home link, like "Chester" on chester.how). On phones the tab bar scrolls
 sideways instead of wrapping. The site itself is still called Starfox Labs (page titles,
-footer, emails).
+emails).
 
 ### Core idea: items and articles
 - Every **item** (project, book, song, game, hobby) is a **card on its section page**.
@@ -120,6 +120,10 @@ footer, emails).
 - **Privacy (`/privacy`)** — what data is stored and why.
 - Header right side: small muted social links (YouTube, GitHub), RSS, theme toggle, and a
   small avatar button (menu → Settings, Sign out) or a "Sign in" text link when logged out.
+- **Footer** (every page), like chester.how's "Planted by Chester": Ivan's Shinx art
+  centred above one line, **"Made in the lab by Gvan"**, nothing else (no copyright, no
+  links: Ivan, 2026-10-06). Hovering the art or the line cross-fades the still into the
+  wagging animation (0.5 s); reduced motion keeps the still.
 
 ## Admin (`/admin`)
 Built: sign-in, the Writing editor and every section form: Projects, Reading, Music,
@@ -281,7 +285,7 @@ from the live schema (`npm run db:types`) — regenerate it after every migratio
 - Fully responsive; must look good on mobile.
 - Screenshots of references live in `/design-refs/` (git-ignored).
 - Do not use any Nintendo / Star Fox artwork or logos. **One exception (Ivan, 2026-10-05):
-  Ivan's own fan art is allowed in the home page's pixel-art spot** (his Shinx still and
+  Ivan's own fan art is allowed in the footer's pixel-art spot** (his Shinx still and
   animation; he made them himself and accepts that the character belongs to Nintendo).
   Nowhere else, and never art made by someone else.
 
@@ -330,7 +334,7 @@ Track *active days* and *articles read* (one read per article per user), not raw
 - Use Supabase Row Level Security on every table.
 - Run `npm run build` and fix errors before saying a step is done.
 
-## Where we left off (updated 2026-10-06, Phase 3 done; next: Shinx to the footer)
+## Where we left off (updated 2026-10-06, Phase 3 done; Shinx footer pushed)
 Everything built so far, with file maps, decisions and how it was tested:
 **`docs/build-log.md`**. Read the relevant part before changing that area.
 
@@ -378,26 +382,22 @@ Everything built so far, with file maps, decisions and how it was tested:
      more. **Pixel-art spot:** Ivan's own Shinx fan art (allowed, see "Visual design").
      Ivan chose the animation with its own first frame as the still: `public/art/
      shinx-still.webp` + `shinx-wag.webp` (190 × 120, white background removed, 8 frames,
-     0.72 s loop); the pixel-art still is kept as `public/art/shinx-pixel.png` for later
-     (e.g. the footer avatar). Originals stay in `GIFS/` (untracked, Ivan's; he can delete
-     it).
-- **Next (Ivan, 2026-10-06): move the Shinx art from the intro to the footer**, before
-  Phase 4. Like chester.how's footer: its leaf drawing centred above a short line,
-  "Planted by Chester". Ours: Shinx centred above a short line (wording to propose to
-  Ivan, e.g. "Planted by Gvan"), **keeping the still → animation hover** (0.5 s
-  cross-fade, never animated with reduced motion; `components/pixel-art.tsx` already does
-  this). Remove it from the intro (`app/page.tsx`, after the first sentence). The footer
-  today (`components/site-footer.tsx`, on every page, `"use cache"` for the year) is
-  "© year Starfox Labs" left and YouTube / GitHub right, under a rule; propose how the
-  centred art + line sits with that. **Reference:** Ivan pointed to a screenshot in
-  `design-refs/`, but none of the nine shows chester's footer (checked 2026-10-06). First
-  ask Ivan for it, or read chester's footer markup in headless Edge (as for the hobby
-  cards, build log step 5) or watch the end of `Chester Recording.mp4`. Plan first, wait
-  for Ivan's OK, then build. Nothing else was started.
+     0.72 s loop); the pixel-art still is kept, unused, as `public/art/shinx-pixel.png`.
+     Originals stay in `GIFS/` (untracked, Ivan's; he can delete it). The art moved to
+     the footer afterwards (below).
+- **Shinx moved to the footer: done** (tested by Ivan, checklist 1–5, pushed; build log,
+  "After Phase 3: Shinx in the footer"). Chester's real
+  footer (read in headless Edge; screenshot `design-refs/Screenshot 2026-10-06 060359`):
+  `flex justify-center pt-36 pb-20`, the art and line one hover group, 0.5 s cross-fade,
+  line `text-sm tracking-tight` muted. Ours (Ivan's choices): "Made in the lab by Gvan",
+  no copyright or links, Shinx 60 px tall (95 × 60, the files are exactly 2×).
+  `components/site-footer.tsx` (no longer cached: no clock), `components/pixel-art.tsx`
+  (fixed size, hover on the parent `group/art`); the intro no longer has the art. **Next:
+  Phase 4 (Accounts + Settings): plan first.**
 - **Rule for every Phase 3 step: re-read all the chester screenshots in `design-refs/`
   first** (chester: `Screenshot 2026-09-26 184223` home, `234546` home grid, `234621`
-  projects, `234654` writing, `234716` hobbies, `2026-09-30 205309` reading; the other
-  three are other references), plus "Pages" and "Visual design" above. Ivan wants the
+  projects, `234654` writing, `234716` hobbies, `2026-09-30 205309` reading,
+  `2026-10-06 060359` footer; the other three are other references), plus "Pages" and "Visual design" above. Ivan wants the
   pages to look and feel a lot like chester.how. `design-refs/Chester Recording.mp4` shows
   its motion (the watch plugin, Gemini engine, is set up; its key lives only in
   `~/.config/watch/.env`). chester.how blocks plain fetches (HTTP 429) but loads in
@@ -432,7 +432,7 @@ Everything built so far, with file maps, decisions and how it was tested:
   11. Sticky, frosted header; its right side fades out past 20 px of scroll (`inert`).
      *Built.*
   Reduced motion: no movement and no delays; colour changes and the sticky header stay.
-  Not used: chester's leaf→maple GIF and footer avatar (Ivan's own pixel art instead).
+  Chester's leaf → maple footer art: Ivan's Shinx instead (footer, built 2026-10-06).
 - **Pieces to reuse** (step 1): `Card` (`index`, `links` for small extra links,
   `playedMs`), `CardGrid` + `spanClass`, `fillGrid` (`lib/grid.ts`), `FramedScreenshot`,
   `SectionHeader`, the cached-loader pattern in `lib/projects.ts` (`"use cache"`,
@@ -522,9 +522,8 @@ Everything built so far, with file maps, decisions and how it was tested:
   filler is a quiet non-link "More on the way." card while Ivan's music isn't public. Once
   it is, link it to his Spektral profile (`MoreCard` in `app/music/page.tsx`, marked
   `TODO(Ivan)`; the profile URL belongs in `lib/site.ts`).
-- **Shinx in the footer**: next task, see "Where we left off" ("Next"). The animation
-  (`shinx-still.webp` / `shinx-wag.webp`) moves there from the intro;
-  `public/art/shinx-pixel.png` (his pixel-art Shinx) is kept, unused, in case it's wanted.
+- `public/art/shinx-pixel.png` (Ivan's pixel-art Shinx) is kept, unused, in case it's
+  wanted somewhere later.
 
 ### Notes for the next session (gotchas — keep these)
 **Next.js 16**
