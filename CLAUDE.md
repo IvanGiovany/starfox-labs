@@ -387,8 +387,8 @@ Everything built so far, with file maps, decisions and how it was tested:
   `www.starfoxlabs.org`** (Vercel 308-redirects the apex there), so Supabase's Redirect
   URLs also need `https://www.starfoxlabs.org/**`, or Google sign-in falls back to the
   Site URL and never finishes (email links work: the apex link is redirected and
-  `/auth/confirm` accepts both). **Next: Ivan adds that URL, publishes the Google app,
-  one live Google sign-in**; details in the build log, "Step 2"; Ivan's answers: contact
+  `/auth/confirm` accepts both). Ivan added the www addresses to Supabase and Google
+  and **published the Google app; live Google sign-in works** (2026-10-07); details in the build log, "Step 2"; Ivan's answers: contact
   `starfoxlabs.contact@gmail.com`, Supabase region Tokyo, his admin email is his Gmail so
   Google signs him into the admin, signing out stays on the page and signs out this
   browser only, the menu's Admin link only for him); 4.3 Settings: Profile
@@ -629,6 +629,10 @@ Everything built so far, with file maps, decisions and how it was tested:
   link previews, the sign-in email's return address) is `https://starfoxlabs.org`. Pick
   one: make the apex Vercel's primary domain, or set `NEXT_PUBLIC_SITE_URL` /
   `site.url` to the www address (then Supabase's Site URL and Google's links too).
+  Ivan chose the apex (2026-10-07), but Vercel still sent `starfoxlabs.org` → www (308,
+  fresh from the edge) when checked afterwards: in Vercel → Domains, the apex needs "No
+  redirect" and www "Redirect to starfoxlabs.org". Remove this item once
+  `curl -sI https://www.starfoxlabs.org/` shows a 308 to the apex.
 - UQ palette beyond purple is still a TODO (see Colors).
 - **Two-factor sign-in for the admin** before the newsletter goes live (see Phase 6).
 - **Browser tests must stop publishing on the shared database** before the newsletter goes
