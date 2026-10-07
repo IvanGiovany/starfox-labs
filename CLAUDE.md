@@ -318,8 +318,9 @@ from the live schema (`npm run db:types`) — regenerate it after every migratio
    Music (including the custom audio player and the "about this" panel on song
    articles), Games, Hobbies; then the home grid (from the section loaders) and status
    cards from data.
-4. **Accounts + Settings** — reader sign-in (Google + email), profiles, profile pictures,
-   Settings tabs, delete account.
+4. **Accounts + Settings** — *done (2026-10-07).* Reader sign-in (Google + email), profiles,
+   profile pictures, Settings tabs, delete account, the sign-up prompt (built, off until
+   Phase 5).
 5. **Comments** — comments and replies on articles, moderation.
 6. **Newsletter** — subscribe (with or without account), double opt-in, send on publish, unsubscribe.
    **Before it goes live:** two-factor sign-in (authenticator app, Supabase MFA/TOTP) for
@@ -353,18 +354,45 @@ Track *active days* and *articles read* (one read per article per user), not raw
 - Use Supabase Row Level Security on every table.
 - Run `npm run build` and fix errors before saying a step is done.
 
-## Where we left off (updated 2026-10-07, end of session)
+## Where we left off (updated 2026-10-07, after Phase 4)
 Everything built so far, with file maps, decisions and how it was tested:
 **`docs/build-log.md`**. Read the relevant part before changing that area.
 
 ### Start here (next session)
-- **State:** Phases 1–3 are done. Since then: the Shinx art moved to the footer ("Made in
-  the lab by Gvan"), the home intro is Ivan's own text (sized like chester's), the favicon
-  is his pixel Shinx, and the **demo content is live** (16 articles and items in every
+- **State:** **Phases 1–4 are done** (Phase 4 finished 2026-10-07, every step tested by
+  Ivan, all pushed). The **demo content is live** (16 articles and items in every
   section; remove it all with **`npm run demo:remove`**, see "Demo content" in "Still
-  open"). Phase 4 steps 4.0–4.4 are committed and pushed (see Phase 4 below); the working tree is clean except `GIFS/` (Ivan's
-  originals, untracked, safe for him to delete).
-- **Phase 4 (Accounts + Settings): plan approved 2026-10-07, in progress.** Steps:
+  open"). The working tree is clean except `GIFS/` (Ivan's originals, untracked, safe for
+  him to delete). Readers can sign up (Google or email), have a profile and picture,
+  change settings and delete their account; the live Google app is published.
+- **Next: Phase 5 (Comments), starting with a plan for Ivan to approve** (CLAUDE.md
+  "Accounts, comments, newsletter": signed-in readers only, everyone reads, newest
+  first, one level of replies, edit / delete your own, the admin deletes any, basic rate
+  limiting). Carry these in:
+  - **Switch the sign-up prompt on** (`SIGN_UP_PROMPT` in `lib/features.ts`) once
+    comments work, and add its browser memory to `/privacy` (`lib/sign-up-memory.ts`).
+  - **A username-change limit** (e.g. once a month), so nobody dodges moderation by
+    renaming (Ivan, 2026-10-07).
+  - **Deleted accounts:** comments stay and show "deleted user"
+    (`comments.user_id … on delete set null`); `delete_my_account()` and Settings →
+    Account already delete the profile and picture. Update the Account tab's and
+    `/privacy`'s wording ("your comments stay as 'deleted user'").
+  - Comments show the author's `display_name`, `@username` and picture
+    (`components/avatar.tsx`, `profiles` is public); the admin's comments can carry an
+    "author" badge (Ivan's profile is `gvan` / "Gvan").
+  - The new table gets RLS, the truncate guard, a place in `db:backup`'s `TABLES`, and a
+    part in `rls-check.sql`. The article page's `#comments` section is the placeholder
+    to replace (`app/writing/[slug]/page.tsx`); public article pages must stay static
+    (comments load in the browser or behind `<Suspense>`).
+  - Rank rules (Phase 7) will count from `profiles.created_at` ("member since").
+- **How Phase 4 was tested** (build log, "Phase 4"): unit tests with tsx; production
+  build on :3124 with `puppeteer-core` in Edge, using **throwaway reader accounts** made
+  with the service key and signed in without any email (`admin.generateLink` →
+  `verifyOtp` in Node, cookies handed to the browser), deleted afterwards with their
+  files. Check scripts (rebuild them from the build log when needed): sign-in (29),
+  Settings (30), Account (19), prompt (18). Ivan keeps two test reader accounts of his
+  own for checklists.
+- **Phase 4 (Accounts + Settings): done 2026-10-07.** Steps:
   4.0 guards (truncate guard + `db:backup` / `db:restore`, see "Protecting the data";
   **done 2026-10-07**: migration applied with Ivan's OK, `db:types` unchanged; Ivan ran
   `rls-check.sql` (all passed) and the dashboard's Truncate button was blocked); 4.1 schema
@@ -418,9 +446,8 @@ Everything built so far, with file maps, decisions and how it was tested:
     localhost with the test users. **Right after 4.2 deploys:** check `/privacy` is live,
     paste the new Magic link + Confirm signup templates (written to work with the old and
     new code), then publish the Google app at once.
-- **What comes next:** the later phases, one at a time (see "Build phases"): 4 Accounts +
-  Settings (in progress), 5 Comments, 6 Newsletter, 7 Ranks, 8 YouTube + polish. The standing
-  rules still apply:
+- **What comes next:** the later phases, one at a time (see "Build phases"): 5 Comments
+  (next), 6 Newsletter, 7 Ranks, 8 YouTube + polish. The standing rules still apply:
   - **Plan first** for every phase and step; wait for Ivan's OK before building.
   - **Ivan runs the browser checklists** himself; give him a short checklist each step.
     Playwright only when he explicitly asks, and then localhost only (see "Browser
@@ -442,10 +469,11 @@ Everything built so far, with file maps, decisions and how it was tested:
      (`npm run demo:remove` first).
   - Also open: where the newsletter's subscribe link goes (Phase 6; the intro no longer
     has it); Ivan to skim the demo articles (placeholder writing in his voice).
-- **Checks from this session** lived in a temporary scratchpad (gone now). Their methods are
-  in the build log: the fit check ("Step 6": every card's text inside its cell and titles
-  not squeezed, at 360–1920 px), the demo check ("Demo content + favicon"), the intro
-  measurements ("Home intro"). Rebuild them the same way when needed.
+- **Checks live in a temporary scratchpad** (gone after each session). Their methods are
+  in the build log: Phase 3's fit check ("Step 6": every card's text inside its cell and
+  titles not squeezed, at 360–1920 px), the demo check ("Demo content + favicon"), the
+  intro measurements ("Home intro"), and Phase 4's account checks (above). Rebuild them
+  the same way when needed.
 
 - **Phase 1 (Foundation):** done.
 - **Phase 2 (Admin + content model): done** (2026-10-04), every step tested by Ivan on
@@ -501,8 +529,7 @@ Everything built so far, with file maps, decisions and how it was tested:
   line `text-sm tracking-tight` muted. Ours (Ivan's choices): "Made in the lab by Gvan",
   no copyright or links, Shinx 60 px tall (95 × 60, the files are exactly 2×).
   `components/site-footer.tsx` (no longer cached: no clock), `components/pixel-art.tsx`
-  (fixed size, hover on the parent `group/art`); the intro no longer has the art. **Next:
-  Phase 4 (Accounts + Settings): plan first.**
+  (fixed size, hover on the parent `group/art`); the intro no longer has the art.
 - **Rule for every Phase 3 step: re-read all the chester screenshots in `design-refs/`
   first** (chester: `Screenshot 2026-09-26 184223` home, `234546` home grid, `234621`
   projects, `234654` writing, `234716` hobbies, `2026-09-30 205309` reading,
@@ -574,7 +601,7 @@ Everything built so far, with file maps, decisions and how it was tested:
 - Things to carry in:
   - Pages use the cache tags the admin already updates (`projects`, `books`, `tracks`,
     `games`, `hobby_items`, plus `home` and `posts`); public pages stay static (Proxy
-    only runs on `/admin`, `/login`, `/auth`).
+    only runs on `/admin`, `/settings`, `/login`, `/auth`).
   - Music: the snippet length to show is `tracks.snippet_seconds` (decoded at upload; the
     player's own figure can be wrong, e.g. in Firefox); older rows fall back to the player.
   - Spektral is Ivan's artist name: `site.artist` in `lib/site.ts`. Song cards on home are
@@ -670,8 +697,9 @@ Everything built so far, with file maps, decisions and how it was tested:
 ### Notes for the next session (gotchas — keep these)
 **Next.js 16**
 - Read `node_modules/next/dist/docs/` before using an API (see AGENTS.md). Middleware is
-  called **Proxy**; `proxy.ts` only runs on `/admin`, `/login` and `/auth` (its `matcher`),
-  so public pages stay static. Keep it that way.
+  called **Proxy**; `proxy.ts` only runs on `/admin`, `/settings`, `/login` and `/auth`
+  (its `matcher`), so public pages stay static. Keep it that way: signed-in bits on public
+  pages (the header's account menu, the sign-up prompt) read the session in the browser.
 - Cache Components is on: anything using the clock, cookies or URL data must be cached
   (`"use cache"`) or wrapped in `<Suspense>`, or the build fails. Anything that reads files
   or the clock (Shiki, `next/og` fonts) must sit inside a `"use cache"` function, or the
@@ -734,9 +762,13 @@ Everything built so far, with file maps, decisions and how it was tested:
   (`autoComplete="off"` on the `<form>`) or has `autoComplete="off"` itself (allowed on
   buttons by `types/react-button-autocomplete.d.ts`). Edge doesn't do this, so test
   hydration in Firefox. Repro method: build log, 2.4b.
-- Auth: sign-in is email code + link (`signInWithOtp` with `shouldCreateUser: false` on the
-  admin form only; sign-ups stay enabled project-wide for Phase 4 readers). The email
-  template links to `/auth/confirm?token_hash=…`, which works in any browser.
+- Auth (since Phase 4): one `/login` for readers and the admin: Google, or an email code +
+  link (`signInWithOtp`, new emails get an account). The email templates (Magic Link and
+  Confirm signup, `supabase/templates/`) link to `/auth/confirm?token_hash=…&next=
+  {{ .RedirectTo }}`, which works in any browser; Google returns through `/auth/callback`
+  (PKCE). Redirects only to paths on this site (`lib/next-path.ts`). Being the admin is
+  only a row in `admins`, never decided by signing in. Reader pages use `requireUser()`,
+  admin pages `requireAdmin()`.
 
 **Working in this repo**
 - Ivan usually has `npm run dev` running on port 3000: don't stop it. Its log is

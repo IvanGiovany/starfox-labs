@@ -1114,7 +1114,7 @@ insects and birds → /hobbies, reading → /reading, writing → /writing; Pola
   line; phones and tablets: cards start 24–40 px below the text (padding + grid gap);
   desktop: 85–86 % fill, cards 36–77 px below the text. Home fit check: 1/1 each.
 
-## Phase 4 — Accounts + Settings (plan approved 2026-10-07)
+## Phase 4 — Accounts + Settings (done 2026-10-07)
 Plan, steps and Ivan's decisions: CLAUDE.md, "Start here".
 
 - **Step 0 — Guards (done 2026-10-07; migration applied with Ivan's OK; tested by Ivan:
