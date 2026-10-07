@@ -354,6 +354,26 @@ body::before {
   }
 }
 
+/* The quieter partner of button-primary (e.g. "Continue with Google"): the
+   raised card colour, one step further from the page on hover. */
+@utility button-secondary {
+  min-height: 2.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--bg-raised);
+  color: var(--fg);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+  &:hover {
+    background: var(--bg-raised-hover);
+  }
+  &:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
+}
+
 /* Small text buttons in admin list rows (Edit, Publish, Delete…): 44px tall
    so they're easy to tap, quiet until hovered. */
 @utility row-action {

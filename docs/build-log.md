@@ -1184,6 +1184,60 @@ Plan, steps and Ivan's decisions: CLAUDE.md, "Start here".
     `delete_my_account` and `is_reserved_name`. Backup includes `profiles`. Lint and
     build pass.
 
+- **Step 2 — Sign-in for everyone + `/privacy` (done 2026-10-07; tested by Ivan, checklist 1–8;
+  both templates pasted into Supabase before testing).** Ivan set up Google
+  Cloud (Testing, his Gmail + test-reader email as test users) and Supabase (Google
+  provider, manual identity linking, URL configuration) first.
+  - `lib/next-path.ts` (moved out of `lib/auth.ts`, which is server-only, so the browser
+    and tests can use it): `safeNextPath` (default now `/`; refuses other sites,
+    backslashes and control characters, since browsers drop tabs and newlines and
+    `/\t/evil.com` would become `//evil.com`; never `/login` or `/auth`, which would
+    loop), `nextFromLink` (a path, or a full URL on this site's origins: what comes back
+    through the email), `emailReturnAddress` (the page's path on `site.url`, query
+    dropped because it travels inside the email link's own query string).
+  - Email: `app/login/actions.ts` now creates accounts (`shouldCreateUser: true`) and
+    sends `emailRedirectTo`; the templates' link is `{{ .SiteURL }}/auth/confirm?…&next=
+    {{ .RedirectTo }}`, so it still goes to the live site and works with old and new
+    code either way (old route: a full URL fails its check → `/admin`; new route: no
+    redirect address → Supabase's Site URL → `/`). `supabase/templates/confirm-signup.html`
+    (new readers get "Confirm signup", returning ones "Magic Link"). Real errors now say
+    so (any address gets an email now, so there's nothing to hide).
+  - Google: `components/google-button.tsx` (browser `signInWithOAuth`, PKCE verifier in a
+    cookie; resets after Back from Google), `app/auth/callback/route.ts`
+    (`exchangeCodeForSession`, then `next`; failure or cancel → `/login?error=google`).
+  - `/login`: `sign in.` header and copy, Google, "or", email (no auto-focus: it would
+    open the phone keyboard), errors `link` / `google` / `not-admin`, signed in →
+    `next`, link to `/privacy`. `button-secondary` utility in `globals.css`.
+  - Header: `components/account-menu.tsx` in `<Suspense>` (reads the URL). Signed out:
+    "Sign in" with `?next=` (path only). Signed in: 24 px initial; menu with name,
+    @username, Admin (only if `is_admin()`), Sign out (`scope: "local"`, stays on the page
+    except `/admin` and `/settings`). Re-checks the session on every page change and on
+    window focus, because signing in with the code (server action) or signing out of the
+    admin changes the cookie without telling the browser client; the profile is fetched
+    only when the person changes. Open state = the page it was opened on, so a page
+    change closes it (no `setState` in an effect: lint rule). The admin bar's sign-out
+    is `scope: "local"` too.
+  - `/privacy` (static): no analytics, theme in local storage, Vercel logs, YouTube
+    thumbnails vs click-to-play embeds; private (email, sign-in method, dates, Google's
+    name / email / picture, first name used) vs public (display name, username, join
+    date); sign-in cookies; Supabase (Tokyo), Vercel, Resend, Google; removal by email
+    until 4.4; contact `starfoxlabs.contact@gmail.com`. Keep it true as later steps add
+    pictures, deletion, comments and the newsletter.
+  - Tested: tsx 5 groups (`next-path`: allowed paths, other sites and tricks, no loops,
+    full URLs only on this site incl. percent-encoded, return address round trip).
+    Production build: public pages still static, `/privacy` ○, `/auth/*` ƒ. Edge on :3124,
+    29 checks, with a throwaway reader made by the service key and signed in without any
+    email (`admin.generateLink` → `verifyOtp` in Node, cookies handed to the browser),
+    deleted afterwards (0 left): profile Reader / reader_…; Sign in link with `next`, none
+    on home; no layout shift signed out or in; `/login` contents and errors; Google →
+    Supabase authorize with `provider=google`, S256, `redirect_to=…/auth/callback?next=…`,
+    verifier cookie on our site; `/privacy`; callback and confirm redirects incl. other
+    sites; avatar button, menu contents (no Admin), Escape, outside click, page change;
+    `/login` signed in → `next` or `/`; reader on `/admin` → not-admin; sign out stays,
+    cookie gone, account kept; phone 390 px: no sideways scroll, Google button ≥ 44 px;
+    console clean. Test gotchas: wait for `load`, not `networkidle0`, between `/login`
+    URLs; after an aborted navigation read cookies with `page.cookies(url)`.
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:

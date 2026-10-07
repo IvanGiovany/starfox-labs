@@ -34,12 +34,3 @@ export async function requireAdmin(next = "/admin"): Promise<CurrentUser> {
   if (!(await isAdmin())) redirect("/login?error=not-admin");
   return user;
 }
-
-/**
- * Only allow redirects to paths on this site ("/admin", not "//evil.com" or
- * "https://…"), so a crafted ?next= link can't send someone elsewhere.
- */
-export function safeNextPath(next: string | null | undefined, fallback = "/admin"): string {
-  if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return fallback;
-  return next;
-}

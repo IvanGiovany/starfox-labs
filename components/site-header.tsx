@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { site } from "@/lib/site";
+import { AccountMenu } from "./account-menu";
 import { HeaderExtras } from "./header-extras";
 import { NavLink, TAB_CLASS } from "./nav-link";
 import { TabBar } from "./tab-bar";
@@ -10,7 +11,7 @@ import { ThemeToggle } from "./theme-toggle";
 // left ("Gvan" is home), quiet social links on the right. It sticks to the
 // top while the page scrolls; only the tab bar takes clicks, so the space
 // around it doesn't block the content underneath. RSS joins in the polish
-// phase, the account menu / "Sign in" link with reader accounts.
+// phase. Last on the right: "Sign in", or the account menu.
 export function SiteHeader() {
   const socials = [
     { label: "YouTube", href: site.links.youtube },
@@ -54,6 +55,10 @@ export function SiteHeader() {
           </a>
         ))}
         <ThemeToggle />
+        {/* Reads the URL, so (like NavLink) it sits inside <Suspense>. */}
+        <Suspense fallback={<span className="block size-6" aria-hidden="true" />}>
+          <AccountMenu />
+        </Suspense>
       </HeaderExtras>
     </header>
   );

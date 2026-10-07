@@ -360,7 +360,7 @@ Everything built so far, with file maps, decisions and how it was tested:
   the lab by Gvan"), the home intro is Ivan's own text (sized like chester's), the favicon
   is his pixel Shinx, and the **demo content is live** (16 articles and items in every
   section; remove it all with **`npm run demo:remove`**, see "Demo content" in "Still
-  open"). Last code commit `dc4d480` (all pushed); the working tree is clean except `GIFS/` (Ivan's
+  open"). Phase 4 steps 4.0–4.2 are committed and pushed (see Phase 4 below); the working tree is clean except `GIFS/` (Ivan's
   originals, untracked, safe for him to delete).
 - **Phase 4 (Accounts + Settings): plan approved 2026-10-07, in progress.** Steps:
   4.0 guards (truncate guard + `db:backup` / `db:restore`, see "Protecting the data";
@@ -381,7 +381,13 @@ Everything built so far, with file maps, decisions and how it was tested:
   any), `delete_my_account()` (signed-in only, refuses admins); 4.2 sign-in for everyone on `/login` (Google + email code/link,
   `/auth/callback`, links return to the page you came from, header avatar menu / "Sign
   in" as a client component so pages stay static) **plus `/privacy`** (moved here from
-  4.4: it must be live before the Google app is published); 4.3 Settings: Profile
+  4.4: it must be live before the Google app is published; **done 2026-10-07**: tested by
+  Ivan, checklist 1–8, privacy text approved; both email templates pasted into Supabase
+  before testing (safe with the old code); **after the deploy: check `/privacy` is live,
+  publish the Google app, one live Google sign-in**; details in the build log, "Step 2"; Ivan's answers: contact
+  `starfoxlabs.contact@gmail.com`, Supabase region Tokyo, his admin email is his Gmail so
+  Google signs him into the admin, signing out stays on the page and signs out this
+  browser only, the menu's Admin link only for him); 4.3 Settings: Profile
   (display name, username, picture, linked sign-in methods) + Appearance; 4.4 delete
   account (typed confirmation; avatar removed by the server, then the RPC; no service key
   on Vercel); 4.5 the end-of-article sign-up prompt. Newsletter tab: Phase 6.

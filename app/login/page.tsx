@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { SectionHeader } from "@/components/section-header";
-import { getCurrentUser, isAdmin, safeNextPath } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
+import { safeNextPath } from "@/lib/next-path";
 import { signOut } from "./actions";
 import { LoginForm } from "./login-form";
 
@@ -11,19 +13,33 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+// One sign-in for everyone: readers and the admin. Signing in only proves who
+// you are; the admin is whoever is in public.admins (lib/auth.ts, RLS).
 export default function LoginPage({ searchParams }: PageProps<"/login">) {
   return (
     <>
       <SectionHeader title="sign in">
-        This sign-in is for the site&apos;s admin. Reader accounts are coming later.
+        Optional: everything here can be read without an account. With one you get a profile
+        with your name and picture, and soon you can comment on articles.
       </SectionHeader>
       {/* Reads the URL and the session cookie, so it renders per request. */}
-      <Suspense fallback={<LoginForm next="/admin" />}>
+      <Suspense fallback={<LoginForm next="/" />}>
         <LoginContent searchParams={searchParams} />
       </Suspense>
+      <p className="mt-10 max-w-sm text-sm text-fg-muted">
+        <Link href="/privacy" className="text-fg-muted underline underline-offset-4 hover:text-fg">
+          Privacy
+        </Link>
+        : what an account stores, and who can see it.
+      </p>
     </>
   );
 }
+
+const ERRORS: Record<string, string> = {
+  link: "That sign-in link is invalid or has expired. Sign in again to get a new one.",
+  google: "Google sign-in didn't finish. Try again, or use your email.",
+};
 
 async function LoginContent({ searchParams }: { searchParams: PageProps<"/login">["searchParams"] }) {
   const params = await searchParams;
@@ -31,9 +47,6 @@ async function LoginContent({ searchParams }: { searchParams: PageProps<"/login"
   const error = typeof params.error === "string" ? params.error : null;
 
   const user = await getCurrentUser();
-
-  // Already signed in as an admin: skip the form.
-  if (user && error !== "not-admin" && (await isAdmin())) redirect(next);
 
   if (user && error === "not-admin") {
     return (
@@ -51,11 +64,14 @@ async function LoginContent({ searchParams }: { searchParams: PageProps<"/login"
     );
   }
 
+  // Already signed in: nothing to do here.
+  if (user) redirect(next);
+
   return (
     <div className="flex flex-col gap-4">
-      {error === "link" && (
+      {error && ERRORS[error] && (
         <p role="alert" className="max-w-sm text-sm text-danger">
-          That sign-in link is invalid or has expired. Enter your email to get a new one.
+          {ERRORS[error]}
         </p>
       )}
       <LoginForm next={next} />
