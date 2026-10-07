@@ -17,7 +17,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 
 // Articles first: items link to them, so a restore must add them before items.
 // New content tables go here (and in the truncate guard's migration).
-const TABLES = ["posts", "projects", "books", "tracks", "games", "hobby_items"];
+const TABLES = ["posts", "projects", "books", "tracks", "games", "hobby_items", "profiles"];
 // Exposed through the API but not backed up: `admins` is one row, added again
 // by hand in the SQL editor; `post_items` is a view.
 const NOT_BACKED_UP = ["admins", "post_items"];

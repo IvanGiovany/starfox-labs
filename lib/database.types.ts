@@ -299,6 +299,33 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          avatar_path: string | null
+          created_at: string
+          display_name: string
+          id: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          avatar_path?: string | null
+          created_at?: string
+          display_name: string
+          id: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          avatar_path?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
       projects: {
         Row: {
           badges: string[]
@@ -457,7 +484,9 @@ export type Database = {
       }
     }
     Functions: {
+      delete_my_account: { Args: never; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
+      is_reserved_name: { Args: { name: string }; Returns: boolean }
       reorder_items: {
         Args: { ids: string[]; section: string }
         Returns: undefined

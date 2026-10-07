@@ -365,10 +365,20 @@ Everything built so far, with file maps, decisions and how it was tested:
 - **Phase 4 (Accounts + Settings): plan approved 2026-10-07, in progress.** Steps:
   4.0 guards (truncate guard + `db:backup` / `db:restore`, see "Protecting the data";
   **done 2026-10-07**: migration applied with Ivan's OK, `db:types` unchanged; Ivan ran
-  `rls-check.sql` (all passed) and the dashboard's Truncate button was blocked); 4.1 schema (`profiles` with a sign-up
-  trigger, reserved usernames, an `avatars` bucket with per-user folders,
-  `delete_my_account()` that refuses admins, a "signed-in reader" part in
-  `rls-check.sql`); 4.2 sign-in for everyone on `/login` (Google + email code/link,
+  `rls-check.sql` (all passed) and the dashboard's Truncate button was blocked); 4.1 schema
+  (migration `20261007140000_profiles.sql`, **applied 2026-10-07** with Ivan's OK,
+  `db:types` regenerated; **done**: Ivan ran `rls-check.sql`, all passed): `profiles` (id =
+  auth user, `username` `^[a-z0-9_]{3,20}$` unique, `display_name` 1–40 trimmed,
+  `avatar_path` inside `<id>/`, `created_at` = member since, not editable; everyone
+  reads, owners edit those three columns, the admin edits any; no insert/delete through
+  the API; truncate guard; in `db:backup`), a sign-up trigger on `auth.users` (username
+  `reader_` + 6 random digits; display name: Google sign-ups get only the first name,
+  `given_name` else the first word of the full name, provider read from
+  `raw_app_meta_data`; everyone else "Reader"; never from the email), reserved names
+  (`is_reserved_name`: containing gvan / starfox / spektral, or exactly ivan, admin, …;
+  only the admin's profile may use them; Ivan is `gvan` / "Gvan"), the public `avatars`
+  bucket (1 MB, WebP/JPEG/PNG, writes only in `avatars/<own id>/`, the admin can delete
+  any), `delete_my_account()` (signed-in only, refuses admins); 4.2 sign-in for everyone on `/login` (Google + email code/link,
   `/auth/callback`, links return to the page you came from, header avatar menu / "Sign
   in" as a client component so pages stay static) **plus `/privacy`** (moved here from
   4.4: it must be live before the Google app is published); 4.3 Settings: Profile

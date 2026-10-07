@@ -1155,6 +1155,35 @@ Plan, steps and Ivan's decisions: CLAUDE.md, "Start here".
     valid one restored, the invalid one reported with the check's name, exit code 1.
     Dry run lists only the new migration; lint and build pass.
 
+- **Step 1 — Schema (done 2026-10-07: applied with Ivan's OK; Ivan ran `rls-check.sql`, all passed).** Plan and the table's rules:
+  CLAUDE.md, "Start here". Ivan's choices: Google sign-ups get only the first name,
+  everyone else "Reader"; the reserved list as proposed; his profile `gvan` / "Gvan".
+  - `supabase/migrations/20261007140000_profiles.sql`: `is_reserved_name()` (lowercased,
+    non-alphanumerics removed), `profiles` + `check_profile_names()` trigger (reserved
+    names refused unless the row's id is in `admins`), `create_profile_for_new_user()`
+    on `auth.users` (made safe so it can never block a sign-up), backfill of existing
+    accounts (the admin renamed to gvan / Gvan), RLS + column grants (only username,
+    display name, picture are updatable), truncate guard, `avatars` bucket and its four
+    storage policies (Storage needs `select` to replace or delete), `delete_my_account()`.
+  - The provider comes from `raw_app_meta_data` (set by the server):
+    `raw_user_meta_data` can be sent by anyone signing up through the API, so an email
+    sign-up with a name in its metadata still gets "Reader".
+  - `rls-check.sql`: visitors read profiles but can't edit them or call
+    `delete_my_account()`; the admin can't delete the admin account; a "Sign-up" part
+    adds five fake accounts (email, Google with given name, Google with full name only,
+    Google with a reserved first name, email with a name in its metadata) and checks
+    their usernames and display names, and that the admin is gvan / Gvan; a "reader"
+    part checks no drafts, no content writes (one row tried each), uploads only to the
+    own avatars folder, own profile only (three columns; not `created_at`, no insert or
+    delete), reserved / malformed / taken usernames, reserved / padded / empty display
+    names, picture paths in other folders, then `delete_my_account()` removes the
+    account and its profile. 32 PASS lines in all.
+  - Checked over the API after applying: visitors see only `gvan` / "Gvan" (created
+    2026-09-30); a visitor's edit and `delete_my_account()` get 401 "permission denied";
+    the avatars bucket is public, 1 MB, WebP/JPEG/PNG. `db:types` added `profiles`,
+    `delete_my_account` and `is_reserved_name`. Backup includes `profiles`. Lint and
+    build pass.
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:
