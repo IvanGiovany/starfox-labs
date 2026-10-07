@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "db:types": "supabase gen types typescript --linked --schema public > lib/database.types.ts",
-    "demo:remove": "node --env-file=.env.local scripts/demo-content.mjs remove"
+    "demo:remove": "node --env-file=.env.local scripts/demo-content.mjs remove",
+    "db:backup": "node --env-file=.env.local scripts/db-backup.mjs backup",
+    "db:restore": "node --env-file=.env.local scripts/db-backup.mjs restore"
   },
   "dependencies": {
     "@breezystack/lamejs": "^1.2.7",

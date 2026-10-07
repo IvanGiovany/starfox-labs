@@ -157,6 +157,51 @@ begin
     raise exception 'FAIL: reorder_items did not update sort_order';
   end if;
   raise notice 'PASS admin: can reorder a section';
+end;
+$$;
+
+-- ─── Guards (as the tables' owner, like the dashboard) ─────────────────────
+reset role;
+
+do $$
+declare
+  t text;
+  refused boolean := false;
+begin
+  foreach t in array array['posts', 'projects', 'books', 'tracks', 'games', 'hobby_items', 'admins'] loop
+    if not exists (
+      select 1 from pg_trigger
+      where tgrelid = format('public.%I', t)::regclass
+        and tgname = t || '_refuse_truncate'
+        and tgenabled <> 'D'
+    ) then
+      raise exception 'FAIL: % has no truncate guard', t;
+    end if;
+    if has_table_privilege('anon', format('public.%I', t), 'TRUNCATE')
+      or has_table_privilege('authenticated', format('public.%I', t), 'TRUNCATE')
+      or has_table_privilege('service_role', format('public.%I', t), 'TRUNCATE') then
+      raise exception 'FAIL: an API role can truncate %', t;
+    end if;
+  end loop;
+  raise notice 'PASS guard: every content table has the truncate guard; API roles can''t truncate';
+
+  -- The guard's behaviour, tried on a throwaway table (never a real one).
+  create temp table guard_probe (x int) on commit drop;
+  create trigger guard_probe_refuse_truncate before truncate on guard_probe
+    for each statement execute function public.refuse_truncate();
+  perform set_config('app.allow_truncate', '', true);
+  begin
+    truncate guard_probe;
+  exception when raise_exception then
+    refused := sqlerrm like 'Truncating % is blocked%';
+  end;
+  if not refused then raise exception 'FAIL: truncate was not refused'; end if;
+  raise notice 'PASS guard: truncate is refused';
+
+  perform set_config('app.allow_truncate', 'on', true);
+  truncate guard_probe;
+  perform set_config('app.allow_truncate', '', true);
+  raise notice 'PASS guard: truncate works when switched on for the transaction';
 
   raise notice 'ALL CHECKS PASSED';
 end;

@@ -225,6 +225,21 @@ from the live schema (`npm run db:types`) — regenerate it after every migratio
   `supabase/seed-sections.sql` (section items; ids start `00000000-0000-4000-8000-`),
   both listed in `supabase/config.toml`. `supabase/tests/rls-check.sql` is a rolled-back
   security/rules check to paste into the SQL editor after schema changes.
+- **Protecting the data** (since 2026-10-07, after every content table was emptied on
+  2026-10-06):
+  - **Truncate guard** (migration `20261007130000`): `TRUNCATE` on `posts`, the item
+    tables and `admins` is refused, from the dashboard too, unless switched on for that
+    transaction (`begin; set local app.allow_truncate = 'on'; truncate …; commit;`). The
+    API roles have no `TRUNCATE`. **Every new table gets the guard** (and goes into
+    `TABLES` in `scripts/db-backup.mjs`).
+  - **`npm run db:backup`** saves every content row (drafts included) to
+    `backups/<date-time>.json` (git-ignored). **`npm run db:restore -- <file>`** lists rows
+    that are missing now; add `--apply` to put them back. Restore only adds missing rows,
+    never changes or deletes. Rows only, not Storage files; `admins` is re-added by hand.
+    (`supabase db dump` needs Docker, which isn't installed.)
+  - **Rules:** back up before any risky database work. Never `supabase db reset --linked`,
+    never "Truncate" or bulk deletes in the dashboard; demo content goes only through
+    `npm run demo:remove`.
 
 ## Accounts, comments, newsletter
 - Accounts are **optional**. Anyone can read articles and comments.
@@ -347,8 +362,32 @@ Everything built so far, with file maps, decisions and how it was tested:
   section; remove it all with **`npm run demo:remove`**, see "Demo content" in "Still
   open"). Last code commit `dc4d480` (all pushed); the working tree is clean except `GIFS/` (Ivan's
   originals, untracked, safe for him to delete).
+- **Phase 4 (Accounts + Settings): plan approved 2026-10-07, in progress.** Steps:
+  4.0 guards (truncate guard + `db:backup` / `db:restore`, see "Protecting the data";
+  **done 2026-10-07**: migration applied with Ivan's OK, `db:types` unchanged; Ivan ran
+  `rls-check.sql` (all passed) and the dashboard's Truncate button was blocked); 4.1 schema (`profiles` with a sign-up
+  trigger, reserved usernames, an `avatars` bucket with per-user folders,
+  `delete_my_account()` that refuses admins, a "signed-in reader" part in
+  `rls-check.sql`); 4.2 sign-in for everyone on `/login` (Google + email code/link,
+  `/auth/callback`, links return to the page you came from, header avatar menu / "Sign
+  in" as a client component so pages stay static) **plus `/privacy`** (moved here from
+  4.4: it must be live before the Google app is published); 4.3 Settings: Profile
+  (display name, username, picture, linked sign-in methods) + Appearance; 4.4 delete
+  account (typed confirmation; avatar removed by the server, then the RPC; no service key
+  on Vercel); 4.5 the end-of-article sign-up prompt. Newsletter tab: Phase 6.
+  - **Ivan's decisions:** Google sign-in is allowed on his admin account (his Google
+    account has 2-step verification); **the sign-up prompt is built in 4.5 but stays
+    switched off until comments arrive in Phase 5**; 4.0 has both guards.
+  - **Google / Supabase setup order:** before 4.2: Google Cloud project, Branding (no
+    logo, so no review), Audience External **in Testing** with Ivan's Gmail and his
+    test-reader email as test users, scopes `openid email profile`, Web OAuth client
+    (redirect URI `https://cdnkflqqledvxqfayztm.supabase.co/auth/v1/callback`); Supabase:
+    Google provider, manual identity linking, URL Configuration. During 4.2: test on
+    localhost with the test users. **Right after 4.2 deploys:** check `/privacy` is live,
+    paste the new Magic link + Confirm signup templates (written to work with the old and
+    new code), then publish the Google app at once.
 - **What comes next:** the later phases, one at a time (see "Build phases"): 4 Accounts +
-  Settings (next), 5 Comments, 6 Newsletter, 7 Ranks, 8 YouTube + polish. The standing
+  Settings (in progress), 5 Comments, 6 Newsletter, 7 Ranks, 8 YouTube + polish. The standing
   rules still apply:
   - **Plan first** for every phase and step; wait for Ivan's OK before building.
   - **Ivan runs the browser checklists** himself; give him a short checklist each step.
@@ -358,17 +397,10 @@ Everything built so far, with file maps, decisions and how it was tested:
     publishing on the shared database (local Supabase for tests, or sending impossible
     from tests), and the admin needs two-factor sign-in.
 - **Open to-dos (Ivan, 2026-10-07)** (details in "Still open"):
-  1. **Rotate the Supabase secret key**: it was pasted into a chat. New key in the
-     dashboard → `.env.local` as `SUPABASE_SERVICE_ROLE_KEY` → delete the old one.
-  2. **Find out how every content table got emptied**, so it can't happen by accident
-     again. All six tables (`posts`, `projects`, `books`, `tracks`, `games`,
-     `hobby_items`) had 0 rows, drafts included, on 2026-10-06 before the demo script ran
-     (it only listed rows first); `admins` still had its row, so it wasn't a full
-     database reset. Window: after Ivan's step-6 checklist on live data (2026-10-06) and
-     before the demo session. Start with Supabase's logs (Dashboard → Logs, Postgres /
-     API, `DELETE` on those tables in that window) and the SQL editor's history. Then
-     consider guards (e.g. no `supabase db reset --linked`; a check before bulk deletes;
-     backups / point-in-time recovery on the plan).
+  1. ~~Rotate the Supabase secret key~~: **done 2026-10-07** (new key in `.env.local`,
+     old one deleted).
+  2. ~~Find out how every content table got emptied~~: **investigated 2026-10-07**, see
+     "Still open"; guarded since Phase 4 step 0.
   3. **Re-add Ivan's song "speki"** (it went with the rest) through the admin, when he's
      ready.
   4. **Link Polacrity** in the home intro once it's public (`TODO(Ivan)` in
@@ -554,14 +586,18 @@ Everything built so far, with file maps, decisions and how it was tested:
   (`add` needs the generated assets; content in `scripts/demo-content-data.mjs`; build
   log, "Demo content"). The writing is placeholder text in Ivan's voice.
 - **Before the demo content went in, every content table was already empty** (0 rows,
-  drafts included, checked 2026-10-06 with the service key): the samples, Ivan's checklist
-  items and his own song "speki" were deleted outside that session. Investigating it is
-  to-do 2 in "Start here"; re-adding "speki" is to-do 3. If "speki" wasn't
-  meant to go, Supabase backups may restore it. Its uploaded files (and the old samples'
-  files) are still in Storage, outside the `demo/` folders (see "Unused media").
-- **Rotate the Supabase secret key** (Ivan, after the demo; to-do 1 in "Start here"): it
-  was pasted into a chat on 2026-10-06. Create a new secret key in the dashboard, put it in `.env.local` as
-  `SUPABASE_SERVICE_ROLE_KEY`, delete the old one. Never in the repo or Vercel.
+  drafts included): the samples, Ivan's checklist items and his own song "speki" went.
+  Re-adding "speki" is to-do 3. Its uploaded files (and the old samples' files) are still
+  in Storage, outside the `demo/` folders (see "Unused media"). **Investigated
+  2026-10-07** (details: build log, "Phase 4, step 0"): emptied between 06:09 and 06:33
+  AEST on 2026-10-06, while Ivan was in the dashboard getting the secret key. Not the
+  repo (no migration, script or app code can do it; no `db reset`: the `admins` row
+  dates from 2026-09-30) and not a Claude session (transcripts: no database writes in
+  that window). Most likely a `TRUNCATE posts … CASCADE` (empties exactly those six
+  tables, skips the row rules, leaves `admins` and Storage); Ivan doesn't remember it and
+  the SQL editor history has nothing. Now guarded (see "Protecting the data").
+- The Supabase secret key was rotated on 2026-10-07 (the old one was pasted into a chat).
+  It lives only in `.env.local`, never in the repo or Vercel.
 - `supabase/seed.sql` and `seed-sections.sql` (the old samples) still exist for a local
   database; the live one doesn't use them.
 - **Vercel** (Ivan to confirm it's done): Production Branch = `main`; env vars
@@ -571,7 +607,8 @@ Everything built so far, with file maps, decisions and how it was tested:
 - UQ palette beyond purple is still a TODO (see Colors).
 - **Two-factor sign-in for the admin** before the newsletter goes live (see Phase 6).
 - **Browser tests must stop publishing on the shared database** before the newsletter goes
-  live: local Supabase for tests, or emails impossible from tests (see Phase 6).
+  live: local Supabase for tests, or emails impossible from tests (see Phase 6). Local
+  Supabase needs Docker Desktop, which isn't installed (found 2026-10-07).
 - **Scheduled publishing** (to-do): pick a future date and time and the article goes live
   then. Needs public queries to require `published_at <= now()`, and something to refresh
   the cache at that moment (e.g. a Vercel Cron job calling a route that runs

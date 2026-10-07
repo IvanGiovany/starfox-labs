@@ -1112,6 +1112,49 @@ insects and birds → /hobbies, reading → /reading, writing → /writing; Pola
   line; phones and tablets: cards start 24–40 px below the text (padding + grid gap);
   desktop: 85–86 % fill, cards 36–77 px below the text. Home fit check: 1/1 each.
 
+## Phase 4 — Accounts + Settings (plan approved 2026-10-07)
+Plan, steps and Ivan's decisions: CLAUDE.md, "Start here".
+
+- **Step 0 — Guards (done 2026-10-07; migration applied with Ivan's OK; tested by Ivan:
+  `rls-check.sql` all passed, the dashboard's "Truncate table" on `hobby_items` refused).**
+  - **The investigation** (how every content table got emptied before the demo):
+    - Not the repo: migrations only create tables, policies and views (the two applied on
+      2026-10-05 only touched views, before the data was last seen); the app's deletes
+      are single-row (`.eq("id", id)`); the demo script deletes only `de300000-` ids. No
+      `db reset --linked`: the `admins` row dates from 2026-09-30 (a reset recreates it,
+      and with seeding on would have brought the samples back).
+    - Not a Claude session: the session transcripts (`~/.claude/projects/…/*.jsonl`) show
+      every command; nothing wrote to the database in the window (no Playwright, no
+      subagents).
+    - Window (AEST, 2026-10-06): hobby items listed at 00:19; a local production build at
+      06:08 still prerendered `sample-rls-explained`; all six tables had 0 rows at 06:33
+      (`admins` and Storage intact). The demo script's first run (06:37) failed on its
+      first delete (`uuid ~~ unknown`), so it removed nothing. In between, Ivan was in the
+      dashboard creating the secret key.
+    - Most likely `TRUNCATE posts … CASCADE`: it empties posts and every table with a
+      foreign key to it (exactly the five item tables, not `admins`), and skips the row
+      rules that refuse deleting an article a published song or game needs. Ivan doesn't
+      remember it; the SQL editor's history has nothing; logs had expired (free plan).
+  - **Truncate guard:** `supabase/migrations/20261007130000_truncate_guard.sql`:
+    `public.refuse_truncate()` (statement trigger, raises unless
+    `app.allow_truncate = 'on'`, with a hint on how to do it on purpose) on `posts`, the
+    five item tables and `admins`; `revoke truncate` from `anon`, `authenticated`,
+    `service_role`. `rls-check.sql` gained a "Guards" part (as the owner): every table
+    has the trigger enabled, no API role can truncate, and the behaviour on a temp table
+    (refused, then allowed when switched on). It never truncates a real table.
+  - **Backups:** `scripts/db-backup.mjs` (`npm run db:backup`, `npm run db:restore --
+    <file> [--apply]`). Service key, every row in id order, 1000 a page; warns about API
+    tables it doesn't know (from the API's OpenAPI listing). Restore refuses a backup from
+    another project, lists missing rows by id, inserts only those (articles first), and
+    retries a failed batch row by row so one bad row doesn't stop the rest (exit code 1).
+    `supabase db dump` was tried first: it needs Docker (not installed).
+  - Tested on the live database with `[test]` drafts (deleted afterwards, with the test
+    backups): backup → delete → list (1 missing) → `--apply` → the row is identical to
+    the backup (timestamps, accents, arrays) → a second run finds nothing missing; a hand-made
+    backup with one valid and one invalid row (published hobby without category): the
+    valid one restored, the invalid one reported with the check's name, exit code 1.
+    Dry run lists only the new migration; lint and build pass.
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:

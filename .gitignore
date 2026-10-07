@@ -44,3 +44,6 @@ design-refs/
 
 # Playwright MCP output (page snapshots, console logs, screenshots from browser tests)
 .playwright-mcp/
+
+# database backups (npm run db:backup): they include drafts
+/backups/
