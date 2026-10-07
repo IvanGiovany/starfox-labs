@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AboutItem } from "@/components/about-item";
 import { ArticleView } from "@/components/article-view";
+import { ARTICLE_END_ID, SignUpPrompt } from "@/components/sign-up-prompt";
+import { SIGN_UP_PROMPT } from "@/lib/features";
 import { readingTime } from "@/lib/format";
 import { renderMarkdown } from "@/lib/markdown";
 import { getPostItem } from "@/lib/post-items";
@@ -75,8 +77,12 @@ export default async function ArticlePage({ params }: PageProps<"/writing/[slug]
         about={item && <AboutItem item={item} />}
         body={body}
       />
+      {/* Where "finished reading" is measured (the sign-up prompt watches it). */}
+      {SIGN_UP_PROMPT && <div id={ARTICLE_END_ID} aria-hidden="true" />}
 
       <OlderNewer older={older} newer={newer} />
+
+      {SIGN_UP_PROMPT && <SignUpPrompt slug={post.slug} />}
 
       {/*
         TODO(Phase 5 — Comments): comments and replies go here. Signed-in

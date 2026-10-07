@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { Avatar } from "@/components/avatar";
 import { PROFILE_CHANGED } from "@/lib/profile-events";
+import { rememberHadAccount } from "@/lib/sign-up-memory";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 // The header's account control: "Sign in", or a small avatar button with a
@@ -48,6 +49,7 @@ export function AccountMenu() {
       if (cancelled || userId === loadedFor.current) return;
       loadedFor.current = userId;
       if (!userId) return setState({ status: "signed-out" });
+      rememberHadAccount(); // the sign-up prompt never shows on this browser again
 
       const [{ data: profile }, { data: admin }] = await Promise.all([
         supabase.from("profiles").select("username, display_name, avatar_path").eq("id", userId).maybeSingle(),

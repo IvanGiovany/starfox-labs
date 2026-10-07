@@ -1339,6 +1339,33 @@ Plan, steps and Ivan's decisions: CLAUDE.md, "Start here".
     a file with another name kept. Gotcha: Claude Code's Bash tool was blocked for a
     while ("classifier gave no verdict"); the PowerShell tool still worked.
 
+- **Step 5 — The end-of-article sign-up prompt (done 2026-10-07, switched off; tested by Ivan
+  with the switch on locally, checklist 1–8, then switched off again).**
+  Ivan's choices: the drafted wording; just above Comments; short articles after 15 s;
+  never again once someone was signed in on this browser. Off until Phase 5.
+  - `lib/features.ts`: `SIGN_UP_PROMPT` = `NEXT_PUBLIC_SIGN_UP_PROMPT === "on"` (fixed at
+    build time; only set in `.env.local` to try it, never on Vercel; listed in
+    `.env.example`). Off: the article page renders neither the marker nor the prompt,
+    so the HTML is unchanged (checked).
+  - `components/sign-up-prompt.tsx`: an `aside` (`reveal` fade-in, off with reduced
+    motion) above Comments: "Enjoyed this?", the text, **Sign up** (`/login?next=
+    /writing/<slug>#comments`), **Not now**, Privacy. Shown when the `#article-end` marker
+    (after the body) comes into view after a scroll; if the whole article fits on the
+    screen, after 15 s. Never with a session, nor where `starfox:had-account` or
+    `starfox:sign-up-prompt-dismissed` is remembered (`lib/sign-up-memory.ts`; blocked
+    storage reads as "nothing remembered"). `AccountMenu` remembers "had an account"
+    whenever it sees a session.
+  - Tested: build with the switch off (no marker or prompt in the article HTML); build
+    with it on, Edge on :3124, `prompt-check` 18, each in a fresh profile: not on load,
+    not just before the end is in view, no layout shift while reading; appears at the
+    end, above Comments; Sign up link; fade-in; Not now hides it and is remembered
+    (reload, another article); never for a signed-in reader, nor after signing out on
+    that browser; a screen tall enough to fit the article: not at 5 s, there by 15 s;
+    storage blocked: still shows, Not now still hides; reduced motion: no animation;
+    phone 390 px (fits, buttons ≥ 44 px); console clean. `signin-check` rerun: 29. Then
+    rebuilt with the switch off. Gotcha: with a 900 px window, "halfway down" an
+    1800 px article already shows the end; test "just before the end is in view".
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:

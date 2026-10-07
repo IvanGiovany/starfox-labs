@@ -402,7 +402,11 @@ Everything built so far, with file maps, decisions and how it was tested:
   on Vercel; plus "Sign out everywhere"; **done 2026-10-07**: tested by Ivan, checklist
   1–7; build log "Step 4"; **profile pictures are cached for an hour only**
   (`AVATAR_CACHE_SECONDS`): deleting a file doesn't clear Supabase's CDN or Vercel's image
-  cache, and with a year a deleted picture stayed public); 4.5 the end-of-article sign-up prompt. Newsletter tab: Phase 6.
+  cache, and with a year a deleted picture stayed public); 4.5 the end-of-article sign-up
+  prompt (plan approved 2026-10-07: wording as drafted, just above Comments, short
+  articles after 15 s, never again once signed in on this browser; **done 2026-10-07,
+  switched off** (`SIGN_UP_PROMPT` in `lib/features.ts`); tested by Ivan with
+  `NEXT_PUBLIC_SIGN_UP_PROMPT=on` in `.env.local`, checklist 1–8; build log "Step 5"). Newsletter tab: Phase 6.
   - **Ivan's decisions:** Google sign-in is allowed on his admin account (his Google
     account has 2-step verification); **the sign-up prompt is built in 4.5 but stays
     switched off until comments arrive in Phase 5**; 4.0 has both guards.
@@ -634,6 +638,9 @@ Everything built so far, with file maps, decisions and how it was tested:
 - **Known dead links**: none (all sections live since step 5).
 - **Username changes have no limit** (Ivan, 2026-10-07): add one in Phase 5 with
   comments (e.g. once a month), so nobody can dodge moderation by renaming.
+- **Switch the sign-up prompt on in Phase 5** (built in 4.5, off): set
+  `SIGN_UP_PROMPT` to on in `lib/features.ts`, and add to `/privacy` that the browser
+  remembers a dismissed prompt and that someone was signed in (`lib/sign-up-memory.ts`).
 - UQ palette beyond purple is still a TODO (see Colors).
 - **Two-factor sign-in for the admin** before the newsletter goes live (see Phase 6).
 - **Browser tests must stop publishing on the shared database** before the newsletter goes
