@@ -10,7 +10,8 @@ export const metadata: Metadata = {
 // Settings for a signed-in reader (or the admin, for their own profile).
 // proxy.ts sends signed-out visitors to /login first; each page also checks
 // with requireUser() inside its own <Suspense>, like the admin pages.
-// Tabs: Profile, Appearance; Account (delete) comes in 4.4, Newsletter in Phase 6.
+// Tabs: Profile, Appearance, Account (sign out everywhere, delete); Newsletter
+// joins in Phase 6.
 export default function SettingsLayout({ children }: LayoutProps<"/settings">) {
   return (
     <>

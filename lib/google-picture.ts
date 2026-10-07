@@ -1,6 +1,6 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
-import { AVATARS_BUCKET, googlePictureUrl, newAvatarPath } from "./avatars";
+import { AVATAR_CACHE_SECONDS, AVATARS_BUCKET, googlePictureUrl, newAvatarPath } from "./avatars";
 import type { Database } from "./database.types";
 import { fetchRemoteImage } from "./images/fetch-remote";
 import { prepareAvatarOnServer } from "./images/prepare-server";
@@ -42,7 +42,7 @@ export async function copyGooglePicture({
   const path = newAvatarPath(userId, image.extension);
   const { error: uploadError } = await db.storage
     .from(AVATARS_BUCKET)
-    .upload(path, image.bytes, { contentType: image.type, cacheControl: "31536000", upsert: false });
+    .upload(path, image.bytes, { contentType: image.type, cacheControl: String(AVATAR_CACHE_SECONDS), upsert: false });
   if (uploadError) throw new Error(`upload: ${uploadError.message}`);
 
   // Only if there's still no picture (they might have picked one meanwhile).

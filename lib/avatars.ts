@@ -2,10 +2,20 @@ import { randomId } from "./media";
 import { supabaseUrl } from "./supabase/config";
 
 // Profile pictures live in the public "avatars" bucket, one folder per
-// account: avatars/<user id>/<random>.webp. A new picture gets a new name, so
-// it can be cached for a year and the old one is deleted (Settings → Profile).
+// account: avatars/<user id>/<random>.webp. A new picture gets a new name and
+// the old one is deleted (Settings → Profile, Settings → Account).
 
 export const AVATARS_BUCKET = "avatars";
+
+/**
+ * How long copies of a picture may be cached, in seconds (the upload's
+ * Cache-Control). Deleting a file does NOT clear caches: Supabase's CDN keeps
+ * serving its copy until this runs out, and Vercel keeps optimized copies for
+ * this or 4 hours (next/image's minimumCacheTTL), whichever is longer. Kept
+ * short so a deleted picture is gone everywhere within a few hours, as
+ * /privacy says (found 2026-10-07: with a year, it stayed reachable).
+ */
+export const AVATAR_CACHE_SECONDS = 3600;
 
 /** The picture's public address, or null when there's no picture. */
 export function avatarUrl(path: string | null | undefined): string | null {

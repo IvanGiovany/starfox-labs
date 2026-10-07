@@ -2,6 +2,7 @@
 // Uses the service key, so it reads drafts too (RLS doesn't apply to it).
 //
 //   npm run db:backup                               → backups/<date-time>.json
+//                                                     (and deletes ones over 30 days old)
 //   npm run db:restore -- backups/<file>.json        list the rows that are missing now
 //   npm run db:restore -- backups/<file>.json --apply   add those rows back
 //
@@ -13,7 +14,7 @@
 // `backups/` folder is git-ignored: backups include drafts.
 
 import { createClient } from "@supabase/supabase-js";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, unlink, writeFile } from "node:fs/promises";
 
 // Articles first: items link to them, so a restore must add them before items.
 // New content tables go here (and in the truncate guard's migration).
@@ -22,6 +23,8 @@ const TABLES = ["posts", "projects", "books", "tracks", "games", "hobby_items", 
 // by hand in the SQL editor; `post_items` is a view.
 const NOT_BACKED_UP = ["admins", "post_items"];
 const PAGE = 1000;
+/** How long backups are kept (see /privacy). */
+const KEEP_DAYS = 30;
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -66,6 +69,27 @@ async function backup() {
   await mkdir("backups", { recursive: true });
   await writeFile(file, JSON.stringify({ project, createdAt, tables }, null, 2) + "\n");
   console.log(`saved ${file}`);
+  await pruneOldBackups();
+}
+
+/**
+ * Deletes backups older than KEEP_DAYS (the privacy page promises at most 30
+ * days: backups hold profiles, so a deleted account mustn't live on longer).
+ * Only files this script named (backups/<date-time>.json), judged by the date
+ * in the name.
+ */
+async function pruneOldBackups(now = Date.now()) {
+  const removed = [];
+  for (const name of await readdir("backups")) {
+    const match = /^(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})\.json$/.exec(name);
+    if (!match) continue;
+    const saved = Date.parse(`${match[1]}T${match[2]}:${match[3]}:${match[4]}Z`);
+    if (Number.isFinite(saved) && now - saved > KEEP_DAYS * 24 * 60 * 60 * 1000) {
+      await unlink(`backups/${name}`);
+      removed.push(name);
+    }
+  }
+  if (removed.length) console.log(`deleted ${removed.length} backup(s) older than ${KEEP_DAYS} days: ${removed.join(", ")}`);
 }
 
 async function restore(file, apply) {

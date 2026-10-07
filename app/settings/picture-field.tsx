@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/avatar";
-import { AVATARS_BUCKET, newAvatarPath } from "@/lib/avatars";
+import { AVATAR_CACHE_SECONDS, AVATARS_BUCKET, newAvatarPath } from "@/lib/avatars";
 import { prepareAvatar, type PreparedImage } from "@/lib/images/prepare";
 import { ImageError } from "@/lib/images/rules";
 import { announceProfileChange } from "@/lib/profile-events";
@@ -51,7 +51,7 @@ export function PictureField({ userId, name, path }: { userId: string; name: str
     const newPath = newAvatarPath(userId, preview.extension);
     const { error: uploadError } = await supabase.storage
       .from(AVATARS_BUCKET)
-      .upload(newPath, preview.blob, { contentType: preview.type, cacheControl: "31536000", upsert: false });
+      .upload(newPath, preview.blob, { contentType: preview.type, cacheControl: String(AVATAR_CACHE_SECONDS), upsert: false });
     if (uploadError) {
       setBusy(null);
       return setError("The picture couldn't be uploaded. Check your connection and try again.");

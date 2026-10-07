@@ -7,6 +7,7 @@ import { Suspense } from "react";
 const TABS = [
   { label: "Profile", href: "/settings" },
   { label: "Appearance", href: "/settings/appearance" },
+  { label: "Account", href: "/settings/account" },
 ];
 
 // The Settings tabs, styled like the admin's. Highlighting the current tab

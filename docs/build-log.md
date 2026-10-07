@@ -1304,6 +1304,41 @@ Plan, steps and Ivan's decisions: CLAUDE.md, "Start here".
     Settings first). Gotchas: select an input's text with `el.select()`, not a triple
     click; tsx flags (`--tsconfig`) before Node flags (`--conditions`).
 
+- **Step 4 — Settings → Account: sign out everywhere, delete account (done 2026-10-07;
+  tested by Ivan, checklist 1–7).** Ivan's choices: confirm by
+  typing the username; backups pruned after 30 days, said on `/privacy`; "Sign out on all
+  devices" added; orphaned profile pictures added to the "Unused media" to-do.
+  - `app/settings/account/` (`page.tsx`, `delete-account-form.tsx`, `actions.ts`): email
+    and "Member since" (private); **Sign out everywhere** (`signOut({ scope: "global" })`
+    → `/login?notice=signed-out-everywhere`); **Delete account** (button off until the
+    username is typed exactly; the admin sees a note instead). `deleteAccount`: checks
+    the typed username again and refuses the admin, clears `avatar_path`, lists and
+    deletes every file in `avatars/<id>/` (strays too), calls `delete_my_account()`,
+    signs out locally and removes any `sb-` cookie left, then `/goodbye`. Any failure
+    stops with "try again"; files go first because SQL can't delete Storage files.
+  - `app/goodbye/page.tsx` (static, noindex); Settings tabs gain Account; `/login` shows
+    notices; `/privacy`: Settings → Account → Delete account, backups kept ≤ 30 days,
+    removing the Google connection; `scripts/db-backup.mjs`: each backup run deletes
+    `backups/<date-time>.json` older than 30 days (by the date in the name).
+  - **Found by the checks: deleted pictures stayed public.** Supabase's CDN (Cloudflare)
+    keeps serving a deleted file until its Cache-Control runs out (probe: HIT after the
+    delete; only a new query string reached Storage's 400), and Vercel keeps optimized
+    copies for max(4 h `minimumCacheTTL`, the upstream max-age) with no way to clear
+    them. Pictures were uploaded with a year. Now `AVATAR_CACHE_SECONDS = 3600`
+    (`lib/avatars.ts`, used by the picture field and the Google copy): a deleted or
+    replaced picture is gone everywhere within ~4 hours; `/privacy` says so. Article
+    images and covers keep a year.
+  - Tested: production build (`/goodbye` ○, `/settings/account` ◐), Edge on :3124:
+    `account-check` 19 (signed-out redirect; tab contents; button off / almost / exact;
+    the server refuses a wrong username sent past the form; delete → `/goodbye`, account
+    + profile + picture + a stray file gone, Storage answers 400, signed out, `/settings`
+    asks to sign in; the same email signs up as a fresh account; sign out everywhere →
+    note, this browser signed out, a second session can't refresh, account kept; phone
+    390 px; console and 404s clean), `settings-check` 30 (+ pictures cached an hour),
+    `signin-check` 29. Backup pruning: a 67-day-old backup deleted, a 10-day-old one and
+    a file with another name kept. Gotcha: Claude Code's Bash tool was blocked for a
+    while ("classifier gave no verdict"); the PowerShell tool still worked.
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:

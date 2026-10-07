@@ -236,6 +236,8 @@ from the live schema (`npm run db:types`) — regenerate it after every migratio
     `backups/<date-time>.json` (git-ignored). **`npm run db:restore -- <file>`** lists rows
     that are missing now; add `--apply` to put them back. Restore only adds missing rows,
     never changes or deletes. Rows only, not Storage files; `admins` is re-added by hand.
+    Each backup run deletes backups older than 30 days (`/privacy` promises it: backups
+    hold profiles, so a deleted account mustn't live on longer).
     (`supabase db dump` needs Docker, which isn't installed.)
   - **Rules:** back up before any risky database work. Never `supabase db reset --linked`,
     never "Truncate" or bulk deletes in the dashboard; demo content goes only through
@@ -360,7 +362,7 @@ Everything built so far, with file maps, decisions and how it was tested:
   the lab by Gvan"), the home intro is Ivan's own text (sized like chester's), the favicon
   is his pixel Shinx, and the **demo content is live** (16 articles and items in every
   section; remove it all with **`npm run demo:remove`**, see "Demo content" in "Still
-  open"). Phase 4 steps 4.0–4.3 are committed and pushed (see Phase 4 below); the working tree is clean except `GIFS/` (Ivan's
+  open"). Phase 4 steps 4.0–4.4 are committed and pushed (see Phase 4 below); the working tree is clean except `GIFS/` (Ivan's
   originals, untracked, safe for him to delete).
 - **Phase 4 (Accounts + Settings): plan approved 2026-10-07, in progress.** Steps:
   4.0 guards (truncate guard + `db:backup` / `db:restore`, see "Protecting the data";
@@ -397,7 +399,10 @@ Everything built so far, with file maps, decisions and how it was tested:
   2026-10-07**: tested by Ivan, checklist 1–8; details in the build log, "Step 3";
   shared image code moved from `lib/admin/` to `lib/images/`); 4.4 delete
   account (typed confirmation; avatar removed by the server, then the RPC; no service key
-  on Vercel); 4.5 the end-of-article sign-up prompt. Newsletter tab: Phase 6.
+  on Vercel; plus "Sign out everywhere"; **done 2026-10-07**: tested by Ivan, checklist
+  1–7; build log "Step 4"; **profile pictures are cached for an hour only**
+  (`AVATAR_CACHE_SECONDS`): deleting a file doesn't clear Supabase's CDN or Vercel's image
+  cache, and with a year a deleted picture stayed public); 4.5 the end-of-article sign-up prompt. Newsletter tab: Phase 6.
   - **Ivan's decisions:** Google sign-in is allowed on his admin account (his Google
     account has 2-step verification); **the sign-up prompt is built in 4.5 but stays
     switched off until comments arrive in Phase 5**; 4.0 has both guards.
@@ -641,7 +646,10 @@ Everything built so far, with file maps, decisions and how it was tested:
 - **Unused media** (to-do): images removed from an article body, and replaced or removed
   covers, stay in the `media` bucket. Deleting automatically is risky (a file may be used
   elsewhere, or the change undone), so build an admin view that lists files no article or
-  item references, to delete by hand.
+  item references, to delete by hand. **It should also list orphaned profile pictures**
+  (Ivan, 2026-10-07): `avatars/<id>/` folders of accounts that no longer exist (deleted
+  in the Supabase dashboard, which doesn't know about our folders; Settings → Account
+  deletes its own files first) and files no profile points to.
 - **Redirects for changed slugs** (to-do): changing a published article's slug breaks old
   links. Fix: a `post_redirects` table (`old_slug` → `post_id`) filled when a published
   slug changes, checked by the article page before `notFound()` (permanent redirect).

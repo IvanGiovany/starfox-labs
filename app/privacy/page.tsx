@@ -4,8 +4,7 @@ import { SectionHeader } from "@/components/section-header";
 import { openGraphDefaults, site } from "@/lib/site";
 
 // What the site stores and why, in plain words. Keep it true: update it when
-// something changes (deleting your account in 4.4,
-// comments in Phase 5, the newsletter in Phase 6). Google's sign-in screen
+// something changes (comments in Phase 5, the newsletter in Phase 6). Google's sign-in screen
 // links here, so it must stay live.
 
 const CONTACT = "starfoxlabs.contact@gmail.com";
@@ -88,12 +87,24 @@ export default function PrivacyPage() {
           </li>
         </ul>
         <p>Nothing is sold or shared with anyone else, and there are no ads.</p>
+        <p>
+          The database is backed up now and then. Backups are kept for up to 30 days and then
+          deleted, so a deleted profile can live on in a backup for at most that long. Backups
+          hold profiles (names and usernames), not email addresses.
+        </p>
 
         <h2>Removing your account</h2>
         <p>
-          Email <a href={`mailto:${CONTACT}`}>{CONTACT}</a> from the address you signed up with, and
-          your account and profile will be deleted. (A delete button in your settings is on its
-          way.)
+          Go to <strong>Settings → Account → Delete account</strong>. It deletes your sign-in, your
+          email address, your profile and your picture straight away. (Copies of a picture kept by
+          the image servers&apos; caches run out within a few hours; the same goes for a picture
+          you remove or replace.) You can also email{" "}
+          <a href={`mailto:${CONTACT}`}>{CONTACT}</a> from the address you signed up with, and it
+          will be done for you.
+        </p>
+        <p>
+          If you signed in with Google, you can also remove {site.name} from your Google
+          account&apos;s list of third-party connections.
         </p>
 
         <h2>Questions</h2>

@@ -41,10 +41,15 @@ const ERRORS: Record<string, string> = {
   google: "Google sign-in didn't finish. Try again, or use your email.",
 };
 
+const NOTICES: Record<string, string> = {
+  "signed-out-everywhere": "You're signed out on all your devices.",
+};
+
 async function LoginContent({ searchParams }: { searchParams: PageProps<"/login">["searchParams"] }) {
   const params = await searchParams;
   const next = safeNextPath(typeof params.next === "string" ? params.next : null);
   const error = typeof params.error === "string" ? params.error : null;
+  const notice = typeof params.notice === "string" ? params.notice : null;
 
   const user = await getCurrentUser();
 
@@ -69,6 +74,11 @@ async function LoginContent({ searchParams }: { searchParams: PageProps<"/login"
 
   return (
     <div className="flex flex-col gap-4">
+      {notice && NOTICES[notice] && (
+        <p role="status" className="max-w-sm text-sm text-fg">
+          {NOTICES[notice]}
+        </p>
+      )}
       {error && ERRORS[error] && (
         <p role="alert" className="max-w-sm text-sm text-danger">
           {ERRORS[error]}
