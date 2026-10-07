@@ -336,9 +336,52 @@ Track *active days* and *articles read* (one read per article per user), not raw
 - Use Supabase Row Level Security on every table.
 - Run `npm run build` and fix errors before saying a step is done.
 
-## Where we left off (updated 2026-10-06, Phase 3 done; Shinx footer pushed)
+## Where we left off (updated 2026-10-07, end of session)
 Everything built so far, with file maps, decisions and how it was tested:
 **`docs/build-log.md`**. Read the relevant part before changing that area.
+
+### Start here (next session)
+- **State:** Phases 1–3 are done. Since then: the Shinx art moved to the footer ("Made in
+  the lab by Gvan"), the home intro is Ivan's own text (sized like chester's), the favicon
+  is his pixel Shinx, and the **demo content is live** (16 articles and items in every
+  section; remove it all with **`npm run demo:remove`**, see "Demo content" in "Still
+  open"). Last code commit `dc4d480` (all pushed); the working tree is clean except `GIFS/` (Ivan's
+  originals, untracked, safe for him to delete).
+- **What comes next:** the later phases, one at a time (see "Build phases"): 4 Accounts +
+  Settings (next), 5 Comments, 6 Newsletter, 7 Ranks, 8 YouTube + polish. The standing
+  rules still apply:
+  - **Plan first** for every phase and step; wait for Ivan's OK before building.
+  - **Ivan runs the browser checklists** himself; give him a short checklist each step.
+    Playwright only when he explicitly asks, and then localhost only (see "Browser
+    testing").
+  - **Phase 6 test-data rule:** before the newsletter can send, browser tests must stop
+    publishing on the shared database (local Supabase for tests, or sending impossible
+    from tests), and the admin needs two-factor sign-in.
+- **Open to-dos (Ivan, 2026-10-07)** (details in "Still open"):
+  1. **Rotate the Supabase secret key**: it was pasted into a chat. New key in the
+     dashboard → `.env.local` as `SUPABASE_SERVICE_ROLE_KEY` → delete the old one.
+  2. **Find out how every content table got emptied**, so it can't happen by accident
+     again. All six tables (`posts`, `projects`, `books`, `tracks`, `games`,
+     `hobby_items`) had 0 rows, drafts included, on 2026-10-06 before the demo script ran
+     (it only listed rows first); `admins` still had its row, so it wasn't a full
+     database reset. Window: after Ivan's step-6 checklist on live data (2026-10-06) and
+     before the demo session. Start with Supabase's logs (Dashboard → Logs, Postgres /
+     API, `DELETE` on those tables in that window) and the SQL editor's history. Then
+     consider guards (e.g. no `supabase db reset --linked`; a check before bulk deletes;
+     backups / point-in-time recovery on the plan).
+  3. **Re-add Ivan's song "speki"** (it went with the rest) through the admin, when he's
+     ready.
+  4. **Link Polacrity** in the home intro once it's public (`TODO(Ivan)` in
+     `app/page.tsx`).
+  5. **Fill in the `TODO(Ivan)` section intros** (`app/*/page.tsx`).
+  6. **Replace the demo content with Ivan's real content before sharing the site widely**
+     (`npm run demo:remove` first).
+  - Also open: where the newsletter's subscribe link goes (Phase 6; the intro no longer
+    has it); Ivan to skim the demo articles (placeholder writing in his voice).
+- **Checks from this session** lived in a temporary scratchpad (gone now). Their methods are
+  in the build log: the fit check ("Step 6": every card's text inside its cell and titles
+  not squeezed, at 360–1920 px), the demo check ("Demo content + favicon"), the intro
+  measurements ("Home intro"). Rebuild them the same way when needed.
 
 - **Phase 1 (Foundation):** done.
 - **Phase 2 (Admin + content model): done** (2026-10-04), every step tested by Ivan on
@@ -512,11 +555,12 @@ Everything built so far, with file maps, decisions and how it was tested:
   log, "Demo content"). The writing is placeholder text in Ivan's voice.
 - **Before the demo content went in, every content table was already empty** (0 rows,
   drafts included, checked 2026-10-06 with the service key): the samples, Ivan's checklist
-  items and his own song "speki" were deleted outside this session. If "speki" wasn't
+  items and his own song "speki" were deleted outside that session. Investigating it is
+  to-do 2 in "Start here"; re-adding "speki" is to-do 3. If "speki" wasn't
   meant to go, Supabase backups may restore it. Its uploaded files (and the old samples'
   files) are still in Storage, outside the `demo/` folders (see "Unused media").
-- **Rotate the Supabase secret key** (Ivan, after the demo): it was pasted into a chat on
-  2026-10-06. Create a new secret key in the dashboard, put it in `.env.local` as
+- **Rotate the Supabase secret key** (Ivan, after the demo; to-do 1 in "Start here"): it
+  was pasted into a chat on 2026-10-06. Create a new secret key in the dashboard, put it in `.env.local` as
   `SUPABASE_SERVICE_ROLE_KEY`, delete the old one. Never in the repo or Vercel.
 - `supabase/seed.sql` and `seed-sections.sql` (the old samples) still exist for a local
   database; the live one doesn't use them.
