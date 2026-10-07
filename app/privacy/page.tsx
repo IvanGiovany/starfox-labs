@@ -4,7 +4,7 @@ import { SectionHeader } from "@/components/section-header";
 import { openGraphDefaults, site } from "@/lib/site";
 
 // What the site stores and why, in plain words. Keep it true: update it when
-// something changes (profile pictures in 4.3, deleting your account in 4.4,
+// something changes (deleting your account in 4.4,
 // comments in Phase 5, the newsletter in Phase 6). Google's sign-in screen
 // links here, so it must stay live.
 
@@ -56,14 +56,16 @@ export default function PrivacyPage() {
           <li>Your email address. It&apos;s used to sign you in and is never shown on the site.</li>
           <li>How you sign in (email, Google or both), and when you joined and last signed in.</li>
           <li>
-            If you use Google: Google shares your name, email address and profile picture. Only
-            your first name is used, as your starting display name, which you can change.
+            If you sign up with Google: Google shares your name, email address and profile picture.
+            Your first name becomes your starting display name, and a copy of your Google picture
+            becomes your profile picture. Both can be changed or removed in your settings.
           </li>
         </ul>
         <p>
           <strong>Public</strong> (anyone can see it, for example next to comments): your display
-          name, your username and when you joined. New accounts get a random username
-          (like <code>reader_482913</code>) that you can change.
+          name, your username, your profile picture if you add one, and when you joined. New
+          accounts get a random username (like <code>reader_482913</code>) that you can change.
+          Pictures are cropped to a square and stored without their location or other details.
         </p>
         <p>
           To keep you signed in, the site sets sign-in cookies in your browser. They&apos;re used for

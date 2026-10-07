@@ -1,5 +1,5 @@
 // How every uploaded image is prepared, wherever the preparation runs: in the
-// browser for pasted or dropped files (lib/admin/prepare-image.ts), on the
+// browser for pasted or dropped files (lib/images/prepare.ts), on the
 // server for "paste image URL" imports. One set of numbers, so both paths
 // produce the same kind of file.
 
@@ -14,6 +14,16 @@ export const IMAGE_RULES = {
   maxUploadBytes: 5 * 1024 * 1024,
   /** Formats we read. GIF and SVG are refused: animation would be lost, and SVG can carry scripts. */
   inputTypes: ["image/jpeg", "image/png", "image/webp", "image/avif"],
+} as const;
+
+/**
+ * Profile pictures (Settings, and a Google sign-up's picture): cropped to a
+ * centred square, at most this many pixels a side, same quality and input
+ * types as above. The avatars bucket allows 1 MB (a 512 px WebP is ~30–80 KB).
+ */
+export const AVATAR_RULES = {
+  size: 512,
+  maxUploadBytes: 1024 * 1024,
 } as const;
 
 /** Plain-language errors the editor can show as they are. */

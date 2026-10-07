@@ -1,7 +1,7 @@
 import type { MediaFolder } from "@/lib/media";
-import { ImageError, type ImageUse } from "./image-rules";
+import { ImageError, type ImageUse } from "@/lib/images/rules";
 import { importImageFromUrl } from "./import-image";
-import { prepareImage } from "./prepare-image";
+import { prepareImage } from "@/lib/images/prepare";
 import { uploadImage, type UploadedImage } from "./upload-image";
 import { UploadError } from "./upload-media";
 

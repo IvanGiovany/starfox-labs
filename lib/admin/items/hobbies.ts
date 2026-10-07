@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { Tables, TablesInsert } from "@/lib/database.types";
 import { IMAGE_STYLES, isImageStyle, LEARNING_CATEGORY, type ImageStyle } from "@/lib/hobbies";
-import type { ImageUse } from "../image-rules";
+import type { ImageUse } from "@/lib/images/rules";
 import {
   baseFromRow,
   baseItemShape,

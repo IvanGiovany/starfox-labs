@@ -1,5 +1,5 @@
 import type { MediaFolder } from "@/lib/media";
-import { ImageError, type ImageUse } from "./image-rules";
+import { ImageError, type ImageUse } from "@/lib/images/rules";
 import type { UploadedImage } from "./upload-image";
 
 // Browser side of "paste image URL": asks the server to import the image

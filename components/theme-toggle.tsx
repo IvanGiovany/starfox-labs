@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect } from "react";
+import { applyThemeChoice } from "@/lib/theme";
 
 type Theme = "light" | "dark";
 
@@ -23,12 +24,11 @@ export function ThemeToggle() {
     } catch {}
   }, []);
 
+  // Flips what's on screen and saves it (Settings → Appearance can also go
+  // back to matching the device).
   function toggle() {
     const next: Theme = currentTheme() === "dark" ? "light" : "dark";
-    document.documentElement.setAttribute("data-theme", next);
-    try {
-      localStorage.setItem("theme", next);
-    } catch {}
+    applyThemeChoice(next);
   }
 
   // Both icons are rendered and CSS shows the right one. The server can't

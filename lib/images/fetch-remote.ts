@@ -3,14 +3,16 @@ import { lookup as dnsLookup, type LookupAddress } from "node:dns";
 import http from "node:http";
 import https from "node:https";
 import { BlockList, isIP, type LookupFunction } from "node:net";
-import { ImageError } from "./image-rules";
+import { ImageError } from "./rules";
 
-// Downloads an image from a URL Ivan pastes into the editor, so we can keep our
-// own copy instead of linking to someone else's site.
+// Downloads an image from a URL, so we can keep our own copy instead of
+// linking to someone else's site: one Ivan pastes into the editor, or a Google
+// sign-up's profile picture (copied once, lib/google-picture.ts).
 //
 // The server fetching a URL it's given is a classic attack surface (SSRF): a
 // crafted URL could make it read internal services or cloud metadata. So:
-//   - admin only (checked by the route that calls this)
+//   - only for the admin (checked by the import route) or a Google picture
+//     address (checked by googlePictureUrl in lib/avatars.ts)
 //   - http(s) on the standard ports only, no "user:password@" URLs
 //   - only public internet addresses. The check runs inside the DNS lookup the
 //     connection itself uses, so a hostname can't pass the check with one
@@ -28,7 +30,7 @@ function tooBig(): string {
   return `That image is too big to import (over ${Math.round(REMOTE_LIMITS.maxBytes / 1024 / 1024)} MB).`;
 }
 
-const USER_AGENT = "StarfoxLabs/1.0 (+https://starfoxlabs.org; image import for the site's own articles)";
+const USER_AGENT = "StarfoxLabs/1.0 (+https://starfoxlabs.org; image import for the site's own pages)";
 
 // Addresses that aren't the public internet: this machine, private networks,
 // link-local (including cloud metadata at 169.254.169.254), carrier-grade NAT,

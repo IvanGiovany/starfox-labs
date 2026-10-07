@@ -1,4 +1,4 @@
-import { checkInputType, fitWithin, IMAGE_RULES, ImageError, type ImageUse } from "./image-rules";
+import { AVATAR_RULES, checkInputType, fitWithin, IMAGE_RULES, ImageError, type ImageUse } from "./rules";
 
 // Prepares a pasted or dropped image in the browser before it's uploaded:
 //   - turned the right way up (the photo's EXIF orientation is applied)
@@ -36,7 +36,7 @@ function context(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
  * Scales in steps of at most half. A single big reduction (say 6000 → 1200 px)
  * skips most source pixels, which makes text in screenshots look jagged.
  */
-function scaleDown(source: ImageBitmap, width: number, height: number): HTMLCanvasElement {
+function scaleDown(source: ImageBitmap | HTMLCanvasElement, width: number, height: number): HTMLCanvasElement {
   let current: CanvasImageSource = source;
   let w = source.width;
   let h = source.height;
@@ -97,6 +97,39 @@ export async function prepareImage(file: Blob, use: ImageUse, { keepTransparency
       throw new ImageError("This image is still over 5 MB after shrinking it. Try a simpler image.");
     }
     return { ...encoded, ...size };
+  } finally {
+    bitmap.close();
+  }
+}
+
+/**
+ * A profile picture: the same treatment, cropped to a centred square and at
+ * most AVATAR_RULES.size a side (smaller pictures aren't enlarged).
+ */
+export async function prepareAvatar(file: Blob): Promise<PreparedImage> {
+  checkInputType(file.type);
+
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  } catch {
+    throw new ImageError("Couldn't read this image. The file may be damaged.");
+  }
+
+  try {
+    const side = Math.min(bitmap.width, bitmap.height);
+    // Crop and take a first step down together, to at most 4× the final size:
+    // a full-size square from a phone photo (6000 × 6000 px) is a canvas big
+    // enough for phone browsers to refuse. scaleDown halves the rest of the way.
+    const first = Math.min(side, AVATAR_RULES.size * 4);
+    const square = canvasOf(first, first);
+    context(square).drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, first, first);
+    const size = Math.min(side, AVATAR_RULES.size);
+    const encoded = await encode(scaleDown(square, size, size), false);
+    if (encoded.blob.size > AVATAR_RULES.maxUploadBytes) {
+      throw new ImageError("This picture is still over 1 MB after shrinking it. Try another one.");
+    }
+    return { ...encoded, width: size, height: size };
   } finally {
     bitmap.close();
   }

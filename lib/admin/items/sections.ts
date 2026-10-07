@@ -1,5 +1,5 @@
 import type { MediaFolder } from "@/lib/media";
-import type { ImageUse } from "../image-rules";
+import type { ImageUse } from "@/lib/images/rules";
 import type { AdminSectionKey } from "../sections";
 
 // The five item sections and what differs between them at the shared level.

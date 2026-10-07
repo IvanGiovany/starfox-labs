@@ -2,14 +2,15 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { supabasePublishableKey, supabaseUrl } from "@/lib/supabase/config";
 
-// Runs before admin, login and auth requests (see `matcher`) — never on public
-// pages, so those stay static and fast.
+// Runs before admin, settings, login and auth requests (see `matcher`) — never
+// on public pages, so those stay static and fast.
 //
 // 1. Keeps the Supabase session fresh: if the access token has expired, the
 //    refresh happens here and the new cookies are written to the response.
-// 2. A quick first filter: no session → /login. This only checks that a valid
-//    session exists. Whether that person is an admin is checked on the server
-//    (lib/auth.ts) and in the database (RLS), never only here.
+// 2. A quick first filter: no session on /admin or /settings → /login. This
+//    only checks that a valid session exists. Whether that person is an admin
+//    is checked on the server (lib/auth.ts) and in the database (RLS), never
+//    only here.
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
@@ -33,9 +34,10 @@ export async function proxy(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const signedIn = Boolean(data?.claims);
 
-  if (!signedIn && request.nextUrl.pathname.startsWith("/admin")) {
+  const { pathname } = request.nextUrl;
+  if (!signedIn && /^\/(admin|settings)(\/|$)/.test(pathname)) {
     const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("next", request.nextUrl.pathname);
+    loginUrl.searchParams.set("next", pathname);
     const redirect = NextResponse.redirect(loginUrl);
     // Keep any cookie changes (e.g. clearing an expired session).
     for (const cookie of response.cookies.getAll()) redirect.cookies.set(cookie);
@@ -46,5 +48,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/login", "/auth/:path*"],
+  matcher: ["/admin/:path*", "/settings/:path*", "/login", "/auth/:path*"],
 };

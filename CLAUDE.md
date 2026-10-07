@@ -360,7 +360,7 @@ Everything built so far, with file maps, decisions and how it was tested:
   the lab by Gvan"), the home intro is Ivan's own text (sized like chester's), the favicon
   is his pixel Shinx, and the **demo content is live** (16 articles and items in every
   section; remove it all with **`npm run demo:remove`**, see "Demo content" in "Still
-  open"). Phase 4 steps 4.0–4.2 are committed and pushed (see Phase 4 below); the working tree is clean except `GIFS/` (Ivan's
+  open"). Phase 4 steps 4.0–4.3 are committed and pushed (see Phase 4 below); the working tree is clean except `GIFS/` (Ivan's
   originals, untracked, safe for him to delete).
 - **Phase 4 (Accounts + Settings): plan approved 2026-10-07, in progress.** Steps:
   4.0 guards (truncate guard + `db:backup` / `db:restore`, see "Protecting the data";
@@ -393,7 +393,9 @@ Everything built so far, with file maps, decisions and how it was tested:
   browser only, the menu's Admin link only for him); 4.3 Settings: Profile
   (display name, username, picture, linked sign-in methods) + Appearance (plan approved
   2026-10-07; Ivan's answers: automatic centred square crop, Google picture copied only
-  at sign-up, appearance saved per browser, no username-change limit for now); 4.4 delete
+  at sign-up, appearance saved per browser, no username-change limit for now; **done
+  2026-10-07**: tested by Ivan, checklist 1–8; details in the build log, "Step 3";
+  shared image code moved from `lib/admin/` to `lib/images/`); 4.4 delete
   account (typed confirmation; avatar removed by the server, then the RPC; no service key
   on Vercel); 4.5 the end-of-article sign-up prompt. Newsletter tab: Phase 6.
   - **Ivan's decisions:** Google sign-in is allowed on his admin account (his Google

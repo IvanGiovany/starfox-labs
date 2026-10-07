@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { fetchRemoteImage } from "@/lib/admin/fetch-remote-image";
-import { ImageError, type ImageUse } from "@/lib/admin/image-rules";
-import { prepareImageOnServer } from "@/lib/admin/prepare-image-server";
+import { fetchRemoteImage } from "@/lib/images/fetch-remote";
+import { ImageError, type ImageUse } from "@/lib/images/rules";
+import { prepareImageOnServer } from "@/lib/images/prepare-server";
 import { getCurrentUser, isAdmin } from "@/lib/auth";
 import { withSize } from "@/lib/image-size";
 import { MEDIA_FOLDERS, mediaPath, type MediaFolder } from "@/lib/media";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 // "Paste image URL" in the editor: the server downloads the image (safely, see
-// fetch-remote-image.ts), prepares it like any other upload, and stores our
+// lib/images/fetch-remote.ts), prepares it like any other upload, and stores our
 // own copy in the media bucket. The editor then links to that copy, never to
 // the original site.
 //

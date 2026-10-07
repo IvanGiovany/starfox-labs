@@ -73,6 +73,8 @@ pass with the publishable key.
     round trip checked: only `undefined` properties drop out, which the React converter
     ignores anyway.
 - **3d — images:**
+  - (Moved in Phase 4 step 3: these image files now live in `lib/images/` as `rules.ts`,
+    `prepare.ts`, `prepare-server.ts` and `fetch-remote.ts`.)
   - Shared rules: `lib/admin/image-rules.ts` (2400 px body, 1200 px cover, WebP at 85%,
     JPEG where WebP can't be encoded, JPEG/PNG/WebP/AVIF in, GIF and SVG refused, 5 MB
     bucket limit). Stored as `media/<folder>/YYYY/MM/<random>.webp`.
@@ -1237,6 +1239,70 @@ Plan, steps and Ivan's decisions: CLAUDE.md, "Start here".
     cookie gone, account kept; phone 390 px: no sideways scroll, Google button ≥ 44 px;
     console clean. Test gotchas: wait for `load`, not `networkidle0`, between `/login`
     URLs; after an aborted navigation read cookies with `page.cookies(url)`.
+
+- **Step 3 — Settings: Profile + Appearance, profile pictures (done 2026-10-07; tested by Ivan,
+  checklist 1–8).**
+  Ivan's choices: automatic centred square crop; a Google picture copied only at
+  sign-up; appearance saved per browser; no username-change limit for now (to-do for
+  Phase 5).
+  - **Images moved** (`git mv`, so history follows): `lib/admin/image-rules.ts` →
+    `lib/images/rules.ts`, `prepare-image.ts` → `prepare.ts`, `prepare-image-server.ts` →
+    `prepare-server.ts`, `fetch-remote-image.ts` → `fetch-remote.ts`; the admin's
+    behaviour is unchanged. New: `AVATAR_RULES` (512 px, 1 MB), `prepareAvatar` (browser:
+    oriented bitmap, crop + first step down to at most 2048 px in one draw, since a full
+    6000 px square is a canvas phones refuse, then halving to 512, WebP/JPEG, no
+    metadata), `prepareAvatarOnServer` (sharp: rotate, centred `cover` square, WebP;
+    `openImage` shared with `prepareImageOnServer`).
+  - `lib/avatars.ts` (URL, `newAvatarPath` = `<id>/<32 hex>.<ext>`, `isOwnAvatarPath`,
+    `initialOf`, `isNewGoogleSignUp` = provider google and created < 10 min ago,
+    `googlePictureUrl` = https on `*.googleusercontent.com` only, size asked `=s512-c`),
+    `lib/profile-rules.ts` (username / display name rules, `isReservedName` mirroring
+    `public.is_reserved_name()`, database error → field message), `lib/profile-events.ts`
+    (Settings → header), `lib/theme.ts` (saved choice: light / dark / none = device; the
+    header toggle and Appearance both go through it, `THEME_CHANGED`).
+  - `lib/google-picture.ts` + `app/auth/callback/route.ts`: a new Google account's picture
+    is copied in `after()` (runs once the redirect is sent), acting as the user with
+    their access token (never the service key): only if the profile has no picture,
+    through the safe remote fetch, uploaded to their folder, set only `where avatar_path
+    is null` (else the upload is removed). A failed callback for someone signed in
+    (linking Google) goes back to the page with `?error=google`.
+  - `/settings` (`app/settings/`): layout with `settings.` header and tabs (Profile,
+    Appearance); `proxy.ts` now also runs on `/settings` (signed out → `/login?next=`),
+    and every page calls `requireUser()` (new in `lib/auth.ts`) inside its own
+    `<Suspense>`. Profile: `PictureField` (pick → prepared in the browser → preview →
+    upload to `avatars/<id>/` → `savePicture` action points the profile at it and deletes
+    the old file; failed save removes the upload; Remove), `ProfileForm` (username
+    lowercased as you type, rules, then "taken" / "Available." after a 400 ms pause; Save
+    off while it's wrong; `saveProfile` action checks again; reserved names allowed for
+    the admin), `SignInMethods` (email always; Link Google = `linkIdentity` → Google →
+    `/auth/callback?next=/settings`; Unlink only with 2+ identities, two-step; resets
+    after Back from Google). Appearance: static page, `ThemeChoices` with
+    `useSyncExternalStore` (follows the header toggle and other tabs).
+  - Header menu: picture (`components/avatar.tsx`, next/image, or the initial),
+    Settings link, reloads on `PROFILE_CHANGED`; Settings and Admin links have
+    `prefetch={false}` (after signing out, their prefetch was redirected to `/login` and
+    logged a 404). `/privacy`: pictures public, cropped, stored without location; a
+    Google sign-up's picture copied and removable.
+  - Tested: tsx 12 + 2: the redirect rules (5); reserved names compared with the
+    database's `is_reserved_name()` over the API for 39 names; username / display name
+    rules; error mapping; avatar paths (incl. `../`, other folders, wrong names);
+    Google picture addresses (other hosts, http, ports, credentials, metadata address,
+    too long); new-sign-up rule; server avatar with `--conditions react-server` (a
+    3000 × 1800 JPEG stored sideways with EXIF orientation 6 + GPS → upright 512 square
+    WebP, no EXIF, centre pixel on the stripe; small not enlarged; GIF refused).
+    Production build on :3124, Edge: `settings-check` 29 (two throwaway readers, one
+    owning a "taken" username, signed in without email, deleted with their files):
+    signed-out redirects, menu link, page contents, tab; username reserved / short /
+    taken / available, Save on and off; save → "Saved.", database and header updated;
+    a reserved name set straight in the page refused by the server; picture preview,
+    upload, file checked (512 square WebP, no metadata, upright), header shows it,
+    replace leaves one file, remove clears both; Link Google reaches Supabase's
+    `/user/identities/authorize` with our callback and goes on to Google;
+    `?error=google` explained; appearance (device → dark → reload → header toggle →
+    light → device; attribute, storage and radio in step); phone 390 px (no sideways
+    scroll, controls ≥ 44 px); console clean. `signin-check` rerun: 29 (menu now has
+    Settings first). Gotchas: select an input's text with `el.select()`, not a triple
+    click; tsx flags (`--tsconfig`) before Node flags (`--conditions`).
 
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so

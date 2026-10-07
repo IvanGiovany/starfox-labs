@@ -23,7 +23,7 @@ import {
 } from "@/lib/admin/items/item-form";
 import { useNewItemUrl } from "@/lib/admin/editor-url";
 import type { ArticleOption } from "@/lib/admin/items/article-options";
-import type { ImageUse } from "@/lib/admin/image-rules";
+import type { ImageUse } from "@/lib/images/rules";
 import { statusAfter, type PostStatus, type SaveIntent } from "@/lib/admin/post-form";
 import { mediaUrl } from "@/lib/media";
 

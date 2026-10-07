@@ -3,17 +3,19 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
+import { Avatar } from "@/components/avatar";
+import { PROFILE_CHANGED } from "@/lib/profile-events";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 // The header's account control: "Sign in", or a small avatar button with a
-// menu (name, Admin for the admin, Sign out). It runs in the browser, so every
+// menu (name, Settings, Admin for the admin, Sign out). It runs in the browser, so every
 // public page stays static: the session is read from the cookie here, and the
 // name from the public profile. The header's right side fades in after a
 // second, so this is settled before anyone sees it; its space is kept so
 // nothing moves. Showing the menu is only cosmetic: what someone may do is
 // still decided on the server and by the database.
 
-type Account = { id: string; name: string; username: string | null; isAdmin: boolean };
+type Account = { id: string; name: string; username: string | null; avatarPath: string | null; isAdmin: boolean };
 type State = { status: "loading" } | { status: "signed-out" } | { status: "signed-in"; account: Account };
 
 export function AccountMenu() {
@@ -34,7 +36,8 @@ export function AccountMenu() {
   // focus. Signing in with the code (a server action) or signing out of the
   // admin changes the cookie without telling this browser client, and the
   // header stays mounted across pages. Reading the cookie is cheap; the
-  // profile is only fetched when the person changes.
+  // profile is only fetched when the person changes, or when Settings says
+  // the profile did (PROFILE_CHANGED).
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
     let cancelled = false;
@@ -47,21 +50,34 @@ export function AccountMenu() {
       if (!userId) return setState({ status: "signed-out" });
 
       const [{ data: profile }, { data: admin }] = await Promise.all([
-        supabase.from("profiles").select("username, display_name").eq("id", userId).maybeSingle(),
+        supabase.from("profiles").select("username, display_name, avatar_path").eq("id", userId).maybeSingle(),
         supabase.rpc("is_admin"),
       ]);
       if (cancelled || loadedFor.current !== userId) return;
       setState({
         status: "signed-in",
-        account: { id: userId, name: profile?.display_name ?? "You", username: profile?.username ?? null, isAdmin: admin === true },
+        account: {
+          id: userId,
+          name: profile?.display_name ?? "You",
+          username: profile?.username ?? null,
+          avatarPath: profile?.avatar_path ?? null,
+          isAdmin: admin === true,
+        },
       });
     }
 
+    const reload = () => {
+      loadedFor.current = undefined;
+      check();
+    };
+
     check();
     window.addEventListener("focus", check);
+    window.addEventListener(PROFILE_CHANGED, reload);
     return () => {
       cancelled = true;
       window.removeEventListener("focus", check);
+      window.removeEventListener(PROFILE_CHANGED, reload);
     };
   }, [pathname]);
 
@@ -122,14 +138,9 @@ export function AccountMenu() {
         aria-expanded={open}
         aria-controls={panelId}
         aria-label={`Account: ${account.name}`}
-        className="-m-1 flex cursor-pointer rounded-full p-1"
+        className="-m-1 flex cursor-pointer rounded-full p-1 transition-opacity hover:opacity-80"
       >
-        <span
-          aria-hidden="true"
-          className="flex size-6 items-center justify-center rounded-full bg-bg-raised text-xs font-medium text-fg transition-colors hover:bg-bg-raised-hover"
-        >
-          {initial(account.name)}
-        </span>
+        <Avatar name={account.name} path={account.avatarPath} size={24} />
       </button>
 
       {open && (
@@ -138,13 +149,21 @@ export function AccountMenu() {
           id={panelId}
           className="absolute top-full right-0 mt-3 w-60 rounded-lg border border-rule bg-bg p-1.5 shadow-lg"
         >
-          <div className="px-3 pt-2 pb-2.5">
-            <p className="truncate text-fg">{account.name}</p>
-            {account.username && <p className="truncate text-xs text-fg-muted">@{account.username}</p>}
+          <div className="flex items-center gap-3 px-3 pt-2 pb-2.5">
+            <Avatar name={account.name} path={account.avatarPath} size={36} />
+            <div className="min-w-0">
+              <p className="truncate text-fg">{account.name}</p>
+              {account.username && <p className="truncate text-xs text-fg-muted">@{account.username}</p>}
+            </div>
           </div>
+          {/* No prefetch for signed-in pages: after signing out, a prefetch of
+              them is redirected to /login and only adds noise. */}
           <div className="border-t border-rule pt-1.5">
+            <Link href="/settings" prefetch={false} className={ITEM}>
+              Settings
+            </Link>
             {account.isAdmin && (
-              <Link href="/admin" className={ITEM}>
+              <Link href="/admin" prefetch={false} className={ITEM}>
                 Admin
               </Link>
             )}
@@ -159,8 +178,3 @@ export function AccountMenu() {
 }
 
 const ITEM = "flex min-h-11 items-center rounded-md px-3 text-fg no-underline transition-colors hover:bg-bg-raised focus-visible:bg-bg-raised";
-
-/** The first letter of a name (whole characters, so an emoji or accent stays intact). */
-function initial(name: string): string {
-  return Array.from(name.trim())[0]?.toUpperCase() ?? "?";
-}

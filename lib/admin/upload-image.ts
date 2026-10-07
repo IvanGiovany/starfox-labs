@@ -1,6 +1,6 @@
 import { withSize } from "@/lib/image-size";
 import { mediaPath, type MediaFolder } from "@/lib/media";
-import type { PreparedImage } from "./prepare-image";
+import type { PreparedImage } from "@/lib/images/prepare";
 import { uploadToMedia } from "./upload-media";
 
 // Uploads a prepared image to the public "media" bucket, into its section's

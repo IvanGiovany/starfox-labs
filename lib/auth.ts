@@ -24,6 +24,13 @@ export const isAdmin = cache(async (): Promise<boolean> => {
   return !error && data === true;
 });
 
+/** Returns the signed-in visitor, or sends them to sign in and back to `next` (Settings). */
+export async function requireUser(next: string): Promise<CurrentUser> {
+  const user = await getCurrentUser();
+  if (!user) redirect(`/login?next=${encodeURIComponent(next)}`);
+  return user;
+}
+
 /**
  * Returns the admin, or sends everyone else away:
  * not signed in → /login; signed in but not an admin → /login with a message.

@@ -9,7 +9,7 @@ import {
   looksLikeImageLink,
   type AddedImage,
 } from "@/lib/admin/add-image";
-import type { ImageUse } from "@/lib/admin/image-rules";
+import type { ImageUse } from "@/lib/images/rules";
 import type { MediaFolder } from "@/lib/media";
 
 // One image field: an article's cover, or an item's picture. Four ways in, all
