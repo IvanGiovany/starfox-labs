@@ -66,7 +66,8 @@ emails).
 - An item links to **at most one** article, and an article belongs to **at most one** item.
 
 ### Pages
-- **Home (`/`)** — the intro (with a one-line "subscribe to the newsletter" link) sits in
+- **Home (`/`)** — the intro (Ivan's own text, 2026-10-07: "Hey, I'm Gvan 👋 Welcome to my
+  lab 🧪 …"; sized like chester's, see build log "Home intro") sits in
   the top-left of one dense grid that mixes cards from every section, each labelled
   `Section · Name` (e.g. `Writing · Article`, `Projects · NEON DRIFT`, `Music · Spektral`).
   Only items marked "Show on home" appear, plus the status cards. Latest YouTube videos
@@ -493,8 +494,15 @@ Everything built so far, with file maps, decisions and how it was tested:
   site only (no email).
 
 ### Still open
-- **Placeholders for Ivan** (all marked `TODO(Ivan)`): home intro (`app/page.tsx`), the
-  section intros (`app/*/page.tsx`). (The status-card placeholders are gone: data now.)
+- **Placeholders for Ivan** (all marked `TODO(Ivan)`): the section intros
+  (`app/*/page.tsx`). (The home intro is Ivan's own now; the status-card placeholders are
+  data now.)
+- **Polacrity link** (to-do, Ivan 2026-10-07): "Polacrity" in the home intro is ink text
+  without a link until it has a site (`TODO(Ivan)` in `app/page.tsx`).
+- **Newsletter link needs a new home** (Phase 6): the intro used to end with "A newsletter
+  for new writing is on its way."; Ivan's new intro (2026-10-07) doesn't have it. Decide
+  where the subscribe link goes when building the newsletter (e.g. under the intro, or in
+  the footer).
 - **Demo content** (live since 2026-10-06, for showing the site): 16 articles, 3 projects
   (Ivan's real ones), 7 books, 2 songs + 1 in progress, 4 games, 7 hobby items, all
   published. Every demo row's id starts `de300000-`; every demo file is in a `demo/`
@@ -515,8 +523,7 @@ Everything built so far, with file maps, decisions and how it was tested:
 - **Vercel** (Ivan to confirm it's done): Production Branch = `main`; env vars
   `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (the publishable
   key, NOT `..._ANON_KEY` as first suggested); check the latest deploy succeeded.
-- **Known dead links**: none among the sections (all live since step 5); the newsletter
-  line is plain text until Phase 6.
+- **Known dead links**: none (all sections live since step 5).
 - UQ palette beyond purple is still a TODO (see Colors).
 - **Two-factor sign-in for the admin** before the newsletter goes live (see Phase 6).
 - **Browser tests must stop publishing on the shared database** before the newsletter goes

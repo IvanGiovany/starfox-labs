@@ -114,39 +114,50 @@ function EntryCard({ entry, span, index }: { entry: HomeEntry; span: Span; index
 }
 
 function Intro({ className }: { className?: string }) {
-  // Muted prose with the key words in full ink, like chester.how.
-  const key = "text-fg no-underline decoration-fg-muted/50 decoration-dotted underline-offset-4 hover:underline";
+  // Muted prose with the key words in full ink, like chester.how; the words
+  // with pages link there. Sized like chester's intro (light serif, tight
+  // leading, a blank line between paragraphs): 24 px on phones, 30 px from
+  // `sm`, and from `lg`, where it fills the grid's top-left 2 × 2 cells, a
+  // size relative to that box (cqw), so it fills it the same at every width.
+  const ink = "text-fg";
+  const link = "text-fg no-underline decoration-fg-muted/50 decoration-dotted underline-offset-4 hover:underline";
 
   return (
-    <section
-      className={`pt-2 pr-4 pb-8 font-serif text-[1.6rem] leading-[1.3] font-light text-fg-muted sm:text-[1.9rem] lg:pb-0 lg:text-[clamp(2rem,2.3vw,2.6rem)] ${className}`}
-    >
-      {/* TODO(Ivan): rewrite in your own words. */}
-      <p>
-        Hi, I&apos;m <span className="text-fg">Ivan</span>. Welcome to{" "}
-        <span className="text-fg">Starfox Labs</span>, my small corner of the internet. I{" "}
-        <Link href="/projects" className={key}>
-          build things
-        </Link>
-        ,{" "}
-        <Link href="/writing" className={key}>
-          write
-        </Link>{" "}
-        about software, and make videos on{" "}
-        <a href={site.links.youtube} target="_blank" rel="noreferrer" className={key}>
-          YouTube
-        </a>
-        .
-      </p>
-      <p className="mt-5">
-        Away from the keyboard I make{" "}
-        <Link href="/music" className={key}>
-          music
-        </Link>{" "}
-        as <span className="text-fg">Spektral</span>.
-      </p>
-      {/* Becomes a real subscribe link in the Newsletter phase. */}
-      <p className="mt-5 font-sans text-sm font-normal">A newsletter for new writing is on its way.</p>
+    <section className={`@container ${className}`}>
+      <div className="p-4 font-serif text-2xl leading-tight font-light text-fg-muted sm:p-8 sm:text-3xl lg:text-[5.7cqw] [&>p+p]:mt-[1lh]">
+        <p>
+          Hey, I&apos;m <span className={ink}>Gvan</span> 👋&nbsp; Welcome to my <span className={ink}>lab</span> 🧪 I like{" "}
+          <span className={ink}>creating things</span>, and I&apos;m currently helping to build{" "}
+          {/* TODO(Ivan): link Polacrity once it has a site. */}
+          <span className={ink}>Polacrity</span>.
+        </p>
+        <p>
+          In my free time, I make{" "}
+          <Link href="/music" className={link}>
+            music
+          </Link>{" "}
+          as <span className={ink}>Spektral</span>, and I&apos;m slowly learning about{" "}
+          <Link href="/hobbies" className={link}>
+            insects
+          </Link>{" "}
+          and{" "}
+          <Link href="/hobbies" className={link}>
+            birds
+          </Link>
+          .
+        </p>
+        <p>
+          I do some{" "}
+          <Link href="/reading" className={link}>
+            reading
+          </Link>{" "}
+          and{" "}
+          <Link href="/writing" className={link}>
+            writing
+          </Link>{" "}
+          too, though not as consistently as I&apos;d like, but I&apos;m working on getting better at that.
+        </p>
+      </div>
     </section>
   );
 }

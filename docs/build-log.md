@@ -1092,6 +1092,26 @@ key from `.env.local`.
   and served. Fit check on all seven card pages at 9 widths: 7/7 each. Firefox's
   `__cf_bm` cookie messages from Supabase Storage are expected noise.
 
+## Home intro (2026-10-07)
+Ivan's own text: three paragraphs, key words in ink (Gvan, lab, creating things,
+Polacrity, music, Spektral, insects, birds, reading, writing); links music → /music,
+insects and birds → /hobbies, reading → /reading, writing → /writing; Polacrity unlinked
+(`TODO(Ivan)`). The newsletter line is gone (Phase 6 needs a new spot for it).
+- **Chester's intro, measured in headless Edge:** one `h1`, Fraunces light, muted, ink
+  words near-black; paragraphs split by `<br><br>` (a gap of exactly one line); 24/30 px on
+  phones, 30 px from `sm`, 36/45 px from `lg` (`leading-tight`); padding 16 px, 32 px from
+  `sm`; a square 2 × 2 box at desktop, text filling 72 % (1440 px) to 84 % (1024 px) of it.
+- **Ours:** `<p>`s with `[&>p+p]:mt-[1lh]` (one line between paragraphs), light serif,
+  `leading-tight`, `p-4 sm:p-8`, 24 px on phones and 30 px from `sm` like chester. From `lg`
+  our grid is already 4 columns (chester switches at 1280), so the box is smaller (468 px at
+  1024 against his 640): the size is `5.7cqw` of the intro's own box (`@container`), which
+  keeps the same line breaks at every width, so it always fills the same share: 85–86 %,
+  27 px at 1024 up to 41 px at 1920. (5.2cqw left 71 % and 104–177 px empty above the cards.)
+- Tested, Edge and real Firefox, 14 each: the text, the ten ink words, the five links,
+  console clean; at 10 widths 360–1920: no overflow, no sideways scroll, paragraph gap = one
+  line; phones and tablets: cards start 24–40 px below the text (padding + grid gap);
+  desktop: 85–86 % fill, cards 36–77 px below the text. Home fit check: 1/1 each.
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:
