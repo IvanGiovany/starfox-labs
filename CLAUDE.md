@@ -375,7 +375,8 @@ Everything built so far, with file maps, decisions and how it was tested:
   regenerated; **done**: Ivan ran `rls-check.sql`, all passed), 5.2 comments on articles (read, post, reply, edit, delete own; plain text;
   `#comment-<id>` links; first 30 then "Show more"; **done 2026-10-08**: 45 browser
   checks, then Ivan's checklist 1–9; build log "Phase 5, Step 2"), 5.3 moderation (Delete on every
-  comment for the admin + an admin **Comments** tab of the latest across articles), 5.4
+  comment for the admin + an admin **Comments** tab of the latest across articles;
+  **done 2026-10-08**: tested by Ivan, checklist 1–7; build log "Phase 5, Step 3"), 5.4
   wrap-up (Settings shows when the username can change again; Account + `/privacy`
   wording; sign-up prompt on).
   - **Ivan's decisions (2026-10-08):** comments go live at once (no approval queue;

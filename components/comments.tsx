@@ -21,12 +21,13 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 // The comments under an article. The article page is static, so everything
 // here happens in the browser: the comments load when the section comes near
 // the screen (or straight away for a #comment-… link), and the session decides
-// whether there's a box to write in. Newest first; replies under their
+// whether there's a box to write in. The admin also sees Delete on every
+// comment (moderation). Newest first; replies under their
 // comment, oldest first; one level of replies (replying to a reply answers the
 // comment above, starting with @username). What anyone may do is decided by
 // the database (RLS + triggers); the buttons only follow it.
 
-type Viewer = { id: string; name: string; username: string; avatarPath: string | null };
+type Viewer = { id: string; name: string; username: string; avatarPath: string | null; isAdmin: boolean };
 type Load = "idle" | "loading" | "ready" | "error";
 /** The open reply box: which thread, and which comment it answers (its key). */
 type ReplyTarget = { threadId: string; toId: string; mention: string };
@@ -59,13 +60,16 @@ export function Comments({ postId, slug }: { postId: string; slug: string }) {
       current = id;
       if (!id) return setViewer(null);
       setTimeout(async () => {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("username, display_name, avatar_path")
-          .eq("id", id)
-          .maybeSingle();
+        const [{ data: profile }, { data: admin }] = await Promise.all([
+          supabase.from("profiles").select("username, display_name, avatar_path").eq("id", id).maybeSingle(),
+          supabase.rpc("is_admin"),
+        ]);
         if (cancelled || current !== id) return;
-        setViewer(profile ? { id, name: profile.display_name, username: profile.username, avatarPath: profile.avatar_path } : null);
+        setViewer(
+          profile
+            ? { id, name: profile.display_name, username: profile.username, avatarPath: profile.avatar_path, isAdmin: admin === true }
+            : null,
+        );
       }, 0);
     });
     return () => {
@@ -310,6 +314,7 @@ function CommentView({
   const size = small ? 28 : 36;
   const state = authorState(comment);
   const own = !!viewer && comment.user_id === viewer.id;
+  const canDelete = own || !!viewer?.isAdmin; // the admin moderates; editing stays the writer's
 
   async function confirmDelete() {
     setDeleting(true);
@@ -385,7 +390,7 @@ function CommentView({
               <p className="mt-1 leading-relaxed break-words whitespace-pre-wrap text-fg">{comment.body}</p>
             )}
 
-            {!editing && (onReply || own) && (
+            {!editing && (onReply || canDelete) && (
               <div className="-ml-3 flex flex-wrap items-center text-sm">
                 {confirming ? (
                   <>
@@ -411,28 +416,28 @@ function CommentView({
                       </button>
                     )}
                     {own && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setError(null);
-                            setEditing(true);
-                          }}
-                          className="row-action"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setError(null);
-                            setConfirming(true);
-                          }}
-                          className="row-action"
-                        >
-                          Delete
-                        </button>
-                      </>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setError(null);
+                          setEditing(true);
+                        }}
+                        className="row-action"
+                      >
+                        Edit
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setError(null);
+                          setConfirming(true);
+                        }}
+                        className="row-action"
+                      >
+                        Delete
+                      </button>
                     )}
                   </>
                 )}

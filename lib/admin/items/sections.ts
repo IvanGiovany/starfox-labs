@@ -6,7 +6,7 @@ import type { AdminSectionKey } from "../sections";
 // Each section's own fields and rules live in its own file (projects.ts, …).
 
 export type ItemTable = "projects" | "books" | "tracks" | "games" | "hobby_items";
-export type ItemSectionKey = Exclude<AdminSectionKey, "writing">;
+export type ItemSectionKey = Exclude<AdminSectionKey, "writing" | "comments">;
 
 export type ItemSection = {
   key: ItemSectionKey;

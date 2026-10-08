@@ -1453,6 +1453,23 @@ Plan, steps and Ivan's decisions (2026-10-08): CLAUDE.md, "Start here".
     "Loading…" (wait for the comments, not for the text to go); test comment bodies
     must not end in a space (the database refuses them).
 
+- **Step 3 — Moderation (done 2026-10-08; tested by Ivan, checklist 1–7).**
+  - On articles the admin sees Delete on every comment (`Viewer.isAdmin` from
+    `is_admin()`, read with the profile); Edit stays the writer's.
+  - `/admin/comments` (new tab "Comments" after Hobbies; `ItemSectionKey` now excludes
+    it): the latest 100 comments across articles, placeholders left out, newest first;
+    author (or "deleted user"), AUTHOR badge, relative time (server clock), "edited",
+    "reply", text clamped to 4 lines, "on <article> ↗" linking to
+    `/writing/<slug>#comment-<id>` (unpublished articles named, not linked);
+    `DeleteCommentButton` (Delete → Confirm delete, cancels itself after 5 s) →
+    `deleteCommentAsAdmin` (server action: `requireAdmin`, `delete_comment()`,
+    `refresh()`; no cache tags, comments aren't cached).
+  - Tested: production build (`/admin/comments` ◐). `admin-gate-check` 3: a visitor is
+    sent to `/login?next=/admin/comments`, a throwaway reader is turned away
+    (not-admin) and sees no list. `comments-check` rerun: 45 (now on the newest article
+    without comments, so real comments are never touched; Ivan's two checklist comments
+    stayed). The admin's own view needs Ivan's sign-in: his checklist.
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:
