@@ -367,12 +367,22 @@ Everything built so far, with file maps, decisions and how it was tested:
 
 ### Start here (next session)
 - **State:** **Phases 1–5 are done** (Phase 5 finished 2026-10-08, every step tested by
-  Ivan, all pushed). The **demo content is live** (16 articles and items in every
-  section; remove it all with **`npm run demo:remove`**, see "Demo content" in "Still
-  open"). The working tree is clean except `GIFS/` (Ivan's originals, untracked, safe for
+  Ivan, all pushed). **The demo content was removed on 2026-10-08** (Ivan's choice,
+  backup `backups/2026-10-08T12-24-45.json`): every content table is empty, and every
+  section shows a "Still growing" empty state until Ivan adds his real content. The working tree is clean except `GIFS/` (Ivan's originals, untracked, safe for
   him to delete). Readers can sign up (Google or email), have a profile and picture,
   change settings and delete their account; the live Google app is published. Signed-in
   readers comment on articles (Phase 5).
+- **Empty states (2026-10-08):** every section page with nothing published shows "Still
+  growing." with a line of its own and an original pixel-art seed sprouting
+  (`components/still-growing.tsx`, `components/sprout-art.tsx`: 16 × 16, four frames with
+  hard cuts, 5 s loop, the last frame only with reduced motion; `sprout-f1`…`f4` in
+  `globals.css`). Home swaps the archive card (and fillers) for a "Lab · Still growing"
+  card while there's no writing. **Ivan's own art:** set `sproutArt` in `lib/art.ts`.
+  **Gotcha:** a production build reuses cached database results from `.next/cache`
+  (Cache Components): after changing data outside the admin (scripts, SQL), clear
+  `.next/cache` before a local build, and on Vercel redeploy **without** the build cache
+  (or wait for the 1-hour revalidation).
 - **Phase 6 (Newsletter): PAUSED at 6.3 (Ivan, 2026-10-08).** Done and pushed: **6.1
   two-factor sign-in** and **6.2 schema**. Nothing newsletter-related is visible on the
   site yet (no form, no emails); the database is ready. When Ivan comes back: start with
@@ -577,8 +587,8 @@ Everything built so far, with file maps, decisions and how it was tested:
   4. **Link Polacrity** in the home intro once it's public (`TODO(Ivan)` in
      `app/page.tsx`).
   5. **Fill in the `TODO(Ivan)` section intros** (`app/*/page.tsx`).
-  6. **Replace the demo content with Ivan's real content before sharing the site widely**
-     (`npm run demo:remove` first).
+  6. ~~Remove the demo content~~: **done 2026-10-08**. Next: **Ivan adds his real
+     content** (new projects too: the three demo projects went as well).
   - Also open: where the newsletter's subscribe link goes (Phase 6; the intro no longer
     has it); Ivan to skim the demo articles (placeholder writing in his voice).
 - **Checks live in a temporary scratchpad** (gone after each session). Their methods are
@@ -719,9 +729,9 @@ Everything built so far, with file maps, decisions and how it was tested:
   - Spektral is Ivan's artist name: `site.artist` in `lib/site.ts`. Song cards on home are
     labelled `Music · <song title>` (`SongCard`'s `label`); "Now producing" keeps
     `Music · Spektral`.
-  - **Live data is the demo set** (2026-10-06; see "Demo content" in "Still open"). The
-    old samples and Ivan's checklist items are gone. Checks must follow the live data, not
-    assume particular items.
+  - **Live data: empty since 2026-10-08** (demo removed), until Ivan adds his own.
+    Checks must follow the live data, not assume particular items; comment checks need a
+    published article (none right now).
 
 ### How the admin is built (reference)
 - **Adding an item section** = a definition file in `lib/admin/items/` (schema + publish
@@ -749,7 +759,10 @@ Everything built so far, with file maps, decisions and how it was tested:
   for new writing is on its way."; Ivan's new intro (2026-10-07) doesn't have it. Decide
   where the subscribe link goes when building the newsletter (e.g. under the intro, or in
   the footer).
-- **Demo content** (live since 2026-10-06, for showing the site): 16 articles, 3 projects
+- **Demo content: removed 2026-10-08** (Ivan's choice; `npm run db:backup` first:
+  `backups/2026-10-08T12-24-45.json`, then `npm run demo:remove`: 40 rows, 27 files in
+  the `demo/` folders; the `2026/` folders (old samples, speki) were left for the
+  "Unused media" view). It was: 16 articles, 3 projects
   (Ivan's real ones), 7 books, 2 songs + 1 in progress, 4 games, 7 hobby items, all
   published. Every demo row's id starts `de300000-`; every demo file is in a `demo/`
   folder in its section's Storage folder. **Remove it all with `npm run demo:remove`**

@@ -1595,6 +1595,36 @@ Plan and Ivan's decisions (2026-10-08): CLAUDE.md, "Start here".
     schema isn't served (PGRST106). Parsed, dry run, `db:types` (+91 lines), tsc,
     lint, build.
 
+## Empty states + demo removal (2026-10-08)
+Ivan's choices: drop ⌘K search; remove all demo content (including the three projects);
+"Still growing" empty states with an original pixel-art sprout, easy to swap for his
+own art; home must look good with little or no content.
+- `components/sprout-art.tsx`: 16 × 16 pixel art written as text rows (one letter per
+  pixel, colours in `COLORS`), drawn as an SVG (runs merged into rects,
+  `crispEdges`, `image-rendering: pixelated`); four frames (seed on its mound → crack
+  with a shoot tip → a hooked shoot with its first leaf → two leaves), switched by
+  `sprout-f1`…`f4` keyframes (`step-end`, 5 s: 0.6 / 0.4 / 0.5 s, then the leaves held);
+  without animation only the last frame shows. Fixed colours (mid-tones, fine on both
+  themes' card colours). `lib/art.ts` `sproutArt`: Ivan's still + animated WebP instead.
+- `components/still-growing.tsx` on all six section pages (Writing shows it instead of
+  the search / tag browser); home: `StillGrowingCard` replaces the archive card (no "0
+  articles") and the fillers (no "More in writing" to an empty page). `fillGrid` cases
+  tested: nothing → YouTube widened + Still growing; 1–2 articles; a book being read.
+- Pushed first (`d1f6136`, deployed), then `npm run db:backup`
+  (`backups/2026-10-08T12-24-45.json`) and `npm run demo:remove` (40 rows; 27 files in
+  the six `demo/` folders). Checked: every content table 0 rows, `demo/` folders empty;
+  the `2026/` folders (old samples, speki) left alone.
+- Tested: the art rendered once to check the frames (light and dark card colours).
+  Production build against the empty database (`/writing/no-posts-yet` placeholder
+  prerendered; `generateStaticParams` stays non-empty). **Gotcha:** the first build
+  still showed the demo, because it reused cached database results from `.next/cache`;
+  cleared, rebuilt. Edge on :3124, `empty-check` 24: every section page's text, line,
+  sprout (4 frames, animations set), no cards, no "Nothing here yet", Writing without
+  the search box; reduced motion: frames 0,0,0,1 and no animation; home at 390 / 800 /
+  1280 / 1920 px: YouTube + "Lab · Still growing", no holes, no sideways scroll, no "0
+  articles", no card links to empty sections (the intro's own word links are fine);
+  phone `/music`; a removed article answers 404; console clean.
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:
