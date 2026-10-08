@@ -7,7 +7,7 @@ const artist = "Spektral";
 export const site = {
   name: "Starfox Labs",
   /** The site in one line: the default description, and the structured data's. */
-  description: "Ivan's notes on software, projects, and music as Spektral.",
+  description: "Gvan's notes on software, projects, and music as Spektral.",
   author: "Ivan",
   /** The name Ivan goes by on the site (the home tab, the footer, his profile, /privacy). */
   handle: "Gvan",
