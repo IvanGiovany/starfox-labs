@@ -49,6 +49,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <head>
         <InlineScript html={themeScript} />
+        {/* Lets feed readers find the RSS feed from any page. (Here rather than in
+            metadata: each page sets its own `alternates`, which would replace it.) */}
+        <link rel="alternate" type="application/rss+xml" title={site.name} href="/rss.xml" />
       </head>
       <body className="min-h-dvh">
         <a

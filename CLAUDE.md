@@ -119,7 +119,7 @@ emails).
 - **Sign in (`/login`)** — Google or email (magic link).
 - **Admin (`/admin`)** — Ivan only (see below).
 - **Privacy (`/privacy`)** — what data is stored and why.
-- Header right side: small muted social links (YouTube, GitHub), RSS, theme toggle, and a
+- Header right side: small muted social links (YouTube, GitHub), RSS (`/rss.xml`), theme toggle, and a
   small avatar button (menu → Settings, Sign out) or a "Sign in" text link when logged out.
 - **Footer** (every page), like chester.how's "Planted by Chester": Ivan's Shinx art
   centred above one line, **"Made in the lab by Gvan"**, nothing else (no copyright, no
@@ -339,7 +339,7 @@ from the live schema (`npm run db:types`) — regenerate it after every migratio
    it). Decide and build this before the send-on-publish code is switched on.
 7. **Ranks** — see rules below; show rank badges next to usernames and on profiles.
 8. **YouTube + polish** — in this order (Ivan, 2026-10-08): sitemap + robots.txt (*done
-   2026-10-08*), RSS feed,
+   2026-10-08*), RSS feed (*done 2026-10-08*: `/rss.xml`, summaries),
    link previews for every page, then the YouTube section from the channel's public video
    feed (no API key); later page transitions and an SEO pass. (No ⌘K search: dropped.)
 

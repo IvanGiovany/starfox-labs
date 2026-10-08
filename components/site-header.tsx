@@ -10,8 +10,8 @@ import { ThemeToggle } from "./theme-toggle";
 // Chester-style header: every section in one small frosted tab bar on the
 // left ("Gvan" is home), quiet social links on the right. It sticks to the
 // top while the page scrolls; only the tab bar takes clicks, so the space
-// around it doesn't block the content underneath. RSS joins in the polish
-// phase. Last on the right: "Sign in", or the account menu.
+// around it doesn't block the content underneath. Then the RSS feed (as
+// quiet as the socials), the theme toggle, and last "Sign in" or the account menu.
 export function SiteHeader() {
   const socials = [
     { label: "YouTube", href: site.links.youtube },
@@ -54,6 +54,10 @@ export function SiteHeader() {
             {link.label}
           </a>
         ))}
+        {/* A file, not a page: a plain link (no client-side navigation). */}
+        <a href="/rss.xml" className="hidden text-fg-muted no-underline transition-colors hover:text-fg md:inline">
+          RSS
+        </a>
         <ThemeToggle />
         {/* Reads the URL, so (like NavLink) it sits inside <Suspense>. */}
         <Suspense fallback={<span className="block size-6" aria-hidden="true" />}>

@@ -1638,6 +1638,28 @@ own art; home must look good with little or no content.
   entries now, all https on the site, every one answers 200); the private pages send
   noindex. Ivan's check after his first article: it appears in `/sitemap.xml`.
 
+## Phase 8, step 2 — RSS feed (2026-10-08)
+Ivan's choices: summaries plus a "Read it on Starfox Labs" link (not whole articles);
+the address `/rss.xml`.
+- `lib/rss.ts` (pure, tested): RSS 2.0 with `atom:link rel="self"`; channel title,
+  `/writing` link, description, `en`; `lastBuildDate` = the newest article's date (not
+  the clock, so it only changes with an article); up to `FEED_SIZE` = 50 items: title,
+  link, `guid isPermaLink`, `pubDate` (RFC 822 via `toUTCString()`), one `category` per
+  tag, `description` = escaped HTML (`<p>summary</p><p><a>Read it on …</a></p>`).
+  `xmlEscape` also drops control characters XML 1.0 forbids. `app/rss.xml/route.ts`:
+  the cached `getPublishedPosts()`, so the prerendered feed (○, 1 h) refreshes with the
+  `posts` tag; `application/rss+xml; charset=utf-8`.
+- Discovery: `<link rel="alternate" type="application/rss+xml">` in the root layout's
+  `<head>` (not in metadata: every page's own `alternates` would replace it); an "RSS"
+  text link in the header after YouTube / GitHub (hidden on phones like them).
+- Tested: tsx 3 groups (escaping incl. `<script>` and a control character, RFC 822
+  dates, absolute links, 50-item limit, empty feed); both sample feeds and the served
+  one parsed by Edge's `DOMParser` (no `parsererror`; the description decodes to HTML).
+  On :3124: `/rss.xml` 200 with the right type; one head link on `/`, `/writing`,
+  `/privacy`; the header link at 1280 px (hidden at 390), no sideways scroll; console
+  clean. Ivan's check after his first article: it appears in `/rss.xml` (and in a feed
+  reader).
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:
