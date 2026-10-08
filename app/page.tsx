@@ -9,6 +9,7 @@ import { GameCard } from "@/components/game-card";
 import { HobbyCard } from "@/components/hobby-card";
 import { ProjectCard } from "@/components/project-card";
 import { SongCard } from "@/components/song-card";
+import { SproutArt } from "@/components/sprout-art";
 import { NowProducingCard } from "@/components/status-cards";
 import { PostDate, WritingCard } from "@/components/writing-card";
 import { getPublishedBooks } from "@/lib/books";
@@ -25,7 +26,10 @@ import { getNowProducing, getPublishedSongs } from "@/lib/tracks";
 // of one dense grid that mixes every section: the latest article, the status
 // cards (now producing, reading, learning), then the next articles and every
 // item marked "Show on home", newest first; the YouTube and archive cards
-// close it. Each card is the same card as on its section page.
+// close it. Each card is the same card as on its section page. With no
+// articles yet, a "Still growing" card takes the archive's place (and the
+// fillers'), so a new or emptied site never shows "0 articles" or links to an
+// empty page.
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
@@ -56,7 +60,9 @@ export default async function Home() {
     ...learning.map((hobby) => ({ key: `hobby-${hobby.id}`, span: sizeSpan(hobby.cardSize), render: (s: Span, i: number) => <HobbyCard hobby={hobby} span={s} index={i} /> })),
     ...feed.map((entry) => ({ key: entry.key, span: entrySpan(entry), render: (s: Span, i: number) => <EntryCard entry={entry} span={s} index={i} /> })),
     { key: "youtube", span: 1, render: (s, i) => <YouTubeCard index={i} className={spanClass(s)} /> },
-    { key: "archive", span: 2, render: (_, i) => <ArchiveCard postCount={posts.length} tags={countTags(posts)} index={i} /> },
+    posts.length > 0
+      ? { key: "archive", span: 2, render: (_, i) => <ArchiveCard postCount={posts.length} tags={countTags(posts)} index={i} /> }
+      : { key: "growing", span: 2, render: (_, i) => <StillGrowingCard index={i} className="col-span-2" /> },
   ];
   const { spans, fillers } = fillGrid(
     slots.map((slot) => slot.span),
@@ -71,9 +77,13 @@ export default async function Home() {
       {slots.map((slot, i) => (
         <Fragment key={slot.key}>{slot.render(spans[i], i)}</Fragment>
       ))}
-      {fillers.map((span, i) => (
-        <MoreCard key={i} index={slots.length + i} className={spanClass(span)} />
-      ))}
+      {fillers.map((span, i) =>
+        posts.length > 0 ? (
+          <MoreCard key={i} index={slots.length + i} className={spanClass(span)} />
+        ) : (
+          <StillGrowingCard key={i} index={slots.length + i} className={spanClass(span)} small />
+        ),
+      )}
     </div>
   );
 }
@@ -209,6 +219,21 @@ function ArchiveCard({ postCount, tags, index }: { postCount: number; tags: TagC
           // toneKey keeps each tag's color the same as its badge elsewhere.
           <Badge key={tag} toneKey={tag}>{`${tag} ${count}`}</Badge>
         ))}
+      </div>
+    </Card>
+  );
+}
+
+/** While there's no writing yet: the sprouting seed, in place of the archive (and of fillers). */
+function StillGrowingCard({ index, className, small = false }: { index: number; className?: string; small?: boolean }) {
+  return (
+    <Card label="Lab · Still growing" index={index} className={className}>
+      <div className="flex items-end gap-4">
+        <SproutArt size={small ? 48 : 64} />
+        <div className="min-w-0">
+          <p className="font-serif text-2xl leading-tight sm:text-3xl">{small ? "More soon." : "Still growing."}</p>
+          {!small && <p className="mt-1 hidden text-sm text-fg-muted sm:block">New writing, projects and more are on their way.</p>}
+        </div>
       </div>
     </Card>
   );

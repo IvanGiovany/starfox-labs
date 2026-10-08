@@ -4,6 +4,7 @@ import { BookCard } from "@/components/book-card";
 import { Card } from "@/components/card";
 import { CardGrid, spanClass } from "@/components/card-grid";
 import { SectionHeader } from "@/components/section-header";
+import { StillGrowing } from "@/components/still-growing";
 import { getPublishedBooks, shelfCounts, type Book } from "@/lib/books";
 import { fillGrid, type Span } from "@/lib/grid";
 import { openGraphDefaults } from "@/lib/site";
@@ -32,7 +33,7 @@ export default async function ReadingPage() {
       </SectionHeader>
 
       {books.length === 0 ? (
-        <p className="pb-8 text-fg-muted">Nothing here yet.</p>
+        <StillGrowing section="reading" />
       ) : (
         <CardGrid>
           {books.map((book, i) => (

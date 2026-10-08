@@ -664,6 +664,42 @@ body::before {
   }
 }
 
+/*
+ * The "Still growing" sprout (components/sprout-art.tsx): four frames, hard
+ * cuts like a sprite. Seed 0.6 s, crack 0.4 s, shoot 0.5 s, then the two
+ * leaves held for 3.5 s before it starts again. Without animation (reduced
+ * motion) only the last frame shows.
+ */
+.sprout-f1,
+.sprout-f2,
+.sprout-f3 {
+  opacity: 0;
+}
+@keyframes sprout-f1 {
+  0% { opacity: 1; }
+  12%, 100% { opacity: 0; }
+}
+@keyframes sprout-f2 {
+  0% { opacity: 0; }
+  12% { opacity: 1; }
+  20%, 100% { opacity: 0; }
+}
+@keyframes sprout-f3 {
+  0% { opacity: 0; }
+  20% { opacity: 1; }
+  30%, 100% { opacity: 0; }
+}
+@keyframes sprout-f4 {
+  0% { opacity: 0; }
+  30%, 100% { opacity: 1; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .sprout-f1 { animation: sprout-f1 5s step-end infinite; }
+  .sprout-f2 { animation: sprout-f2 5s step-end infinite; }
+  .sprout-f3 { animation: sprout-f3 5s step-end infinite; }
+  .sprout-f4 { animation: sprout-f4 5s step-end infinite; }
+}
+
 /* Respect reduced motion everywhere, including future page transitions. */
 @media (prefers-reduced-motion: reduce) {
   *,

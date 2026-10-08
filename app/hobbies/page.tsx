@@ -3,6 +3,7 @@ import { Card } from "@/components/card";
 import { CardGrid, spanClass } from "@/components/card-grid";
 import { HobbyCard } from "@/components/hobby-card";
 import { SectionHeader } from "@/components/section-header";
+import { StillGrowing } from "@/components/still-growing";
 import { fillGrid, type Span } from "@/lib/grid";
 import { hobbiesSummary } from "@/lib/hobbies";
 import { getPublishedHobbies, type Hobby } from "@/lib/hobbies-loader";
@@ -32,7 +33,7 @@ export default async function HobbiesPage() {
       </SectionHeader>
 
       {hobbies.length === 0 ? (
-        <p className="pb-8 text-fg-muted">Nothing here yet.</p>
+        <StillGrowing section="hobbies" />
       ) : (
         <CardGrid>
           {hobbies.map((hobby, i) => (

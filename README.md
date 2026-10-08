@@ -149,7 +149,7 @@ Built one phase at a time; the full plan is in [CLAUDE.md](CLAUDE.md#build-phase
 - [ ] **Comments**
 - [ ] **Newsletter** with double opt-in
 - [ ] **Ranks** for long-time readers
-- [ ] **Polish**: latest YouTube videos, ⌘K search, page transitions, RSS, sitemap
+- [ ] **Polish**: latest YouTube videos, page transitions, RSS, sitemap
 
 ## Credits
 

@@ -3,6 +3,7 @@ import { Card } from "@/components/card";
 import { CardGrid, spanClass } from "@/components/card-grid";
 import { ProjectCard } from "@/components/project-card";
 import { SectionHeader } from "@/components/section-header";
+import { StillGrowing } from "@/components/still-growing";
 import { fillGrid, type Span } from "@/lib/grid";
 import { getPublishedProjects } from "@/lib/projects";
 import { openGraphDefaults, site } from "@/lib/site";
@@ -31,7 +32,7 @@ export default async function ProjectsPage() {
       </SectionHeader>
 
       {projects.length === 0 ? (
-        <p className="pb-8 text-fg-muted">Nothing here yet.</p>
+        <StillGrowing section="projects" />
       ) : (
         <CardGrid>
           {projects.map((project, i) => (

@@ -18,7 +18,7 @@ code quality, clear structure, and a good README matter.
 - Resend: **custom SMTP for Supabase Auth emails** (sign-in codes and links), set up
   2026-09-30 on `starfoxlabs.org`; later also the newsletter. The Resend API key lives only
   in Supabase's SMTP settings, never in this repo or `.env.local`.
-- YouTube Data API: latest videos on the home page
+- YouTube: latest videos on the home page, from the channel's public video feed (no API key)
 - Motion (framer-motion) for page transitions
 - Hosting: Vercel (auto-deploys from `main`)
 
@@ -47,8 +47,8 @@ Elements to take from chester.how:
 - **Card grid** (exact rules under "Cards" in Visual design).
 
 ### Minor reference: https://www.jmduke.com/
-Only for: **tag filters with counts** (e.g. `nextjs (12)`), **⌘K / Ctrl+K search** in a
-command palette, and the **warm dark mode** (`#1C1B1A`, not cold blue-black).
+Only for: **tag filters with counts** (e.g. `nextjs (12)`) and the **warm dark mode**
+(`#1C1B1A`, not cold blue-black). (A command-palette search was dropped: Ivan, 2026-10-08.)
 
 ## Site structure
 Header tab bar: **Gvan · Projects · Writing · Reading · Music · Games · Hobbies**
@@ -338,8 +338,9 @@ from the live schema (`npm run db:types`) — regenerate it after every migratio
    sending refuses unless it's the production deployment, and test items can never trigger
    it). Decide and build this before the send-on-publish code is switched on.
 7. **Ranks** — see rules below; show rank badges next to usernames and on profiles.
-8. **YouTube + polish** — live YouTube video cards on home, ⌘K search, page transitions,
-   SEO, RSS feed, sitemap.
+8. **YouTube + polish** — in this order (Ivan, 2026-10-08): sitemap + robots.txt, RSS feed,
+   link previews for every page, then the YouTube section from the channel's public video
+   feed (no API key); later page transitions and an SEO pass. (No ⌘K search: dropped.)
 
 ## Rank rules (draft — Ivan to confirm)
 Track *active days* and *articles read* (one read per article per user), not raw page views.

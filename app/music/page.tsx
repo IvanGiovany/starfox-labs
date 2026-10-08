@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Card } from "@/components/card";
 import { CardGrid, spanClass } from "@/components/card-grid";
 import { SectionHeader } from "@/components/section-header";
+import { StillGrowing } from "@/components/still-growing";
 import { SongCard } from "@/components/song-card";
 import { fillGrid, type Span } from "@/lib/grid";
 import { openGraphDefaults } from "@/lib/site";
@@ -31,7 +32,7 @@ export default async function MusicPage() {
       </SectionHeader>
 
       {songs.length === 0 ? (
-        <p className="pb-8 text-fg-muted">Nothing here yet.</p>
+        <StillGrowing section="music" />
       ) : (
         <CardGrid>
           {songs.map((song, i) => (

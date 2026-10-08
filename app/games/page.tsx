@@ -3,6 +3,7 @@ import { Card } from "@/components/card";
 import { CardGrid, spanClass } from "@/components/card-grid";
 import { GameCard } from "@/components/game-card";
 import { SectionHeader } from "@/components/section-header";
+import { StillGrowing } from "@/components/still-growing";
 import { hoursSummary } from "@/lib/games";
 import { getPublishedGames, type Game } from "@/lib/games-loader";
 import { fillGrid, type Span } from "@/lib/grid";
@@ -32,7 +33,7 @@ export default async function GamesPage() {
       </SectionHeader>
 
       {games.length === 0 ? (
-        <p className="pb-8 text-fg-muted">Nothing here yet.</p>
+        <StillGrowing section="games" />
       ) : (
         <CardGrid>
           {games.map((game, i) => (

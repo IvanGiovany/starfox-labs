@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { SectionHeader } from "@/components/section-header";
+import { StillGrowing } from "@/components/still-growing";
 import { WritingBrowser, WritingBrowserFallback } from "@/components/writing-browser";
 import { countTags, getPublishedPosts } from "@/lib/posts";
 import { openGraphDefaults } from "@/lib/site";
@@ -32,9 +33,14 @@ export default async function WritingPage() {
         prerender everything else, and ship the fallback (the unfiltered first
         page of cards) as real HTML until the browser takes over.
       */}
-      <Suspense fallback={<WritingBrowserFallback posts={posts} tags={tags} />}>
-        <WritingBrowser posts={posts} tags={tags} />
-      </Suspense>
+      {posts.length === 0 ? (
+        // Nothing to search or filter yet.
+        <StillGrowing section="writing" />
+      ) : (
+        <Suspense fallback={<WritingBrowserFallback posts={posts} tags={tags} />}>
+          <WritingBrowser posts={posts} tags={tags} />
+        </Suspense>
+      )}
     </>
   );
 }
