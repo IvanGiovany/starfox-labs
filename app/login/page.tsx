@@ -20,7 +20,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
     <>
       <SectionHeader title="sign in">
         Optional: everything here can be read without an account. With one you get a profile
-        with your name and picture, and soon you can comment on articles.
+        with your name and picture, and you can comment on articles.
       </SectionHeader>
       {/* Reads the URL and the session cookie, so it renders per request. */}
       <Suspense fallback={<LoginForm next="/" />}>

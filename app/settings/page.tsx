@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { isAdmin, requireUser } from "@/lib/auth";
+import { isAdminAccount, requireUser } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PictureField } from "./picture-field";
 import { ProfileForm } from "./profile-form";
@@ -21,7 +21,7 @@ async function Profile({ searchParams }: { searchParams: PageProps<"/settings">[
   const [{ data: profile }, { data: auth }, admin, { data: nextUsernameChange }] = await Promise.all([
     supabase.from("profiles").select("username, display_name, avatar_path").eq("id", user.id).single(),
     supabase.auth.getUser(),
-    isAdmin(),
+    isAdminAccount(),
     supabase.rpc("next_username_change"), // null when it may change now (always for the admin)
   ]);
 

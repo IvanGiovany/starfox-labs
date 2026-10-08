@@ -1495,6 +1495,49 @@ Plan, steps and Ivan's decisions (2026-10-08): CLAUDE.md, "Start here".
     prompt after reading to the end above Comments; console clean), `comments-check`
     rerun 45.
 
+## Phase 6 — Newsletter (in progress)
+Plan and Ivan's decisions (2026-10-08): CLAUDE.md, "Start here".
+
+- **Step 1, part A — Two-factor sign-in, the code (done 2026-10-08; tested by Ivan,
+  checklist 1–8; his authenticator is set up).** Ivan's choices: admin only; one factor scanned onto two devices; the
+  header's Admin link visible before the code; setup in Settings → Account.
+  - Probe first (throwaway reader, Node): TOTP is on for the project; enroll → wrong
+    code refused (`mfa_verification_failed`) → real code (RFC 6238, computed with
+    `node:crypto`) → `aal2`; a fresh sign-in elsewhere is `aal1` with `aal2` next;
+    removing a factor at `aal1` is refused (`insufficient_aal`).
+  - `lib/admin-access.ts` (pure, tested): `adminAccess()` → signed-out / not-admin /
+    needs-setup / needs-code / ok; `TWO_FACTOR_REQUIRED = false` until part B;
+    `twoFactorPath()`, `TWO_FACTOR_SETUP_PATH`. `lib/auth.ts`: `CurrentUser.aal` (from
+    the verified claims), `isAdminAccount()` (identity: reserved names, no account
+    deletion, Settings' two-factor section; for now the `is_admin` RPC, part B adds
+    `is_admin_account()`), `hasVerifiedFactor()` (`mfa.listFactors()`: asks Supabase
+    Auth), `getAdminAccess()`, `isAdmin()` (powers: the admin routes), `requireAdmin()`
+    (→ the code screen, or the setup once required). Settings' identity checks moved to
+    `isAdminAccount()`.
+  - `/login/two-factor?next=` (`app/login/two-factor/`): signed out → `/login?next=`;
+    `aal2` or no factor → `next`; otherwise the form (`TwoFactorCodeInput` in
+    `components/two-factor-code.tsx`: number pad, `one-time-code`, non-digits dropped,
+    the sixth digit sends; `twoFactorError()`), `challengeAndVerify` in the browser,
+    then `window.location.replace(next)` so the server reads the aal2 cookie from the
+    start. `proxy.ts` matcher `/login/:path*` (was `/login`).
+  - Settings → Account → "Two-factor sign-in" (`#two-factor`, admin only,
+    `app/settings/account/two-factor.tsx`): clears a half-done setup, `enroll` with
+    issuer "Starfox Labs", QR (Supabase's SVG data URL) + the key in groups of four,
+    "scan it with your backup device too", code → on; "On since …"; Turn off needs a
+    current code (verified first, since unenrolling needs aal2). The admin layout shows
+    a reminder while no factor exists. `/login` intro no longer says "soon you can
+    comment".
+  - Tested: tsx 4 groups (access rules incl. part B's, path, errors). Production build
+    (`/login/two-factor` ◐). Edge on :3124, `twofactor-check` 15 (throwaway reader with
+    a factor added through the API): signed out → sign in; no factor → straight on;
+    readers see no two-factor section and are turned away from the admin; issuer
+    "Starfox Labs"; fresh sign-in aal1; number pad, focused; wrong code explained, box
+    emptied; the right code typed with a space goes on to `next` and the cookie is
+    aal2; aal2 → straight on; phone 390 px; console clean apart from the browser's own
+    log of the deliberately wrong code (422). Reruns: `admin-gate-check` 3,
+    `wrapup-check` 15. Gotcha: redirects inside streamed pages (`redirect()` behind
+    `<Suspense>`) land after the `load` event; checks must wait for the address.
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:

@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { isAdmin, requireUser } from "@/lib/auth";
+import { isAdminAccount, requireUser } from "@/lib/auth";
 import { AVATARS_BUCKET } from "@/lib/avatars";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -38,7 +38,7 @@ export async function deleteAccount(_prev: DeleteState, formData: FormData): Pro
   if (!profile || String(formData.get("confirm") ?? "").trim() !== profile.username) {
     return { error: "Type your username exactly as shown to confirm." };
   }
-  if (await isAdmin()) return { error: "The admin account can't be deleted here." };
+  if (await isAdminAccount()) return { error: "The admin account can't be deleted here." };
 
   const retry = "Your account couldn't be deleted. Nothing is lost; try again in a moment.";
   const { error: clearError } = await supabase.from("profiles").update({ avatar_path: null }).eq("id", user.id);

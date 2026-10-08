@@ -48,5 +48,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/settings/:path*", "/login", "/auth/:path*"],
+  // "/login/:path*" covers /login and the two-factor code screen (/login/two-factor).
+  matcher: ["/admin/:path*", "/settings/:path*", "/login/:path*", "/auth/:path*"],
 };

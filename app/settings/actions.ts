@@ -1,6 +1,6 @@
 "use server";
 
-import { isAdmin, requireUser } from "@/lib/auth";
+import { isAdminAccount, requireUser } from "@/lib/auth";
 import { AVATARS_BUCKET, isOwnAvatarPath } from "@/lib/avatars";
 import {
   displayNameProblem,
@@ -31,7 +31,7 @@ export async function saveProfile(prev: ProfileState, formData: FormData): Promi
     username: normaliseUsername(String(formData.get("username") ?? "")),
   };
 
-  const admin = await isAdmin();
+  const admin = await isAdminAccount();
   const errors: ProfileFieldErrors = {};
   const nameProblem = displayNameProblem(values.displayName, admin);
   const userProblem = usernameProblem(values.username, admin);

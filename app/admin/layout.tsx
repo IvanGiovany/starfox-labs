@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { signOut } from "@/app/login/actions";
 import { AdminTabs } from "@/components/admin/admin-tabs";
-import { requireAdmin } from "@/lib/auth";
+import { TWO_FACTOR_SETUP_PATH } from "@/lib/admin-access";
+import { hasVerifiedFactor, requireAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -22,6 +24,8 @@ export default function AdminLayout({ children }: LayoutProps<"/admin">) {
 
 async function AdminGate({ children }: { children: React.ReactNode }) {
   const admin = await requireAdmin();
+  // Until two-factor sign-in is required (lib/admin-access.ts), a reminder.
+  const twoFactorOn = await hasVerifiedFactor();
 
   return (
     <div className="pb-8">
@@ -37,6 +41,15 @@ async function AdminGate({ children }: { children: React.ReactNode }) {
             </button>
           </form>
         </div>
+        {!twoFactorOn && (
+          <p className="mt-4 rounded-lg bg-bg-raised px-4 py-3 text-sm text-fg">
+            Set up two-factor sign-in before the newsletter:{" "}
+            <Link href={TWO_FACTOR_SETUP_PATH} prefetch={false} className="underline underline-offset-4">
+              Settings → Account
+            </Link>
+            .
+          </p>
+        )}
         <AdminTabs />
       </div>
       <div className="mt-6">{children}</div>

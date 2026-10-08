@@ -165,8 +165,8 @@ section.
   MP3 in the browser), with manual upload of a ready-made snippet as a fallback; plus a
   full-track link. A song can only be published once its article exists (unless it's
   still in progress); games need their review article before publishing, too.
-- Writing editor (built): publishing will optionally send the newsletter (a checkbox
-  added in Phase 6, not before).
+- Writing editor (built): no newsletter box (Ivan, 2026-10-08): the newsletter is a
+  weekly digest sent from the admin Newsletter tab.
 - Saving or publishing refreshes the cached pages (cache tags) so changes show at once.
 - Moderation: delete any comment.
 
@@ -248,7 +248,8 @@ from the live schema (`npm run db:types`) — regenerate it after every migratio
 - After a reader finishes an article, show a gentle, dismissible prompt to create an account
   (profile picture, Google or email). Don't show it again once dismissed or signed in. No popups on page load.
 - Newsletter: anyone can subscribe with just an email (no account needed). Use double opt-in
-  (confirmation email). Every email has an unsubscribe link. Newsletter = new article published.
+  (confirmation email). Every email has an unsubscribe link. Newsletter = a weekly digest of new articles, sent by
+  hand (Ivan, 2026-10-08).
 - Comments: logged-in users only; shown to everyone at the bottom of the article, newest first.
   One level of replies. Users can edit/delete their own; admin can delete any. Basic rate limiting.
 - Deleting an account: removes profile, avatar, and newsletter subscription; the user's
@@ -322,7 +323,8 @@ from the live schema (`npm run db:types`) — regenerate it after every migratio
    profile pictures, Settings tabs, delete account, the sign-up prompt (on since 5.4).
 5. **Comments** — *done (2026-10-08).* Comments and replies on articles, moderation (admin
    Comments tab), username-change limit, sign-up prompt on.
-6. **Newsletter** — subscribe (with or without account), double opt-in, send on publish, unsubscribe.
+6. **Newsletter** — subscribe (with or without account), double opt-in, a weekly digest
+   sent by hand from the admin (Ivan, 2026-10-08; it was "send on publish"), unsubscribe.
    **Before it goes live:** two-factor sign-in (authenticator app, Supabase MFA/TOTP) for
    the admin account, since it can publish and email every subscriber. `requireAdmin()` and
    the admin RLS policies then require a two-factor session (`aal2`).
@@ -366,12 +368,36 @@ Everything built so far, with file maps, decisions and how it was tested:
   him to delete). Readers can sign up (Google or email), have a profile and picture,
   change settings and delete their account; the live Google app is published. Signed-in
   readers comment on articles (Phase 5).
-- **Next: Phase 6 (Newsletter), starting with a plan for Ivan to approve** (see "Build
-  phases" and "Accounts, comments, newsletter"). It must include, **before anything can
-  send**: two-factor sign-in (TOTP) for the admin with `requireAdmin()` and the admin RLS
-  policies requiring `aal2`, and browser tests that can never send email (local Supabase
-  needs Docker, which isn't installed). Also decide where the subscribe link lives (the
-  home intro lost it) and fill Settings' Newsletter tab.
+- **Now: Phase 6 (Newsletter), plan approved 2026-10-08.** Steps: **6.1 two-factor
+  sign-in for the admin** (TOTP; `requireAdmin()` and `is_admin()` require `aal2`, the
+  migration only after Ivan has enrolled and signed in with it; **part A done
+  2026-10-08** (code screen `/login/two-factor`, setup in Settings → Account, identity
+  vs powers in `lib/auth.ts`; build log "Phase 6, Step 1"; tested by Ivan, checklist
+  1–8; **Ivan's authenticator is set up**, phone + backup device); then part B: migration (`is_admin()` requires aal2,
+  new `is_admin_account()`), `TWO_FACTOR_REQUIRED = true`, `rls-check.sql` with aal) → 6.2 schema
+  (`newsletter_subscribers`, `newsletter_digests`; unsubscribing deletes the row;
+  pending rows go after 7 days; `delete_my_account()` removes subscriptions) → 6.3
+  subscribe (form at the end of each article + a `/newsletter` page linked from the
+  Writing intro), double opt-in (confirm page with a button, since mail scanners open
+  links), unsubscribe (link + one-click `List-Unsubscribe` headers), Settings →
+  Newsletter → 6.4 the weekly digest → 6.5 tests can never send → 6.6 `/privacy` and
+  wrap-up.
+  - **Ivan's decisions (2026-10-08):** **a weekly digest, sent by hand**: the admin
+    Newsletter tab has "Send this week's digest" with a preview of the articles
+    published since the last digest, checked against Resend's daily limit (free plan:
+    100 emails a day, shared with the sign-in emails; refuse with a reason if it doesn't
+    fit); no "send" box in the Writing editor; automatic weekly sending is a later
+    to-do. Two-factor first. Visitors subscribe through a database function only our
+    server can call (a server-only secret), not the service key on Vercel. Signed-in
+    readers subscribe with one click (no confirmation email). Sender "Gvan from Starfox
+    Labs" `<newsletter@starfoxlabs.org>`, replies to `starfoxlabs.contact@gmail.com`.
+  - **If Ivan loses every device with the authenticator:** Supabase dashboard → SQL
+    editor: `delete from auth.mfa_factors where user_id = (select user_id from
+    public.admins);` then sign in and set it up again in Settings → Account.
+  - **Tests can never send (6.5):** the Resend API key lives only in Vercel's
+    Production environment (never `.env.local`, previews or the repo); sending refuses
+    unless `VERCEL_ENV=production` and the key is set; locally emails go to the server
+    log.
 - **Phase 5 (Comments): done 2026-10-08** (plan approved 2026-10-08). Comments load in the browser
   (article pages stay static) and are written straight from it with the publishable
   key; **every rule is in the database** (RLS + triggers), since anyone can call the
@@ -689,6 +715,8 @@ Everything built so far, with file maps, decisions and how it was tested:
 - **Known dead links**: none (all sections live since step 5).
 - **Username changes: once every 30 days** (Ivan, 2026-10-07/08), so nobody dodges
   moderation by renaming: in the 5.1 migration; Settings explains it in 5.4.
+- **Automatic weekly digest** (to-do, Ivan 2026-10-08): the digest is sent by hand from
+  the admin Newsletter tab for now; a Vercel Cron job could send it later.
 - **Approve comments before publishing** (to-do, Ivan 2026-10-08): only if spam becomes a
   problem. Comments go live at once for now. (Also "later if needed": blocking a reader
   from commenting.)

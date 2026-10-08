@@ -1,12 +1,13 @@
 import { Suspense } from "react";
-import { isAdmin, requireUser } from "@/lib/auth";
+import { isAdminAccount, requireUser } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { signOutEverywhere } from "./actions";
 import { DeleteAccountForm } from "./delete-account-form";
+import { TwoFactorSetup } from "./two-factor";
 
-// Settings → Account: the private details, signing out everywhere, and
-// deleting the account (not the admin's).
+// Settings → Account: the private details, two-factor sign-in (the admin
+// only), signing out everywhere, and deleting the account (not the admin's).
 export default function AccountPage() {
   return (
     <Suspense fallback={<p className="text-fg-muted">Loading your account…</p>}>
@@ -20,13 +21,15 @@ async function Account() {
   const supabase = await createSupabaseServerClient();
   const [{ data: profile }, admin, { count: comments }] = await Promise.all([
     supabase.from("profiles").select("username, created_at").eq("id", user.id).single(),
-    isAdmin(),
+    isAdminAccount(),
     // Comments the reader can see: on published articles (a placeholder isn't theirs any more).
     supabase.from("comments").select("id", { count: "exact", head: true }).eq("user_id", user.id).is("deleted_at", null),
   ]);
   if (!profile) {
     return <p className="text-danger">Your account couldn&apos;t be loaded. Reload the page to try again.</p>;
   }
+  // Verified authenticators (asked of Supabase Auth); the admin only.
+  const factor = admin ? (await supabase.auth.mfa.listFactors()).data?.totp[0] : undefined;
 
   return (
     <div className="flex flex-col gap-12">
@@ -41,6 +44,12 @@ async function Account() {
         </dl>
         <p className="text-sm text-fg-muted">Only you can see these.</p>
       </Section>
+
+      {admin && (
+        <Section title="Two-factor sign-in" id="two-factor">
+          <TwoFactorSetup factor={factor ? { id: factor.id, createdAt: factor.updated_at } : null} />
+        </Section>
+      )}
 
       <Section title="Sign out on all devices">
         <p className="text-fg-muted">
@@ -90,9 +99,9 @@ function commentCount(n: number): string {
   return `You've written ${n} comment${n === 1 ? "" : "s"}.`;
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, id, children }: { title: string; id?: string; children: React.ReactNode }) {
   return (
-    <section className="flex flex-col gap-4">
+    <section id={id} className="flex scroll-mt-28 flex-col gap-4">
       <h2 className="font-serif text-2xl">{title}</h2>
       {children}
     </section>
