@@ -8,8 +8,9 @@ import { StillGrowing } from "@/components/still-growing";
 import { getPublishedBooks, shelfCounts, type Book } from "@/lib/books";
 import { fillGrid, type Span } from "@/lib/grid";
 import { openGraphDefaults } from "@/lib/site";
+import { SECTION_META } from "@/lib/section-meta";
 
-const description = "What I'm reading, what I've finished, and what's next.";
+const { description } = SECTION_META.reading;
 
 export const metadata: Metadata = {
   title: "Reading",

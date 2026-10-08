@@ -7,8 +7,9 @@ import { StillGrowing } from "@/components/still-growing";
 import { fillGrid, type Span } from "@/lib/grid";
 import { getPublishedProjects } from "@/lib/projects";
 import { openGraphDefaults, site } from "@/lib/site";
+import { SECTION_META } from "@/lib/section-meta";
 
-const description = "Things I've built, mostly for fun.";
+const { description } = SECTION_META.projects;
 
 export const metadata: Metadata = {
   title: "Projects",

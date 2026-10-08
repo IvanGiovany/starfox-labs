@@ -8,8 +8,9 @@ import { fillGrid, type Span } from "@/lib/grid";
 import { hobbiesSummary } from "@/lib/hobbies";
 import { getPublishedHobbies, type Hobby } from "@/lib/hobbies-loader";
 import { openGraphDefaults } from "@/lib/site";
+import { SECTION_META } from "@/lib/section-meta";
 
-const description = "The things I do for fun away from the keyboard, and what I'm learning.";
+const { description } = SECTION_META.hobbies;
 
 export const metadata: Metadata = {
   title: "Hobbies",

@@ -7,8 +7,9 @@ import { SongCard } from "@/components/song-card";
 import { fillGrid, type Span } from "@/lib/grid";
 import { openGraphDefaults } from "@/lib/site";
 import { getPublishedSongs } from "@/lib/tracks";
+import { SECTION_META } from "@/lib/section-meta";
 
-const description = "Songs I've made, each with a short preview and a few words about it.";
+const { description } = SECTION_META.music;
 
 export const metadata: Metadata = {
   title: "Music",

@@ -5,8 +5,9 @@ import { StillGrowing } from "@/components/still-growing";
 import { WritingBrowser, WritingBrowserFallback } from "@/components/writing-browser";
 import { countTags, getPublishedPosts } from "@/lib/posts";
 import { openGraphDefaults } from "@/lib/site";
+import { SECTION_META } from "@/lib/section-meta";
 
-const description = "Articles about software, and a few other things.";
+const { description } = SECTION_META.writing;
 
 export const metadata: Metadata = {
   title: "Writing",

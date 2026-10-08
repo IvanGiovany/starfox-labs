@@ -1660,6 +1660,25 @@ the address `/rss.xml`.
   clean. Ivan's check after his first article: it appears in `/rss.xml` (and in a feed
   reader).
 
+## Phase 8, step 3 — Link previews (2026-10-08)
+Ivan's choice: no counts in the images (platforms cache previews for days).
+- `lib/section-meta.ts`: each section's title and description (the pages' metadata now
+  read it; texts unchanged). `lib/section-og.tsx`: `sectionOgImage` (`ogImage` with
+  "<section>." and the description), `sectionOgAlt`. `app/{projects,writing,reading,
+  music,games,hobbies}/opengraph-image.tsx` (Writing's rewritten through the helper, same
+  output). `app/privacy/opengraph-image.tsx` re-exports the root image.
+- **Found by the check:** `/privacy` had no `og:image` at all: a page that sets its own
+  `openGraph` metadata doesn't inherit the root's `opengraph-image` file. (Section pages
+  were the same before they had their own files.)
+- Tested: build (every image ○, 1 y). `preview-check` on :3124, 40: for every page in
+  `/sitemap.xml` (home, six sections, `/privacy`): title, description, canonical,
+  `og:title/description/url/site_name/image(+width/height/alt)`, `twitter:card`,
+  `twitter:image` each exactly once; canonical and `og:url` absolute on the site; each
+  page's own image; `summary_large_image`; every image 200, `image/png`, a real PNG
+  1200 × 630 (IHDR read). One image looked at (Hobbies: the longest description fits on
+  one line). Article previews (existing, Phase 1) can't be re-checked until an article
+  is published.
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:

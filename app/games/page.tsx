@@ -8,8 +8,9 @@ import { hoursSummary } from "@/lib/games";
 import { getPublishedGames, type Game } from "@/lib/games-loader";
 import { fillGrid, type Span } from "@/lib/grid";
 import { openGraphDefaults } from "@/lib/site";
+import { SECTION_META } from "@/lib/section-meta";
 
-const description = "Games I'm playing and have played, each with a review.";
+const { description } = SECTION_META.games;
 
 export const metadata: Metadata = {
   title: "Games",

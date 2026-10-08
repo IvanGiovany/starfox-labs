@@ -1,10 +1,10 @@
 import { sectionOgAlt, sectionOgImage, sectionOgSize } from "@/lib/section-og";
 
-// Link preview for the Writing page ("writing."), drawn at build time.
-export const alt = sectionOgAlt("writing");
+// Link preview for the Music page ("music."), drawn at build time.
+export const alt = sectionOgAlt("music");
 export const size = sectionOgSize;
 export const contentType = "image/png";
 
 export default async function Image() {
-  return sectionOgImage("writing");
+  return sectionOgImage("music");
 }
