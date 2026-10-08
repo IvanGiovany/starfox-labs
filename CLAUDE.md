@@ -327,6 +327,8 @@ from the live schema (`npm run db:types`) — regenerate it after every migratio
    Comments tab), username-change limit, sign-up prompt on.
 6. **Newsletter** — subscribe (with or without account), double opt-in, a weekly digest
    sent by hand from the admin (Ivan, 2026-10-08; it was "send on publish"), unsubscribe.
+   *Paused at 6.3 (Ivan, 2026-10-08): 6.1 two-factor and 6.2 schema are done; see "Start
+   here".*
    **Before it goes live:** two-factor sign-in (authenticator app, Supabase MFA/TOTP) for
    the admin account, since it can publish and email every subscriber. `requireAdmin()` and
    the admin RLS policies then require a two-factor session (`aal2`).
@@ -370,7 +372,11 @@ Everything built so far, with file maps, decisions and how it was tested:
   him to delete). Readers can sign up (Google or email), have a profile and picture,
   change settings and delete their account; the live Google app is published. Signed-in
   readers comment on articles (Phase 5).
-- **Now: Phase 6 (Newsletter), plan approved 2026-10-08.** Steps: **6.1 two-factor
+- **Phase 6 (Newsletter): PAUSED at 6.3 (Ivan, 2026-10-08).** Done and pushed: **6.1
+  two-factor sign-in** and **6.2 schema**. Nothing newsletter-related is visible on the
+  site yet (no form, no emails); the database is ready. When Ivan comes back: start with
+  **"6.3 plan (proposed, decisions open)"** below and ask him the 6 open decisions.
+  Plan approved 2026-10-08 (as below). Steps: **6.1 two-factor
   sign-in for the admin** (TOTP; `requireAdmin()` and `is_admin()` require `aal2`, the
   migration only after Ivan has enrolled and signed in with it; **part A done
   2026-10-08** (code screen `/login/two-factor`, setup in Settings → Account, identity
@@ -400,7 +406,7 @@ Everything built so far, with file maps, decisions and how it was tested:
     with Ivan's OK, `db:types` regenerated, `NEWSLETTER_SECRET` in `.env.local`;
     **done 2026-10-08**: Ivan stored the hash, ran `rls-check.sql` (all passed) and added
     the secret to Vercel Production; a live test with the real secret passed 7/7;
-    build log "Phase 6, Step 2". **Next: plan 6.3.**
+    build log "Phase 6, Step 2".
   - **6.2 decisions (Ivan, 2026-10-08):** visitors' subscribe / confirm / unsubscribe go
     through database functions gated by a server-only secret `NEWSLETTER_SECRET`
     (`.env.local` + Vercel **Production** only; the database stores only its SHA-256 in
@@ -410,6 +416,40 @@ Everything built so far, with file maps, decisions and how it was tested:
     confirmation emails an hour site-wide; the same answer whether or not an address is
     subscribed; the first digest covers the last 7 days; keep 20 of Resend's 100 daily
     emails for sign-in codes (a digest is refused above 80).
+  - **6.3 plan (proposed 2026-10-08, NOT yet approved; 6 decisions open):** sending
+    confirmation emails starts here, so two things move forward: the **"tests can never
+    send" guard** (from 6.5) and the **`/privacy` update** (from 6.6). Split in two:
+    - **6.3a sign-ups:** `lib/email/` sends through Resend's API (from "Gvan from
+      Starfox Labs" `<newsletter@starfoxlabs.org>`, replies to the contact address,
+      plain-text version too) **only if `VERCEL_ENV=production` and `RESEND_API_KEY`
+      is set**, otherwise logs the email (dev server, :3124 checks, previews);
+      HMAC links signed with `NEWSLETTER_SECRET`; the form (email, honeypot, always
+      "Almost done: check your inbox…", errors for a bad address and the cap) at the
+      end of every article (a quiet block under Older/Newer, above the sign-up prompt
+      and Comments: "New writing, once a week by email.") and on `/newsletter`
+      (intro draft: "A short email once a week with what I wrote: software, the odd
+      game review, notes from making music. No tracking. Unsubscribe in one click."),
+      plus one sentence in the Writing intro ("It also goes out as a weekly email:
+      newsletter."); `/newsletter/confirm` (a Confirm **button**, since mail scanners
+      open links; broken/expired link explained, form again); `/newsletter/unsubscribe`
+      (button) + a one-click POST endpoint for `List-Unsubscribe-Post` (headers added in
+      6.4); confirmation email draft: subject "Confirm your Starfox Labs newsletter",
+      "Someone, hopefully you, asked for Starfox Labs' weekly digest at this address.
+      [Confirm my subscription] Not you? Ignore this email. Nothing more will be sent,
+      and the address is forgotten within 7 days."; `/privacy`: what's stored, Resend
+      delivers, unsubscribing deletes, backups hold subscriber emails ≤ 30 days,
+      deleting an account removes the subscription. **Ivan first:** a Resend API key
+      with sending access only, limited to `starfoxlabs.org`, in Vercel Production only,
+      before 6.3a is pushed.
+    - **6.3b signed-in readers:** Settings → Newsletter (status; "Subscribe with
+      <account email>" / Unsubscribe in one click); on articles, one button instead of
+      the email field, or "You're subscribed. Manage in Settings."
+    - **Gap found:** 20 confirmations an hour still allows hundreds a day (Resend's free
+      plan: 100 a day, shared with sign-in codes). Proposed fix: a small migration capping
+      confirmation emails at **30 per 24 hours**; the 6.4 digest check also counts them.
+    - **Open decisions:** (1) bring the guard and `/privacy` into 6.3; (2) the 30-a-day
+      cap; (3) placement (article block + `/newsletter`); (4) the wording drafts above;
+      (5) Ivan sets up the Resend key before 6.3a is pushed; (6) the 6.3a / 6.3b split.
   - **If Ivan loses every device with the authenticator:** Supabase dashboard → SQL
     editor: `delete from auth.mfa_factors where user_id = (select user_id from
     public.admins);` then sign in and set it up again in Settings → Account.
@@ -515,8 +555,10 @@ Everything built so far, with file maps, decisions and how it was tested:
     localhost with the test users. **Right after 4.2 deploys:** check `/privacy` is live,
     paste the new Magic link + Confirm signup templates (written to work with the old and
     new code), then publish the Google app at once.
-- **What comes next:** the later phases, one at a time (see "Build phases"): 6 Newsletter
-  (next), 7 Ranks, 8 YouTube + polish. The standing rules still apply:
+- **What comes next:** Ivan's choice (2026-10-08), with Phase 6 paused: **replace the demo
+  content with his real content**, and the **polish phase** (Phase 8: RSS feed, sitemap +
+  robots.txt, link previews for every page, the YouTube section). Then 6 Newsletter
+  (resume at 6.3) and 7 Ranks. The standing rules still apply:
   - **Plan first** for every phase and step; wait for Ivan's OK before building.
   - **Ivan runs the browser checklists** himself; give him a short checklist each step.
     Playwright only when he explicitly asks, and then localhost only (see "Browser
