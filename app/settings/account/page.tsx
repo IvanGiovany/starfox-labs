@@ -18,9 +18,11 @@ export default function AccountPage() {
 async function Account() {
   const user = await requireUser("/settings/account");
   const supabase = await createSupabaseServerClient();
-  const [{ data: profile }, admin] = await Promise.all([
+  const [{ data: profile }, admin, { count: comments }] = await Promise.all([
     supabase.from("profiles").select("username, created_at").eq("id", user.id).single(),
     isAdmin(),
+    // Comments the reader can see: on published articles (a placeholder isn't theirs any more).
+    supabase.from("comments").select("id", { count: "exact", head: true }).eq("user_id", user.id).is("deleted_at", null),
   ]);
   if (!profile) {
     return <p className="text-danger">Your account couldn&apos;t be loaded. Reload the page to try again.</p>;
@@ -66,6 +68,11 @@ async function Account() {
                 <li>your profile: name, username and picture</li>
               </ul>
               <p className="mt-2">
+                {commentCount(comments ?? 0)} Your comments stay, shown as &ldquo;deleted user&rdquo;,
+                without your name, username or picture. If you&apos;d like some gone, delete them
+                first: each of your comments has a Delete button.
+              </p>
+              <p className="mt-2">
                 You can sign up again later with the same email, as a new account.
               </p>
             </div>
@@ -75,6 +82,12 @@ async function Account() {
       </Section>
     </div>
   );
+}
+
+/** "You've written 3 comments." */
+function commentCount(n: number): string {
+  if (n === 0) return "You haven't written any comments.";
+  return `You've written ${n} comment${n === 1 ? "" : "s"}.`;
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

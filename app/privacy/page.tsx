@@ -4,11 +4,11 @@ import { SectionHeader } from "@/components/section-header";
 import { openGraphDefaults, site } from "@/lib/site";
 
 // What the site stores and why, in plain words. Keep it true: update it when
-// something changes (comments in Phase 5, the newsletter in Phase 6). Google's sign-in screen
-// links here, so it must stay live.
+// something changes (next: the newsletter in Phase 6). Google's sign-in screen
+// links here, so it must stay live. The owner is named by site.handle (Gvan).
 
 const CONTACT = "starfoxlabs.contact@gmail.com";
-const UPDATED = "7 October 2026";
+const UPDATED = "8 October 2026";
 
 const description = `What ${site.name} stores, who can see it, and how to remove it.`;
 
@@ -40,6 +40,11 @@ export default function PrivacyPage() {
             address and browser) to run and protect the service.
           </li>
           <li>
+            If you close the sign-up invitation at the end of an article, or have been signed in on
+            this browser, your browser remembers it (local storage) so the invitation doesn&apos;t
+            come back.
+          </li>
+          <li>
             Videos are embedded from youtube-nocookie.com and only load when you press play. Their
             preview images do come from YouTube&apos;s servers, so Google sees that request.
           </li>
@@ -48,12 +53,13 @@ export default function PrivacyPage() {
         <h2>If you make an account</h2>
         <p>Accounts are optional. You can sign in with Google or with your email address.</p>
         <p>
-          <strong>Private</strong> (only you, and {site.author} as the site&apos;s owner, through the
+          <strong>Private</strong> (only you, and {site.handle} as the site&apos;s owner, through the
           database):
         </p>
         <ul>
           <li>Your email address. It&apos;s used to sign you in and is never shown on the site.</li>
           <li>How you sign in (email, Google or both), and when you joined and last signed in.</li>
+          <li>When you last changed your username (it can change once every 30 days).</li>
           <li>
             If you sign up with Google: Google shares your name, email address and profile picture.
             Your first name becomes your starting display name, and a copy of your Google picture
@@ -65,11 +71,24 @@ export default function PrivacyPage() {
           name, your username, your profile picture if you add one, and when you joined. New
           accounts get a random username (like <code>reader_482913</code>) that you can change.
           Pictures are cropped to a square and stored without their location or other details.
+          The comments you write are public too, with your display name, username and picture,
+          and when you wrote and last edited them.
         </p>
         <p>
           To keep you signed in, the site sets sign-in cookies in your browser. They&apos;re used for
           nothing else.
         </p>
+
+        <h2>Comments</h2>
+        <ul>
+          <li>Only signed-in readers can comment; everyone can read comments.</li>
+          <li>You can edit or delete your own comments any time.</li>
+          <li>{site.handle} can delete any comment.</li>
+          <li>
+            Deleting a comment that has replies leaves &ldquo;This comment was deleted.&rdquo; in
+            its place, with its text and your name removed, so the replies still make sense.
+          </li>
+        </ul>
 
         <h2>Where it&apos;s stored</h2>
         <ul>
@@ -90,13 +109,15 @@ export default function PrivacyPage() {
         <p>
           The database is backed up now and then. Backups are kept for up to 30 days and then
           deleted, so a deleted profile can live on in a backup for at most that long. Backups
-          hold profiles (names and usernames), not email addresses.
+          hold profiles (names and usernames) and comments, not email addresses.
         </p>
 
         <h2>Removing your account</h2>
         <p>
           Go to <strong>Settings → Account → Delete account</strong>. It deletes your sign-in, your
-          email address, your profile and your picture straight away. (Copies of a picture kept by
+          email address, your profile and your picture straight away. Your comments stay as
+          &ldquo;deleted user&rdquo;, without your name, username or picture (see Comments
+          above), so delete any you&apos;d like gone first. (Copies of a picture kept by
           the image servers&apos; caches run out within a few hours; the same goes for a picture
           you remove or replace.) You can also email{" "}
           <a href={`mailto:${CONTACT}`}>{CONTACT}</a> from the address you signed up with, and it

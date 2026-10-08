@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/avatar";
 import { Badge } from "@/components/badge";
 import { CommentForm } from "@/components/comment-form";
+import { localDateTime } from "@/components/local-date-time";
 import {
   afterDelete,
   authorState,
@@ -358,12 +359,12 @@ function CommentView({
                 ·
               </span>
               <a href={`#comment-${comment.id}`} className="text-fg-muted no-underline hover:text-fg hover:underline">
-                <time dateTime={comment.created_at} title={fullDate(comment.created_at)}>
+                <time dateTime={comment.created_at} title={localDateTime(comment.created_at)}>
                   {relativeTime(comment.created_at)}
                 </time>
               </a>
               {comment.edited_at && (
-                <span className="text-fg-muted" title={`Edited ${fullDate(comment.edited_at)}`}>
+                <span className="text-fg-muted" title={`Edited ${localDateTime(comment.edited_at)}`}>
                   · edited
                 </span>
               )}
@@ -453,9 +454,4 @@ function CommentView({
       </div>
     </article>
   );
-}
-
-/** "Oct 8, 2026, 2:15 PM" in the reader's own time zone (the tooltip on hover). */
-function fullDate(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }

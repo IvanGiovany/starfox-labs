@@ -319,10 +319,9 @@ from the live schema (`npm run db:types`) — regenerate it after every migratio
    articles), Games, Hobbies; then the home grid (from the section loaders) and status
    cards from data.
 4. **Accounts + Settings** — *done (2026-10-07).* Reader sign-in (Google + email), profiles,
-   profile pictures, Settings tabs, delete account, the sign-up prompt (built, off until
-   Phase 5).
-5. **Comments** — comments and replies on articles, moderation. *In progress (plan
-   approved 2026-10-08, see "Start here").*
+   profile pictures, Settings tabs, delete account, the sign-up prompt (on since 5.4).
+5. **Comments** — *done (2026-10-08).* Comments and replies on articles, moderation (admin
+   Comments tab), username-change limit, sign-up prompt on.
 6. **Newsletter** — subscribe (with or without account), double opt-in, send on publish, unsubscribe.
    **Before it goes live:** two-factor sign-in (authenticator app, Supabase MFA/TOTP) for
    the admin account, since it can publish and email every subscriber. `requireAdmin()` and
@@ -355,18 +354,25 @@ Track *active days* and *articles read* (one read per article per user), not raw
 - Use Supabase Row Level Security on every table.
 - Run `npm run build` and fix errors before saying a step is done.
 
-## Where we left off (updated 2026-10-07, after Phase 4)
+## Where we left off (updated 2026-10-08, after Phase 5)
 Everything built so far, with file maps, decisions and how it was tested:
 **`docs/build-log.md`**. Read the relevant part before changing that area.
 
 ### Start here (next session)
-- **State:** **Phases 1–4 are done** (Phase 4 finished 2026-10-07, every step tested by
+- **State:** **Phases 1–5 are done** (Phase 5 finished 2026-10-08, every step tested by
   Ivan, all pushed). The **demo content is live** (16 articles and items in every
   section; remove it all with **`npm run demo:remove`**, see "Demo content" in "Still
   open"). The working tree is clean except `GIFS/` (Ivan's originals, untracked, safe for
   him to delete). Readers can sign up (Google or email), have a profile and picture,
-  change settings and delete their account; the live Google app is published.
-- **Now: Phase 5 (Comments), plan approved 2026-10-08.** Comments load in the browser
+  change settings and delete their account; the live Google app is published. Signed-in
+  readers comment on articles (Phase 5).
+- **Next: Phase 6 (Newsletter), starting with a plan for Ivan to approve** (see "Build
+  phases" and "Accounts, comments, newsletter"). It must include, **before anything can
+  send**: two-factor sign-in (TOTP) for the admin with `requireAdmin()` and the admin RLS
+  policies requiring `aal2`, and browser tests that can never send email (local Supabase
+  needs Docker, which isn't installed). Also decide where the subscribe link lives (the
+  home intro lost it) and fill Settings' Newsletter tab.
+- **Phase 5 (Comments): done 2026-10-08** (plan approved 2026-10-08). Comments load in the browser
   (article pages stay static) and are written straight from it with the publishable
   key; **every rule is in the database** (RLS + triggers), since anyone can call the
   API directly. Steps: **5.1 schema** (migration `20261008100000_comments.sql`:
@@ -378,7 +384,11 @@ Everything built so far, with file maps, decisions and how it was tested:
   comment for the admin + an admin **Comments** tab of the latest across articles;
   **done 2026-10-08**: tested by Ivan, checklist 1–7; build log "Phase 5, Step 3"), 5.4
   wrap-up (Settings shows when the username can change again; Account + `/privacy`
-  wording; sign-up prompt on).
+  wording; sign-up prompt on; **done 2026-10-08**: 15 + 45 browser checks, then Ivan's
+  checklist 1–7; build log "Phase 5, Step 4"). All pushed. Ivan's 5.4 choices: the
+  username field is read-only with the date while locked; Account shows "You've written
+  N comments"; the prompt's switch (`lib/features.ts`) is removed; `/privacy` names the
+  owner "Gvan" (`site.handle`; `site.author` stays "Ivan" for link previews).
   - **Ivan's decisions (2026-10-08):** comments go live at once (no approval queue;
     "approve before publishing" is a to-do in "Still open"); a deleted comment with
     replies becomes a "This comment was deleted." placeholder (text and author
@@ -393,23 +403,12 @@ Everything built so far, with file maps, decisions and how it was tested:
     post `[test] …` comments on a live demo article (Ivan's OK, 2026-10-08) and delete
     them; **delete test comments before deleting a throwaway account**, or they stay as
     "deleted user".
-  Carried in from Phase 4 (all covered by the steps above):
-  - **Switch the sign-up prompt on** (`SIGN_UP_PROMPT` in `lib/features.ts`) once
-    comments work, and add its browser memory to `/privacy` (`lib/sign-up-memory.ts`).
-  - **A username-change limit** (e.g. once a month), so nobody dodges moderation by
-    renaming (Ivan, 2026-10-07).
-  - **Deleted accounts:** comments stay and show "deleted user"
-    (`comments.user_id … on delete set null`); `delete_my_account()` and Settings →
-    Account already delete the profile and picture. Update the Account tab's and
-    `/privacy`'s wording ("your comments stay as 'deleted user'").
-  - Comments show the author's `display_name`, `@username` and picture
-    (`components/avatar.tsx`, `profiles` is public); the admin's comments can carry an
-    "author" badge (Ivan's profile is `gvan` / "Gvan").
-  - The new table gets RLS, the truncate guard, a place in `db:backup`'s `TABLES`, and a
-    part in `rls-check.sql`. The article page's `#comments` section is the placeholder
-    to replace (`app/writing/[slug]/page.tsx`); public article pages must stay static
-    (comments load in the browser or behind `<Suspense>`).
-  - Rank rules (Phase 7) will count from `profiles.created_at` ("member since").
+  - **How Phase 5 was tested** (build log, "Phase 5"): `rls-check.sql` (51 PASS, run by
+    Ivan); tsx unit tests for `lib/comments.ts`; production build on :3124 with
+    `puppeteer-core` in Edge and throwaway readers (as in Phase 4): `comments-check` 45
+    (runs on the newest article **without** comments, so real comments are never
+    touched), `admin-gate-check` 3, `wrapup-check` 15. The admin's own views need Ivan's
+    sign-in: his checklist. Rank rules (Phase 7) will count from `profiles.created_at`.
 - **How Phase 4 was tested** (build log, "Phase 4"): unit tests with tsx; production
   build on :3124 with `puppeteer-core` in Edge, using **throwaway reader accounts** made
   with the service key and signed in without any email (`admin.generateLink` →
@@ -458,8 +457,8 @@ Everything built so far, with file maps, decisions and how it was tested:
   cache, and with a year a deleted picture stayed public); 4.5 the end-of-article sign-up
   prompt (plan approved 2026-10-07: wording as drafted, just above Comments, short
   articles after 15 s, never again once signed in on this browser; **done 2026-10-07,
-  switched off** (`SIGN_UP_PROMPT` in `lib/features.ts`); tested by Ivan with
-  `NEXT_PUBLIC_SIGN_UP_PROMPT=on` in `.env.local`, checklist 1–8; build log "Step 5"). Newsletter tab: Phase 6.
+  switched off** then (the switch was removed in 5.4: the prompt is always on); tested by
+  Ivan, checklist 1–8; build log "Step 5"). Newsletter tab: Phase 6.
   - **Ivan's decisions:** Google sign-in is allowed on his admin account (his Google
     account has 2-step verification); **the sign-up prompt is built in 4.5 but stays
     switched off until comments arrive in Phase 5**; 4.0 has both guards.
@@ -471,8 +470,8 @@ Everything built so far, with file maps, decisions and how it was tested:
     localhost with the test users. **Right after 4.2 deploys:** check `/privacy` is live,
     paste the new Magic link + Confirm signup templates (written to work with the old and
     new code), then publish the Google app at once.
-- **What comes next:** the later phases, one at a time (see "Build phases"): 5 Comments
-  (next), 6 Newsletter, 7 Ranks, 8 YouTube + polish. The standing rules still apply:
+- **What comes next:** the later phases, one at a time (see "Build phases"): 6 Newsletter
+  (next), 7 Ranks, 8 YouTube + polish. The standing rules still apply:
   - **Plan first** for every phase and step; wait for Ivan's OK before building.
   - **Ivan runs the browser checklists** himself; give him a short checklist each step.
     Playwright only when he explicitly asks, and then localhost only (see "Browser
@@ -693,9 +692,8 @@ Everything built so far, with file maps, decisions and how it was tested:
 - **Approve comments before publishing** (to-do, Ivan 2026-10-08): only if spam becomes a
   problem. Comments go live at once for now. (Also "later if needed": blocking a reader
   from commenting.)
-- **Switch the sign-up prompt on in Phase 5** (built in 4.5, off): set
-  `SIGN_UP_PROMPT` to on in `lib/features.ts`, and add to `/privacy` that the browser
-  remembers a dismissed prompt and that someone was signed in (`lib/sign-up-memory.ts`).
+- **Ivan's `.env.local`** still has `NEXT_PUBLIC_SIGN_UP_PROMPT=on` from testing 4.5:
+  unused since 5.4, safe to delete.
 - UQ palette beyond purple is still a TODO (see Colors).
 - **Two-factor sign-in for the admin** before the newsletter goes live (see Phase 6).
 - **Browser tests must stop publishing on the shared database** before the newsletter goes

@@ -5,7 +5,6 @@ import { AboutItem } from "@/components/about-item";
 import { ArticleView } from "@/components/article-view";
 import { Comments } from "@/components/comments";
 import { ARTICLE_END_ID, SignUpPrompt } from "@/components/sign-up-prompt";
-import { SIGN_UP_PROMPT } from "@/lib/features";
 import { readingTime } from "@/lib/format";
 import { renderMarkdown } from "@/lib/markdown";
 import { getPostItem } from "@/lib/post-items";
@@ -79,11 +78,11 @@ export default async function ArticlePage({ params }: PageProps<"/writing/[slug]
         body={body}
       />
       {/* Where "finished reading" is measured (the sign-up prompt watches it). */}
-      {SIGN_UP_PROMPT && <div id={ARTICLE_END_ID} aria-hidden="true" />}
+      <div id={ARTICLE_END_ID} aria-hidden="true" />
 
       <OlderNewer older={older} newer={newer} />
 
-      {SIGN_UP_PROMPT && <SignUpPrompt slug={post.slug} />}
+      <SignUpPrompt slug={post.slug} />
 
       {/* Comments load in the browser, so this page stays static. The
           #comments id is linked to (e.g. from sign-in: /writing/slug#comments). */}

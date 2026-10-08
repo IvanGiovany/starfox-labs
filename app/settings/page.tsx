@@ -18,10 +18,11 @@ async function Profile({ searchParams }: { searchParams: PageProps<"/settings">[
   const user = await requireUser("/settings");
   const params = await searchParams;
   const supabase = await createSupabaseServerClient();
-  const [{ data: profile }, { data: auth }, admin] = await Promise.all([
+  const [{ data: profile }, { data: auth }, admin, { data: nextUsernameChange }] = await Promise.all([
     supabase.from("profiles").select("username, display_name, avatar_path").eq("id", user.id).single(),
     supabase.auth.getUser(),
     isAdmin(),
+    supabase.rpc("next_username_change"), // null when it may change now (always for the admin)
   ]);
 
   if (!profile) {
@@ -43,6 +44,7 @@ async function Profile({ searchParams }: { searchParams: PageProps<"/settings">[
           userId={user.id}
           isAdmin={admin}
           initial={{ displayName: profile.display_name, username: profile.username }}
+          nextUsernameChange={nextUsernameChange ?? null}
         />
       </Section>
       <Section title="Sign-in methods">

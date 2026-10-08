@@ -7,6 +7,8 @@ const artist = "Spektral";
 export const site = {
   name: "Starfox Labs",
   author: "Ivan",
+  /** The name Ivan goes by on the site (the home tab, the footer, his profile, /privacy). */
+  handle: "Gvan",
   artist,
   // Canonical address, used for link previews and canonical URLs.
   // NEXT_PUBLIC_SITE_URL can override it (e.g. for a staging deployment).

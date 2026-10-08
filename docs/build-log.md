@@ -1366,7 +1366,7 @@ Plan, steps and Ivan's decisions: CLAUDE.md, "Start here".
     rebuilt with the switch off. Gotcha: with a 900 px window, "halfway down" an
     1800 px article already shows the end; test "just before the end is in view".
 
-## Phase 5 — Comments (in progress)
+## Phase 5 — Comments (done 2026-10-08)
 Plan, steps and Ivan's decisions (2026-10-08): CLAUDE.md, "Start here".
 
 - **Step 1 — Schema (done 2026-10-08: applied with Ivan's OK; Ivan ran `rls-check.sql`, all passed).**
@@ -1469,6 +1469,31 @@ Plan, steps and Ivan's decisions (2026-10-08): CLAUDE.md, "Start here".
     (not-admin) and sees no list. `comments-check` rerun: 45 (now on the newest article
     without comments, so real comments are never touched; Ivan's two checklist comments
     stayed). The admin's own view needs Ivan's sign-in: his checklist.
+
+- **Step 4 — Wrap-up (done 2026-10-08; tested by Ivan, checklist 1–7).** Ivan's choices:
+  read-only username with the date; Account shows the comment count; the switch removed;
+  "Gvan" on `/privacy`.
+  - Username: `/settings` reads `next_username_change()`; `saveProfile` returns it after a
+    save (`nextUsernameChange`), so a change locks the field at once. `ProfileForm`:
+    read-only (`read-only:` styles) with "You can change your username again on <date,
+    time>"; otherwise the hint warns "You can change it once every 30 days." (not for
+    the admin). `components/local-date-time.tsx`: `LocalDateTime` (UTC date from the
+    server, local date and time in the browser via `useSyncExternalStore`, no hydration
+    mismatch) and `localDateTime` (also the comments' tooltip).
+  - Account: "You've written N comments." (counts the reader's live comments on
+    published articles; RLS hides the rest) + "Your comments stay, shown as 'deleted
+    user'…". `/privacy` (updated 8 October 2026): prompt memory, private rename date,
+    public comments, a Comments section, backups hold comments, comments stay after
+    deleting the account; owner named by `site.handle` ("Gvan").
+  - Sign-up prompt always on: `lib/features.ts` deleted (`git rm`), the article page
+    always renders the marker and the prompt, `.env.example` line removed.
+  - Tested: production build; Edge on :3124, `wrapup-check` 15 (a throwaway reader: hint
+    before, read-only + date 30 days on after saving, database change time, still
+    locked after a reload with local time, display name still saves, a forced change
+    refused with the 30-day message; Account 0 then 1 comment and the wording;
+    `/privacy` contents, no "Ivan"; article HTML has the marker, no prompt on load,
+    prompt after reading to the end above Comments; console clean), `comments-check`
+    rerun 45.
 
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so

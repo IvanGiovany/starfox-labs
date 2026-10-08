@@ -19,8 +19,7 @@ const SHORT_ARTICLE_DELAY_MS = 15_000;
 //     screen, after 15 seconds on the page;
 //   - nobody is signed in, and nobody ever has been on this browser;
 //   - the reader hasn't chosen "Not now" before (remembered in the browser).
-// Switched off until Phase 5 (lib/features.ts): the article page doesn't
-// render it at all then.
+// On since Phase 5, when comments gave an account a purpose.
 export function SignUpPrompt({ slug }: { slug: string }) {
   const [visible, setVisible] = useState(false);
   const headingId = useId();

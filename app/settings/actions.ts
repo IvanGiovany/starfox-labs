@@ -20,6 +20,8 @@ export type ProfileState = {
   status: "idle" | "saved" | "error";
   values: { displayName: string; username: string };
   errors?: ProfileFieldErrors & { form?: string };
+  /** When the username may change again (null: now); set after a save. */
+  nextUsernameChange?: string | null;
 };
 
 export async function saveProfile(prev: ProfileState, formData: FormData): Promise<ProfileState> {
@@ -43,7 +45,9 @@ export async function saveProfile(prev: ProfileState, formData: FormData): Promi
     .update({ display_name: values.displayName, username: values.username })
     .eq("id", user.id);
   if (error) return { status: "error", values, errors: profileSaveError(error) };
-  return { status: "saved", values };
+  // A changed username starts the 30 days (migration 20261008100000).
+  const { data: next } = await supabase.rpc("next_username_change");
+  return { status: "saved", values, nextUsernameChange: next ?? null };
 }
 
 export type PictureResult = { error?: string };
