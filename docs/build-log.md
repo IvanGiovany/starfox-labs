@@ -1758,6 +1758,17 @@ Ivan's choices: "Gvan" only in the structured data; refresh the README at the en
   paths (`MSYS_NO_PATHCONV=1`); Lighthouse 13 names its LCP audits
   `lcp-breakdown-insight` / `lcp-discovery-insight`.
 
+## Search favicon (2026-10-08)
+Google still showed the old (Vercel) favicon and an old description. Checked the live site
+as Googlebot: title "Starfox Labs" and the current description are served, no `noindex`,
+`robots.txt` doesn't block the icons, and the live icons are Ivan's Shinx (since
+`53982c6`), so Google's copy is simply stale. One real gap with Google's favicon
+guidance (square, at least 48 × 48, ideally a multiple of 48): `app/icon.png` was 32 × 32.
+Now 192 × 192, the same pixel art scaled 6× with nearest-neighbour (checked: shrinking it
+back gives the original pixels exactly), linked as `sizes="192x192"`; `favicon.ico`
+(16 / 32 / 48) and the 180 × 180 Apple icon stay. To refresh Google sooner: Search
+Console → URL inspection → `https://starfoxlabs.org/` → Request indexing.
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:
