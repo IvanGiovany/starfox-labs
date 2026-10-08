@@ -1366,6 +1366,45 @@ Plan, steps and Ivan's decisions: CLAUDE.md, "Start here".
     rebuilt with the switch off. Gotcha: with a 900 px window, "halfway down" an
     1800 px article already shows the end; test "just before the end is in view".
 
+## Phase 5 — Comments (in progress)
+Plan, steps and Ivan's decisions (2026-10-08): CLAUDE.md, "Start here".
+
+- **Step 1 — Schema (done 2026-10-08: applied with Ivan's OK; Ivan ran `rls-check.sql`, all passed).**
+  - Backup first (`backups/2026-10-08T02-10-30.json`).
+  - `supabase/migrations/20261008100000_comments.sql`: `comments` (`post_id` cascade,
+    `user_id` → profiles `on delete set null` = "deleted user", `parent_id`, `body`
+    1–2000 characters with no leading/trailing space, `by_admin`, `created_at`,
+    `edited_at`, `deleted_at`; placeholders have an empty body and no author).
+    `check_new_comment()` (before insert, security definer): reply rules first (parent
+    exists, is top-level, same article, not deleted; parent read `for share` so a reply
+    can't slip in during a delete), then `by_admin`, then the rate limit (per-person
+    advisory lock; 20 s / 30 per 24 h; `PT429`, which PostgREST answers with 429;
+    the admin and inserts without a user, e.g. restores, skip it). `mark_comment_edited()`.
+    RLS: read on published articles (admin all), insert as yourself on published
+    articles, update own non-deleted; grants: insert `(post_id, parent_id, body)`,
+    update `(body)`, no delete. `delete_comment(id)` → `removed` / `placeholder` /
+    `gone`. Truncate guard. Username limit: `profiles.username_changed_at`,
+    `limit_username_changes()` (after `profiles_check_names`, by trigger name order;
+    `PT429`), `next_username_change()`; `profiles` select is now granted per column
+    (without `username_changed_at`). `profileSaveError` maps `PT429`.
+  - `rls-check.sql`: 51 PASS lines. Name checks moved before the reader's first rename
+    (otherwise the 30-day limit would refuse them first). The comments part steps
+    around the rate limit by backdating the reader's comments as the owner (`now()` is
+    fixed for the whole transaction) and adds 29 old ones to reach the daily limit.
+    Gotcha (Ivan's first run failed on it): `if delete_comment(x) <> 'removed' or
+    exists (… where id = x)` is one statement, and its `exists` reads the snapshot
+    taken before the function deleted the row. Call the function in its own
+    statement (`outcome := delete_comment(x)`), then check.
+  - `db-backup.mjs`: `comments` in `TABLES` (after `profiles`), restores top-level
+    comments before replies, readable labels for rows without a title.
+  - Checked: every statement and PL/pgSQL body parsed with `@libpg-query/parser`
+    (scratchpad; `parsePlPgSQL`, DO blocks wrapped as functions; a broken block is
+    caught); dry run listed only this file. Over the API after applying, as a visitor:
+    comments readable (empty), profiles readable, `username_changed_at` 401, insert 401,
+    `delete_comment` and `next_username_change` 401. `db:types` added `comments`,
+    `username_changed_at`, both functions (`next_username_change` is typed `string` but
+    returns null when a change is allowed). Backup includes comments; lint and build pass.
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:

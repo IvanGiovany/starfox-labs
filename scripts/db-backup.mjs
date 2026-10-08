@@ -16,9 +16,10 @@
 import { createClient } from "@supabase/supabase-js";
 import { mkdir, readdir, readFile, unlink, writeFile } from "node:fs/promises";
 
-// Articles first: items link to them, so a restore must add them before items.
-// New content tables go here (and in the truncate guard's migration).
-const TABLES = ["posts", "projects", "books", "tracks", "games", "hobby_items", "profiles"];
+// Restore order: articles before the items that link to them, profiles before
+// the comments that point at them. New content tables go here (and get the
+// truncate guard, see 20261007130000).
+const TABLES = ["posts", "projects", "books", "tracks", "games", "hobby_items", "profiles", "comments"];
 // Exposed through the API but not backed up: `admins` is one row, added again
 // by hand in the SQL editor; `post_items` is a view.
 const NOT_BACKED_UP = ["admins", "post_items"];
@@ -92,6 +93,14 @@ async function pruneOldBackups(now = Date.now()) {
   if (removed.length) console.log(`deleted ${removed.length} backup(s) older than ${KEEP_DAYS} days: ${removed.join(", ")}`);
 }
 
+/** How a row is named in the restore's list: title, username, or the start of a comment. */
+function label(row) {
+  if (row.title) return row.title;
+  if (row.username) return `@${row.username}`;
+  if (typeof row.body === "string") return row.body ? JSON.stringify(row.body.slice(0, 40)) : "(deleted comment)";
+  return "";
+}
+
 async function restore(file, apply) {
   if (!file) throw new Error("Usage: npm run db:restore -- backups/<file>.json [--apply]");
   const saved = JSON.parse(await readFile(file, "utf8"));
@@ -102,9 +111,10 @@ async function restore(file, apply) {
   for (const table of TABLES) {
     const rows = saved.tables[table] ?? [];
     const existing = new Set((await allRows(table, "id")).map((r) => r.id));
-    const missing = rows.filter((r) => !existing.has(r.id));
+    // Top-level comments before replies, so a reply's comment is always there.
+    const missing = rows.filter((r) => !existing.has(r.id)).sort((a, b) => (a.parent_id ? 1 : 0) - (b.parent_id ? 1 : 0));
     console.log(`${table}: ${missing.length} missing of ${rows.length}`);
-    for (const r of missing) console.log(`  ${r.id}  ${r.title}`);
+    for (const r of missing) console.log(`  ${r.id}  ${label(r)}`);
     if (!apply || !missing.length) continue;
 
     // Plain inserts: a row that exists by now is an error, never overwritten.
@@ -117,7 +127,7 @@ async function restore(file, apply) {
         const { error: rowError } = await db.from(table).insert(row);
         if (rowError) {
           failed++;
-          console.error(`  FAILED ${row.id} (${row.title}): ${rowError.message}`);
+          console.error(`  FAILED ${row.id} (${label(row)}): ${rowError.message}`);
         }
       }
     }

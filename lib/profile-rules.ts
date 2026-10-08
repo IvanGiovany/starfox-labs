@@ -46,10 +46,12 @@ export type ProfileFieldErrors = { displayName?: string; username?: string };
 /**
  * Turns the database's refusal into a message for the right field. Postgres
  * codes: 23505 unique (the username is taken), 23514 a check (a reserved name,
- * or a rule the form should already have caught).
+ * or a rule the form should already have caught), PT429 the username was
+ * changed less than 30 days ago (migration 20261008100000).
  */
 export function profileSaveError(error: { code?: string; message?: string }): ProfileFieldErrors & { form?: string } {
   if (error.code === "23505") return { username: "That username is taken." };
+  if (error.code === "PT429") return { username: "You can change your username once every 30 days." };
   if (error.code === "23514") {
     if (error.message?.includes("reserved")) return { form: "That name is reserved." };
     if (error.message?.includes("username")) return { username: "Use 3–20 lowercase letters, numbers or _." };

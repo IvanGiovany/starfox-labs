@@ -321,7 +321,8 @@ from the live schema (`npm run db:types`) — regenerate it after every migratio
 4. **Accounts + Settings** — *done (2026-10-07).* Reader sign-in (Google + email), profiles,
    profile pictures, Settings tabs, delete account, the sign-up prompt (built, off until
    Phase 5).
-5. **Comments** — comments and replies on articles, moderation.
+5. **Comments** — comments and replies on articles, moderation. *In progress (plan
+   approved 2026-10-08, see "Start here").*
 6. **Newsletter** — subscribe (with or without account), double opt-in, send on publish, unsubscribe.
    **Before it goes live:** two-factor sign-in (authenticator app, Supabase MFA/TOTP) for
    the admin account, since it can publish and email every subscriber. `requireAdmin()` and
@@ -365,10 +366,32 @@ Everything built so far, with file maps, decisions and how it was tested:
   open"). The working tree is clean except `GIFS/` (Ivan's originals, untracked, safe for
   him to delete). Readers can sign up (Google or email), have a profile and picture,
   change settings and delete their account; the live Google app is published.
-- **Next: Phase 5 (Comments), starting with a plan for Ivan to approve** (CLAUDE.md
-  "Accounts, comments, newsletter": signed-in readers only, everyone reads, newest
-  first, one level of replies, edit / delete your own, the admin deletes any, basic rate
-  limiting). Carry these in:
+- **Now: Phase 5 (Comments), plan approved 2026-10-08.** Comments load in the browser
+  (article pages stay static) and are written straight from it with the publishable
+  key; **every rule is in the database** (RLS + triggers), since anyone can call the
+  API directly. Steps: **5.1 schema** (migration `20261008100000_comments.sql`:
+  `comments` table, `delete_comment()`, rate limit, username-change limit,
+  `next_username_change()`; **applied 2026-10-08** with Ivan's OK, `db:types`
+  regenerated; **done**: Ivan ran `rls-check.sql`, all passed), 5.2 comments on articles (read, post, reply, edit, delete own; plain text;
+  `#comment-<id>` links; first 30 then "Show more"), 5.3 moderation (Delete on every
+  comment for the admin + an admin **Comments** tab of the latest across articles), 5.4
+  wrap-up (Settings shows when the username can change again; Account + `/privacy`
+  wording; sign-up prompt on).
+  - **Ivan's decisions (2026-10-08):** comments go live at once (no approval queue;
+    "approve before publishing" is a to-do in "Still open"); a deleted comment with
+    replies becomes a "This comment was deleted." placeholder (text and author
+    cleared), removed with its last reply; deleting an article deletes its comments;
+    plain text, links not clickable; max 2000 characters; 1 comment every 20 s and 30 a
+    day per account, admin exempt (code `PT429` → HTTP 429); editing any time, marked
+    "edited"; username: the first change any time, then once every 30 days (admin
+    exempt; `username_changed_at` isn't publicly readable: `profiles` select is granted
+    column by column now); blocking readers later if needed; the admin Comments tab: yes.
+    Replies sit under their comment oldest first; top-level comments newest first.
+  - **Testing comments:** comments only work on published articles, so browser checks
+    post `[test] …` comments on a live demo article (Ivan's OK, 2026-10-08) and delete
+    them; **delete test comments before deleting a throwaway account**, or they stay as
+    "deleted user".
+  Carried in from Phase 4 (all covered by the steps above):
   - **Switch the sign-up prompt on** (`SIGN_UP_PROMPT` in `lib/features.ts`) once
     comments work, and add its browser memory to `/privacy` (`lib/sign-up-memory.ts`).
   - **A username-change limit** (e.g. once a month), so nobody dodges moderation by
@@ -663,8 +686,11 @@ Everything built so far, with file maps, decisions and how it was tested:
   `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (the publishable
   key, NOT `..._ANON_KEY` as first suggested); check the latest deploy succeeded.
 - **Known dead links**: none (all sections live since step 5).
-- **Username changes have no limit** (Ivan, 2026-10-07): add one in Phase 5 with
-  comments (e.g. once a month), so nobody can dodge moderation by renaming.
+- **Username changes: once every 30 days** (Ivan, 2026-10-07/08), so nobody dodges
+  moderation by renaming: in the 5.1 migration; Settings explains it in 5.4.
+- **Approve comments before publishing** (to-do, Ivan 2026-10-08): only if spam becomes a
+  problem. Comments go live at once for now. (Also "later if needed": blocking a reader
+  from commenting.)
 - **Switch the sign-up prompt on in Phase 5** (built in 4.5, off): set
   `SIGN_UP_PROMPT` to on in `lib/features.ts`, and add to `/privacy` that the browser
   remembers a dismissed prompt and that someone was signed in (`lib/sign-up-memory.ts`).

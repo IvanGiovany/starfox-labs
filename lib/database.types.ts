@@ -115,6 +115,64 @@ export type Database = {
           },
         ]
       }
+      comments: {
+        Row: {
+          body: string
+          by_admin: boolean
+          created_at: string
+          deleted_at: string | null
+          edited_at: string | null
+          id: string
+          parent_id: string | null
+          post_id: string
+          user_id: string | null
+        }
+        Insert: {
+          body: string
+          by_admin?: boolean
+          created_at?: string
+          deleted_at?: string | null
+          edited_at?: string | null
+          id?: string
+          parent_id?: string | null
+          post_id: string
+          user_id?: string | null
+        }
+        Update: {
+          body?: string
+          by_admin?: boolean
+          created_at?: string
+          deleted_at?: string | null
+          edited_at?: string | null
+          id?: string
+          parent_id?: string | null
+          post_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       games: {
         Row: {
           badges: string[]
@@ -307,6 +365,7 @@ export type Database = {
           id: string
           updated_at: string
           username: string
+          username_changed_at: string | null
         }
         Insert: {
           avatar_path?: string | null
@@ -315,6 +374,7 @@ export type Database = {
           id: string
           updated_at?: string
           username: string
+          username_changed_at?: string | null
         }
         Update: {
           avatar_path?: string | null
@@ -323,6 +383,7 @@ export type Database = {
           id?: string
           updated_at?: string
           username?: string
+          username_changed_at?: string | null
         }
         Relationships: []
       }
@@ -484,9 +545,11 @@ export type Database = {
       }
     }
     Functions: {
+      delete_comment: { Args: { comment_id: string }; Returns: string }
       delete_my_account: { Args: never; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
       is_reserved_name: { Args: { name: string }; Returns: boolean }
+      next_username_change: { Args: never; Returns: string }
       reorder_items: {
         Args: { ids: string[]; section: string }
         Returns: undefined
