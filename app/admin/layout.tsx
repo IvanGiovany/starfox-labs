@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { signOut } from "@/app/login/actions";
 import { AdminTabs } from "@/components/admin/admin-tabs";
+import { InstantNavigation } from "@/components/instant-navigation";
 import { requireAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = {
@@ -14,9 +15,12 @@ export const metadata: Metadata = {
 // request-time work, which Cache Components requires inside <Suspense>.
 export default function AdminLayout({ children }: LayoutProps<"/admin">) {
   return (
-    <Suspense fallback={<p className="py-10 text-fg-muted">Checking sign-in…</p>}>
-      <AdminGate>{children}</AdminGate>
-    </Suspense>
+    <>
+      <InstantNavigation />
+      <Suspense fallback={<p className="py-10 text-fg-muted">Checking sign-in…</p>}>
+        <AdminGate>{children}</AdminGate>
+      </Suspense>
+    </>
   );
 }
 

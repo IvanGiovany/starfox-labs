@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { InstantNavigation } from "@/components/instant-navigation";
 import { SectionHeader } from "@/components/section-header";
 import { getCurrentUser } from "@/lib/auth";
 import { safeNextPath } from "@/lib/next-path";
@@ -20,6 +21,7 @@ export const metadata: Metadata = {
 export default function TwoFactorPage({ searchParams }: PageProps<"/login/two-factor">) {
   return (
     <>
+      <InstantNavigation />
       <SectionHeader title="one more step">
         Open your authenticator app and type the 6-digit code for Starfox Labs.
       </SectionHeader>

@@ -700,7 +700,51 @@ body::before {
   .sprout-f4 { animation: sprout-f4 5s step-end infinite; }
 }
 
-/* Respect reduced motion everywhere, including future page transitions. */
+/*
+ * Page transitions (the ViewTransition in app/layout.tsx): only the page
+ * content cross-fades, out in 120 ms, in over 200 ms. No slide, no resizing
+ * (the group snaps to the new size); the rest of the page (header, footer,
+ * background: the "root" snapshot) switches at once and holds still. Pages
+ * with a data-instant-navigation marker (admin, settings, sign-in) switch
+ * instantly; so does everything with reduced motion (below).
+ */
+::view-transition-group(.page-fade) {
+  animation-duration: 0s;
+}
+::view-transition-old(.page-fade) {
+  animation: page-fade-out 120ms ease-out both;
+}
+::view-transition-new(.page-fade) {
+  animation: page-fade-in 200ms ease-out 60ms both;
+}
+@keyframes page-fade-out {
+  to { opacity: 0; }
+}
+@keyframes page-fade-in {
+  from { opacity: 0; }
+}
+::view-transition-group(root) {
+  /* Its default animation changes nothing visible but would keep every
+     transition (and the page's clicks) waiting 250 ms. */
+  animation: none;
+}
+::view-transition-old(root) {
+  animation: none;
+  opacity: 0;
+}
+::view-transition-new(root) {
+  animation: none;
+}
+:root:has([data-instant-navigation])::view-transition-group(.page-fade),
+:root:has([data-instant-navigation])::view-transition-old(.page-fade),
+:root:has([data-instant-navigation])::view-transition-new(.page-fade) {
+  animation: none;
+}
+:root:has([data-instant-navigation])::view-transition-old(.page-fade) {
+  opacity: 0;
+}
+
+/* Respect reduced motion everywhere, including the page transitions. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -711,6 +755,15 @@ body::before {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  /* The view-transition pseudo-elements aren't matched by "*". */
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+  ::view-transition-old(*) {
+    opacity: 0;
   }
 }
 

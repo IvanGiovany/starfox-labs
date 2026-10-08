@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { InstantNavigation } from "@/components/instant-navigation";
 import { SectionHeader } from "@/components/section-header";
 import { SettingsTabs } from "./settings-tabs";
 
@@ -15,6 +16,7 @@ export const metadata: Metadata = {
 export default function SettingsLayout({ children }: LayoutProps<"/settings">) {
   return (
     <>
+      <InstantNavigation />
       <SectionHeader title="settings">
         Your profile and how the site looks for you. Your name, username and picture are public;
         your email address never is.

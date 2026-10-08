@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Newsreader } from "next/font/google";
+import { ViewTransition } from "react";
 import { InlineScript } from "@/components/inline-script";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -66,7 +67,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <div className="mx-auto flex min-h-dvh w-full max-w-[calc(var(--page-max)+2*var(--page-pad))] flex-col px-(--page-pad)">
           <SiteHeader />
           <main id="main" className="flex-1">
-            {children}
+            {/* Page transitions: on navigation only the page content cross-fades
+                (`page-fade` in globals.css); header, footer and background hold
+                still. The admin, settings and sign-in pages switch instantly
+                (they carry data-instant-navigation). One wrapper element, so the
+                content fades as one piece. */}
+            <ViewTransition default="page-fade">
+              <div>{children}</div>
+            </ViewTransition>
           </main>
           <SiteFooter />
         </div>

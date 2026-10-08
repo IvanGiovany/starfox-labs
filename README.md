@@ -26,7 +26,7 @@ never means touching code.
 - Friendly **404 pages** that point somewhere useful.
 
 The rest (admin editor, the Projects / Reading / Music / Games / Hobbies sections, reader
-accounts, comments, newsletter, loyalty ranks) is on the [roadmap](#roadmap).
+accounts, comments, newsletter) is on the [roadmap](#roadmap).
 
 ## Tech stack
 
@@ -143,13 +143,12 @@ You'll need Node.js 20.9 or newer and a free [Supabase](https://supabase.com) pr
 Built one phase at a time; the full plan is in [CLAUDE.md](CLAUDE.md#build-phases-build-one-phase-at-a-time).
 
 - [x] **Foundation**: design system, home, writing, articles, link previews, 404s
-- [ ] **Admin**: sign-in for me only, and an editor for articles and every section
-- [ ] **Sections**: Projects, Reading, Music, Games, Hobbies
-- [ ] **Accounts and settings** for readers (optional)
-- [ ] **Comments**
-- [ ] **Newsletter** with double opt-in
-- [ ] **Ranks** for long-time readers
-- [ ] **Polish**: latest YouTube videos, page transitions, RSS, sitemap
+- [x] **Admin**: sign-in for me only (with two-factor), and an editor for articles and every section
+- [x] **Sections**: Projects, Reading, Music, Games, Hobbies
+- [x] **Accounts and settings** for readers (optional)
+- [x] **Comments**
+- [ ] **Newsletter** with double opt-in (database ready; paused)
+- [ ] **Polish**: latest YouTube videos, RSS and sitemap done; page transitions and an SEO pass next
 
 ## Credits
 

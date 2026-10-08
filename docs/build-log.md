@@ -1709,6 +1709,27 @@ Ivan's choices: the newest 2 videos, Shorts included, full-bleed thumbnail cards
   (finish the finite animations before measuring); `networkidle0` hung (wait for `load`
   and the images).
 
+## Phase 8, step 5 — Page transitions (2026-10-08)
+Ivan's choices: a content-only cross-fade, no slide; public pages only. (Phase 7, ranks,
+was dropped the same day; removed from CLAUDE.md and the README.)
+- Next 16 + React 19.2's `<ViewTransition>` (browser View Transitions API; no library;
+  no animation where unsupported). `app/layout.tsx`: `<ViewTransition
+  default="page-fade"><div>{children}</div></ViewTransition>` inside `<main>`.
+  `globals.css`: `::view-transition-group(.page-fade)` 0 s (no resize morph);
+  `-old` `page-fade-out` 120 ms; `-new` `page-fade-in` 200 ms after 60 ms; the root
+  snapshot and its group don't animate (the group's default 250 ms changes nothing
+  visible but held every transition, and clicks, for a quarter second: found by the
+  check). `components/instant-navigation.tsx` (`<span data-instant-navigation hidden>`)
+  in the admin and settings layouts and both sign-in pages; CSS
+  `:root:has([data-instant-navigation])` turns the fade off there (no `usePathname`, so
+  no extra `<Suspense>`). Reduced motion: every view-transition animation off.
+- Tested: `transition-check` 22 in Edge and real Firefox 157, each with and without
+  reduced motion (a recorder wraps `document.startViewTransition` and reads the
+  pseudo-elements' animations): no transition on first load; one per header-tab
+  navigation; the exact fade timings; root and group still; the cards' drop-in still
+  plays on the arriving page; sign-in instant; reduced motion: nothing animates;
+  consoles clean. Reruns: `empty-check` 24, `video-check` 15, `preview-check` 40.
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:

@@ -3,7 +3,7 @@
 ## What this is
 Personal blog for Ivan at starfoxlabs.org. Mostly software topics, some general posts.
 Promotes Ivan's YouTube channel. Readers can optionally create accounts, comment on
-articles, subscribe to a newsletter, and earn ranks for long-term loyalty (top rank: **Immortal**).
+articles, and subscribe to a newsletter.
 
 This is also a portfolio project for software engineering job applications, so
 code quality, clear structure, and a good README matter.
@@ -337,24 +337,15 @@ from the live schema (`npm run db:types`) — regenerate it after every migratio
    (Docker, `npx supabase start`) or make it impossible for a test to send emails (e.g.
    sending refuses unless it's the production deployment, and test items can never trigger
    it). Decide and build this before the send-on-publish code is switched on.
-7. **Ranks** — see rules below; show rank badges next to usernames and on profiles.
+   (Phase 7, ranks, was dropped on 2026-10-08: Ivan won't build it. The numbering is kept
+   so the build log and commits still match.)
 8. **YouTube + polish** — in this order (Ivan, 2026-10-08): sitemap + robots.txt (*done
-   2026-10-08*), RSS feed (*done 2026-10-08*: `/rss.xml`, summaries),
-   link previews (*done 2026-10-08*: one per section, no counts; `/privacy` re-exports the
-   site card), the YouTube section (*done 2026-10-08*: 2 newest videos on home, Shorts
-   included, from the channel's public feed),
-   link previews for every page, then the YouTube section from the channel's public video
-   feed (no API key); later page transitions and an SEO pass. (No ⌘K search: dropped.)
-
-## Rank rules (draft — Ivan to confirm)
-Track *active days* and *articles read* (one read per article per user), not raw page views.
-| Rank | Requirement |
-|---|---|
-| Initiate | Just joined |
-| Regular | 5+ articles read |
-| Veteran | Member 3+ months, 20+ articles read |
-| Legend | Member 6+ months, 50+ articles read, at least 1 comment |
-| Immortal | Member 12+ months, active in at least 8 of those 12 months |
+   2026-10-08*), RSS feed (*done 2026-10-08*: `/rss.xml`, summaries), link previews
+   (*done 2026-10-08*: one per section, no counts; `/privacy` re-exports the site card),
+   the YouTube section (*done 2026-10-08*: 2 newest videos on home, Shorts included, from
+   the channel's public feed), page transitions (*done 2026-10-08*: content-only cross-fade,
+   public pages only), then an SEO pass. (No ⌘K
+   search: dropped.)
 
 ## Rules for Claude
 - Plan first. Propose a plan and wait for approval before writing code for a new phase.
@@ -377,6 +368,14 @@ Everything built so far, with file maps, decisions and how it was tested:
   him to delete). Readers can sign up (Google or email), have a profile and picture,
   change settings and delete their account; the live Google app is published. Signed-in
   readers comment on articles (Phase 5).
+- **Page transitions (2026-10-08):** React's `<ViewTransition default="page-fade">`
+  around the page content in `app/layout.tsx` (one wrapper `<div>`); CSS in
+  `globals.css`: content out 120 ms, in 200 ms after 60 ms; the root (header, footer,
+  background) and its group never animate; pages that render `<InstantNavigation />`
+  (admin, settings, sign-in) switch instantly via `:root:has([data-instant-navigation])`;
+  reduced motion turns every view-transition animation off (the `*` rule doesn't reach
+  those pseudo-elements). Any new signed-in or form-heavy page should render
+  `<InstantNavigation />`.
 - **YouTube on home (2026-10-08):** `site.youtubeChannelId` (`UCi1vz5yZr_iJe3aW9xX4OmA`,
   the channel behind @gvan1); `lib/youtube-feed.ts` (pure: `parseYouTubeFeed`, thumbnails)
   and `lib/youtube-loader.ts` (`getLatestVideos`: "use cache", hours, tag `youtube`;
@@ -523,7 +522,7 @@ Everything built so far, with file maps, decisions and how it was tested:
     `puppeteer-core` in Edge and throwaway readers (as in Phase 4): `comments-check` 45
     (runs on the newest article **without** comments, so real comments are never
     touched), `admin-gate-check` 3, `wrapup-check` 15. The admin's own views need Ivan's
-    sign-in: his checklist. Rank rules (Phase 7) will count from `profiles.created_at`.
+    sign-in: his checklist.
 - **How Phase 4 was tested** (build log, "Phase 4"): unit tests with tsx; production
   build on :3124 with `puppeteer-core` in Edge, using **throwaway reader accounts** made
   with the service key and signed in without any email (`admin.generateLink` →
@@ -588,7 +587,7 @@ Everything built so far, with file maps, decisions and how it was tested:
 - **What comes next:** Ivan's choice (2026-10-08), with Phase 6 paused: **replace the demo
   content with his real content**, and the **polish phase** (Phase 8: RSS feed, sitemap +
   robots.txt, link previews for every page, the YouTube section). Then 6 Newsletter
-  (resume at 6.3) and 7 Ranks. The standing rules still apply:
+  (resume at 6.3). The standing rules still apply:
   - **Plan first** for every phase and step; wait for Ivan's OK before building.
   - **Ivan runs the browser checklists** himself; give him a short checklist each step.
     Playwright only when he explicitly asks, and then localhost only (see "Browser

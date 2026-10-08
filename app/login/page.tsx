@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { InstantNavigation } from "@/components/instant-navigation";
 import { SectionHeader } from "@/components/section-header";
 import { getCurrentUser } from "@/lib/auth";
 import { safeNextPath } from "@/lib/next-path";
@@ -18,6 +19,7 @@ export const metadata: Metadata = {
 export default function LoginPage({ searchParams }: PageProps<"/login">) {
   return (
     <>
+      <InstantNavigation />
       <SectionHeader title="sign in">
         Optional: everything here can be read without an account. With one you get a profile
         with your name and picture, and you can comment on articles.
