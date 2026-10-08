@@ -1405,6 +1405,54 @@ Plan, steps and Ivan's decisions (2026-10-08): CLAUDE.md, "Start here".
     `username_changed_at`, both functions (`next_username_change` is typed `string` but
     returns null when a change is allowed). Backup includes comments; lint and build pass.
 
+- **Step 2 — Comments on articles (done 2026-10-08; tested by Ivan, checklist 1–9).**
+  - `lib/comments.ts` (browser-safe, tested): `COMMENT_MAX` 2000, `COMMENTS_PAGE` 30,
+    `COMMENT_COLUMNS` (author embedded from `profiles`), `normaliseCommentBody` (CRLF,
+    3+ blank lines → 1, trim), `commentProblem`, `buildThreads` (replies oldest first,
+    ties by id), `countVisible`, `afterDelete` (mirrors `delete_comment()`),
+    `authorState` (author / deleted user / placeholder), `mentionFor` (a reply to a
+    reply starts `@username `), `relativeTime` (just now … 6 days ago, then the date),
+    `commentError` (PT429 and the reply rules' own messages; raw constraint names
+    replaced). `lib/comments-api.ts`: browser calls (page of top-level comments by
+    keyset on `created_at, id` + their replies, exact count without placeholders,
+    post, edit, `delete_comment`).
+  - `components/comments.tsx`: loads when the section is within 800 px of the screen
+    (an IntersectionObserver; a `#comment-…` link loads on its first callback, then
+    scrolls to the comment and tints it), heading count, the viewer from
+    `onAuthStateChange` (follows the header's sign-out; profile fetched in a
+    `setTimeout`, as Supabase advises), box for signed-in readers ("Comment as
+    <name>…"), "Sign in to join the conversation." otherwise (`next` =
+    `/writing/<slug>#comments`), threads with replies indented under a rule from the
+    picture, Reply / Edit / Delete (two-step: "Delete this comment?" Delete / Keep),
+    placeholders ("This comment was deleted.", no Reply in that thread), "deleted
+    user", AUTHOR badge (`tone-lavender`), time links to `#comment-<id>` (full date as
+    tooltip), "· edited". `components/comment-form.tsx`: grows with the text, count
+    from 1,800, Ctrl/⌘+Enter, Escape cancels replies and edits, `autoComplete="off"`
+    (Firefox form restore). The article page keeps a static `<section id="comments">`.
+  - Lint gotchas (React compiler rules): no `setState` at the top of an effect (start
+    async work with the `await`; the observer's first callback instead of a direct
+    call), no `Date.now()` in handlers defined in the component body (the reply box is
+    keyed by the comment it answers).
+  - Tested: tsx 7 groups (normalising, limits, threads, deletes, authors/mentions,
+    relative times, errors). Production build (articles still ○). Edge on :3124,
+    `comments-check` 45, on the newest demo article with two throwaway readers (and a
+    third for the phone), everything deleted afterwards (0 comments, 0 accounts left):
+    static HTML has the section; nothing fetched before scrolling near; signed-out
+    link; Post off when empty / spaces / over 2,000; posting tidies the text; name,
+    @username, "just now", line breaks; count 0 → 1 → 2 → 1; the second comment within
+    20 s shows the database's "Slow down…" and keeps the text; count from 1,850 and the
+    box grows; edit focused, saved, "edited"; someone else's comment has only Reply;
+    reply box empty and focused, reply saved and indented, box closes; reply to a reply
+    starts `@username `; Escape closes; `#comment-` link loads, scrolls, tints; Delete
+    asks, Keep keeps; placeholder keeps the reply, no Reply there; last reply removes
+    both; 31 comments: 30 newest first, count 31, Show more adds the last without
+    repeats; a deleted account's comment shows "deleted user"; signing out in the
+    header swaps the box for "Sign in"; phone 390 px: no sideways scroll (long words and
+    addresses wrap), buttons ≥ 44 px; console clean apart from the browser's own log
+    of the deliberate 429. Test gotchas: while "Show more" loads its text is
+    "Loading…" (wait for the comments, not for the text to go); test comment bodies
+    must not end in a space (the database refuses them).
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:

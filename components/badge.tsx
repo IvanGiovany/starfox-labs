@@ -14,6 +14,7 @@ const STATUS_TONES: Record<string, Tone> = {
   playing: "tone-yellow",
   finished: "tone-green",
   dropped: "tone-pink",
+  author: "tone-lavender", // the admin's comments
 };
 
 /** The tone class for a text (also colours books' typed covers). */

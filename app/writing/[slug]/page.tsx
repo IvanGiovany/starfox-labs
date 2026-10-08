@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AboutItem } from "@/components/about-item";
 import { ArticleView } from "@/components/article-view";
+import { Comments } from "@/components/comments";
 import { ARTICLE_END_ID, SignUpPrompt } from "@/components/sign-up-prompt";
 import { SIGN_UP_PROMPT } from "@/lib/features";
 import { readingTime } from "@/lib/format";
@@ -84,18 +85,10 @@ export default async function ArticlePage({ params }: PageProps<"/writing/[slug]
 
       {SIGN_UP_PROMPT && <SignUpPrompt slug={post.slug} />}
 
-      {/*
-        TODO(Phase 5 — Comments): comments and replies go here. Signed-in
-        readers can post; everyone can read. Keep the #comments id so links
-        like /writing/slug#comments keep working.
-      */}
-      <section id="comments" aria-labelledby="comments-heading" className="mt-16 border-t border-rule pt-8">
-        <h2 id="comments-heading" className="font-serif text-2xl font-semibold">
-          Comments
-        </h2>
-        <p className="mt-3 text-fg-muted">
-          Comments aren&apos;t open yet. Soon you&apos;ll be able to sign in and reply here.
-        </p>
+      {/* Comments load in the browser, so this page stays static. The
+          #comments id is linked to (e.g. from sign-in: /writing/slug#comments). */}
+      <section id="comments" aria-labelledby="comments-heading" className="mt-16 scroll-mt-28 border-t border-rule pt-8">
+        <Comments postId={post.id} slug={post.slug} />
       </section>
     </article>
   );
