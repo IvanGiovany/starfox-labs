@@ -338,7 +338,8 @@ from the live schema (`npm run db:types`) — regenerate it after every migratio
    sending refuses unless it's the production deployment, and test items can never trigger
    it). Decide and build this before the send-on-publish code is switched on.
 7. **Ranks** — see rules below; show rank badges next to usernames and on profiles.
-8. **YouTube + polish** — in this order (Ivan, 2026-10-08): sitemap + robots.txt, RSS feed,
+8. **YouTube + polish** — in this order (Ivan, 2026-10-08): sitemap + robots.txt (*done
+   2026-10-08*), RSS feed,
    link previews for every page, then the YouTube section from the channel's public video
    feed (no API key); later page transitions and an SEO pass. (No ⌘K search: dropped.)
 

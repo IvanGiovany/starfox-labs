@@ -1625,6 +1625,19 @@ own art; home must look good with little or no content.
   articles", no card links to empty sections (the intro's own word links are fine);
   phone `/music`; a removed article answers 404; console clean.
 
+## Phase 8, step 1 — Sitemap + robots.txt (2026-10-08)
+- `lib/sitemap.ts` (`sitemapEntries`, pure, tested): home, the six section pages, every
+  published article (with its publish date; home and `/writing` take the newest),
+  `/privacy`; absolute `https://starfoxlabs.org/…` from `site.url`; never admin,
+  settings, sign-in, `/auth`, `/goodbye`. `app/sitemap.ts` loads the cached
+  `getPublishedPosts()`, so the prerendered `/sitemap.xml` (○, 1 h) refreshes with the
+  `posts` tag when the admin publishes. `app/robots.ts`: allow `/`, disallow `/admin`,
+  `/settings`, `/login`, `/auth`, `/goodbye`; points to the sitemap (static ○).
+- Tested: tsx 3 groups (empty site, dates, no private pages). Build. On :3124:
+  `robots.txt` (text/plain, contents), `sitemap.xml` (application/xml, valid urlset, 8
+  entries now, all https on the site, every one answers 200); the private pages send
+  noindex. Ivan's check after his first article: it appears in `/sitemap.xml`.
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:
