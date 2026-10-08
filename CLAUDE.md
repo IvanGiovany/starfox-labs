@@ -70,8 +70,8 @@ emails).
   lab 🧪 …"; sized like chester's, see build log "Home intro") sits in
   the top-left of one dense grid that mixes cards from every section, each labelled
   `Section · Name` (e.g. `Writing · Article`, `Projects · NEON DRIFT`, `Music · Spektral`).
-  Only items marked "Show on home" appear, plus the status cards. Latest YouTube videos
-  join in the polish phase.
+  Only items marked "Show on home" appear, plus the status cards and the channel's 2
+  newest YouTube videos (wide photo-style cards, from its public feed; built 2026-10-08).
 - **Projects (`/projects`)** — `projects.` Like chester's projects page (`design-refs/`):
   wide and small cards, each with a **framed screenshot** sitting in the lower half and
   bleeding off the bottom edge. A card links to the live project, else its GitHub repo,
@@ -341,7 +341,8 @@ from the live schema (`npm run db:types`) — regenerate it after every migratio
 8. **YouTube + polish** — in this order (Ivan, 2026-10-08): sitemap + robots.txt (*done
    2026-10-08*), RSS feed (*done 2026-10-08*: `/rss.xml`, summaries),
    link previews (*done 2026-10-08*: one per section, no counts; `/privacy` re-exports the
-   site card),
+   site card), the YouTube section (*done 2026-10-08*: 2 newest videos on home, Shorts
+   included, from the channel's public feed),
    link previews for every page, then the YouTube section from the channel's public video
    feed (no API key); later page transitions and an SEO pass. (No ⌘K search: dropped.)
 
@@ -376,6 +377,15 @@ Everything built so far, with file maps, decisions and how it was tested:
   him to delete). Readers can sign up (Google or email), have a profile and picture,
   change settings and delete their account; the live Google app is published. Signed-in
   readers comment on articles (Phase 5).
+- **YouTube on home (2026-10-08):** `site.youtubeChannelId` (`UCi1vz5yZr_iJe3aW9xX4OmA`,
+  the channel behind @gvan1); `lib/youtube-feed.ts` (pure: `parseYouTubeFeed`, thumbnails)
+  and `lib/youtube-loader.ts` (`getLatestVideos`: "use cache", hours, tag `youtube`;
+  newest 2; the sharp `maxresdefault` thumbnail when it exists; any failure → no videos
+  and home keeps just the channel card); `components/video-card.tsx` (wide, photo-card
+  style, opens YouTube in a new tab). Videos join the dated home feed by date. Testing
+  `lib/*-loader.ts` with tsx needs `next/cache` stubbed (a `--require` hook that returns
+  no-op `cacheLife` / `cacheTag`); layout checks must finish the cards' drop-in
+  animations first (finite ones only: the sprout loops forever).
 - **Link previews (2026-10-08):** section names and one-line descriptions live in
   `lib/section-meta.ts` (page metadata and preview images both read them);
   `app/<section>/opengraph-image.tsx` via `lib/section-og.tsx`. **Gotcha:** a page that

@@ -17,6 +17,9 @@ export const site = {
     github: "https://github.com/IvanGiovany",
     youtube: "https://www.youtube.com/@gvan1",
   },
+  // The channel behind @gvan1, for its public video feed (home's video cards).
+  // Empty: home shows only the channel card.
+  youtubeChannelId: "UCi1vz5yZr_iJe3aW9xX4OmA",
 
   // The header tab bar. "Gvan" is the home link, like "Chester" on chester.how.
   nav: [

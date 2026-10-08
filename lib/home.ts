@@ -5,6 +5,7 @@ import type { Hobby } from "./hobbies-loader";
 import type { PostSummary } from "./posts";
 import type { Project } from "./projects";
 import type { Song } from "./tracks";
+import type { Video } from "./youtube-feed";
 
 // What the home grid shows, and in what order. Built from the same data as the
 // section pages, so a card on home is exactly the card on its section page.
@@ -20,7 +21,8 @@ export type HomeEntry =
   | { kind: "book"; key: string; date: string; book: Book }
   | { kind: "song"; key: string; date: string; song: Song }
   | { kind: "game"; key: string; date: string; game: Game }
-  | { kind: "hobby"; key: string; date: string; hobby: Hobby };
+  | { kind: "hobby"; key: string; date: string; hobby: Hobby }
+  | { kind: "video"; key: string; date: string; video: Video };
 
 export type HomeLayout = {
   /** The latest article: the wide card beside the intro. */
@@ -29,7 +31,7 @@ export type HomeLayout = {
   reading: Book[];
   /** ...and every item in the Learning category. */
   learning: Hobby[];
-  /** Everything else, newest first: the next articles and the items marked "Show on home". */
+  /** Everything else, newest first: the next articles, the items marked "Show on home", and the newest videos. */
   feed: HomeEntry[];
 };
 
@@ -47,6 +49,8 @@ export function homeLayout(data: {
   songs: Song[];
   games: Game[];
   hobbies: Hobby[];
+  /** The channel's newest videos (already limited to HOME_VIDEOS). */
+  videos?: Video[];
 }): HomeLayout {
   const [featured = null, ...rest] = data.posts;
   const reading = data.books.filter((book) => book.readingStatus === "reading");
@@ -63,6 +67,7 @@ export function homeLayout(data: {
     ...data.hobbies
       .filter((h) => h.showOnHome && !isLearning(h))
       .map((hobby) => ({ kind: "hobby" as const, key: `hobby-${hobby.id}`, date: hobby.homeDate, hobby })),
+    ...(data.videos ?? []).map((video) => ({ kind: "video" as const, key: `video-${video.id}`, date: video.publishedAt, video })),
   ];
   // Newest first; the key settles ties, so the order never depends on loading order.
   feed.sort((a, b) => Date.parse(b.date) - Date.parse(a.date) || a.key.localeCompare(b.key));

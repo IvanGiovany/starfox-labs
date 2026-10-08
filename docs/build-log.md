@@ -1679,6 +1679,36 @@ Ivan's choice: no counts in the images (platforms cache previews for days).
   one line). Article previews (existing, Phase 1) can't be re-checked until an article
   is published.
 
+## Phase 8, step 4 — YouTube on home (2026-10-08)
+Ivan's choices: the newest 2 videos, Shorts included, full-bleed thumbnail cards.
+- Channel ID looked up once from the public `@gvan1` page (canonical
+  `/channel/UCi1vz5yZr_iJe3aW9xX4OmA`), stored as `site.youtubeChannelId`. The public
+  feed (`/feeds/videos.xml?channel_id=…`, Atom, max-age 900) had 1 video on 2026-10-08.
+- `lib/youtube-feed.ts`: `parseYouTubeFeed` (per `<entry>`: `yt:videoId` of 11
+  characters, title with entities decoded, a valid `published`; anything else skipped;
+  newest first), `smallThumbnail` (hqdefault, 480 × 360 letterboxed), `largeThumbnail`
+  (maxresdefault, 1280 × 720, missing for some videos). `lib/youtube-loader.ts`:
+  `getLatestVideos` ("use cache", hours, tag `youtube`; 5 s timeout; a HEAD per video
+  for the sharp thumbnail; every failure → `[]`). `components/video-card.tsx`: hobby
+  photo-card style (fills the card, slides 48 px on hover / focus, `motion-safe` only),
+  title on a dark backing bottom-left, a small play button bottom-right, label "YouTube
+  · Video", external link (new tab); through next/image (`i.ytimg.com/vi/**` was already
+  allowed). `lib/home.ts`: `HomeEntry` kind `video`, dated by `publishedAt`; videos span
+  2. The "YouTube · @gvan1" channel card stays at the end.
+- Found by the checks: with a video and no writing, the grid needed a filler, so home
+  showed two sprout cards. Fix: the "Still growing" card now starts small and the grid
+  widens it when that fills a row (no filler in any tested case).
+- Tested: tsx 6 groups (the real saved feed; a tricky feed: entities incl. an emoji,
+  malformed entries, ordering, not-a-feed; home ordering by date; grid fills; the loader
+  with `fetch` faked: offline, 500, changed format → no videos; newest 2 with the sharp
+  thumbnail only where it exists; `next/cache` stubbed by a `--require` hook). Build.
+  `video-check` 15 on :3124 (390 / 800 / 1280 / 1920 px: the card, wide, link and new
+  tab, sharp thumbnail through `/_next/image` all 200, full grid, channel card; hover
+  slides 48 px, not with reduced motion; console clean) and `empty-check` rerun 24.
+  Gotchas: the first runs reported holes because the cards were still dropping in
+  (finish the finite animations before measuring); `networkidle0` hung (wait for `load`
+  and the images).
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:

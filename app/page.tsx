@@ -9,6 +9,7 @@ import { GameCard } from "@/components/game-card";
 import { HobbyCard } from "@/components/hobby-card";
 import { ProjectCard } from "@/components/project-card";
 import { SongCard } from "@/components/song-card";
+import { VideoCard } from "@/components/video-card";
 import { SproutArt } from "@/components/sprout-art";
 import { NowProducingCard } from "@/components/status-cards";
 import { PostDate, WritingCard } from "@/components/writing-card";
@@ -21,11 +22,12 @@ import { countTags, getPublishedPosts, type PostSummary, type TagCount } from "@
 import { getPublishedProjects } from "@/lib/projects";
 import { openGraphDefaults, site } from "@/lib/site";
 import { getNowProducing, getPublishedSongs } from "@/lib/tracks";
+import { getLatestVideos } from "@/lib/youtube-loader";
 
 // Home: a chester.how-style "digital garden". The intro sits in the top-left
 // of one dense grid that mixes every section: the latest article, the status
 // cards (now producing, reading, learning), then the next articles and every
-// item marked "Show on home", newest first; the YouTube and archive cards
+// item marked "Show on home" and the channel's newest videos, newest first; the YouTube and archive cards
 // close it. Each card is the same card as on its section page. With no
 // articles yet, a "Still growing" card takes the archive's place (and the
 // fillers'), so a new or emptied site never shows "0 articles" or links to an
@@ -42,7 +44,7 @@ type Slot = { key: string; span: Span; render: (span: Span, index: number) => Re
 const sizeSpan = (size: "small" | "wide"): Span => (size === "wide" ? 2 : 1);
 
 export default async function Home() {
-  const [posts, projects, books, songs, games, hobbies, producing] = await Promise.all([
+  const [posts, projects, books, songs, games, hobbies, producing, videos] = await Promise.all([
     getPublishedPosts(),
     getPublishedProjects(),
     getPublishedBooks(),
@@ -50,8 +52,9 @@ export default async function Home() {
     getPublishedGames(),
     getPublishedHobbies(),
     getNowProducing(),
+    getLatestVideos(),
   ]);
-  const { featured, reading, learning, feed } = homeLayout({ posts, projects, books, songs, games, hobbies });
+  const { featured, reading, learning, feed } = homeLayout({ posts, projects, books, songs, games, hobbies, videos });
 
   const slots: Slot[] = [
     ...(featured ? [{ key: "featured", span: 2 as Span, render: (_: Span, i: number) => <FeaturedWritingCard post={featured} index={i} /> }] : []),
@@ -62,7 +65,8 @@ export default async function Home() {
     { key: "youtube", span: 1, render: (s, i) => <YouTubeCard index={i} className={spanClass(s)} /> },
     posts.length > 0
       ? { key: "archive", span: 2, render: (_, i) => <ArchiveCard postCount={posts.length} tags={countTags(posts)} index={i} /> }
-      : { key: "growing", span: 2, render: (_, i) => <StillGrowingCard index={i} className="col-span-2" /> },
+      : // Small at first: the grid widens it when that fills a row, so it never needs a second sprout as filler.
+        { key: "growing", span: 1, render: (s, i) => <StillGrowingCard index={i} className={spanClass(s)} small={s === 1} /> },
   ];
   const { spans, fillers } = fillGrid(
     slots.map((slot) => slot.span),
@@ -102,6 +106,8 @@ function entrySpan(entry: HomeEntry): Span {
       return sizeSpan(entry.game.cardSize);
     case "hobby":
       return sizeSpan(entry.hobby.cardSize);
+    case "video":
+      return 2; // 16:9 thumbnails crop badly in a square cell
   }
 }
 
@@ -120,6 +126,8 @@ function EntryCard({ entry, span, index }: { entry: HomeEntry; span: Span; index
       return <GameCard game={entry.game} span={span} index={index} />;
     case "hobby":
       return <HobbyCard hobby={entry.hobby} span={span} index={index} />;
+    case "video":
+      return <VideoCard video={entry.video} span={span} index={index} />;
   }
 }
 
@@ -188,7 +196,8 @@ function FeaturedWritingCard({ post, index }: { post: PostSummary; index: number
   );
 }
 
-// Links to the channel for now. The polish phase replaces this with live video cards.
+// The channel itself, closing the grid. The newest videos have their own cards
+// (VideoCard) among the dated ones; if YouTube can't be reached, this is all.
 function YouTubeCard({ index, className }: { index: number; className?: string }) {
   const handle = site.links.youtube.split("/").pop();
   return (
