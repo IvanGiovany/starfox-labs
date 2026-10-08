@@ -548,6 +548,7 @@ export type Database = {
       delete_comment: { Args: { comment_id: string }; Returns: string }
       delete_my_account: { Args: never; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
+      is_admin_account: { Args: never; Returns: boolean }
       is_reserved_name: { Args: { name: string }; Returns: boolean }
       next_username_change: { Args: never; Returns: string }
       reorder_items: {

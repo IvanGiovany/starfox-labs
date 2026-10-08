@@ -29,13 +29,10 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   };
 });
 
-/**
- * Is the signed-in visitor the admin's account? Asks the database.
- * (Part B: public.is_admin_account(), when is_admin() starts requiring aal2.)
- */
+/** Is the signed-in visitor the admin's account? Asks the database (no two-factor needed). */
 export const isAdminAccount = cache(async (): Promise<boolean> => {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.rpc("is_admin");
+  const { data, error } = await supabase.rpc("is_admin_account");
   return !error && data === true;
 });
 

@@ -1,15 +1,13 @@
 // Who may use the admin, as one pure decision (lib/auth.ts gathers the facts;
 // unit tests cover the rules). Being the admin *account* is identity (a row in
-// public.admins). Admin *powers* also need a two-factor session (aal2) once a
-// factor is set up.
+// public.admins). Admin *powers* also need a two-factor session (aal2).
 
 /**
- * Part B of Phase 6 step 1 sets this to true, together with the migration that
- * makes public.is_admin() require aal2: from then on an admin account without
- * two-factor sign-in is sent to set it up. Until then it can still use the
- * admin (with a banner), so Ivan can't be locked out before he has enrolled.
+ * Admin powers require two-factor sign-in (since Phase 6 step 1 part B, with
+ * migration 20261008120000, which makes public.is_admin() require aal2): an
+ * admin account without it is sent to set it up in Settings → Account.
  */
-export const TWO_FACTOR_REQUIRED = false;
+export const TWO_FACTOR_REQUIRED = true;
 
 export type AdminAccess = "signed-out" | "not-admin" | "needs-setup" | "needs-code" | "ok";
 

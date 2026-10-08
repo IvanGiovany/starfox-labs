@@ -53,7 +53,7 @@ export function AccountMenu() {
 
       const [{ data: profile }, { data: admin }] = await Promise.all([
         supabase.from("profiles").select("username, display_name, avatar_path").eq("id", userId).maybeSingle(),
-        supabase.rpc("is_admin"),
+        supabase.rpc("is_admin_account"), // the Admin link shows before the two-factor code too
       ]);
       if (cancelled || loadedFor.current !== userId) return;
       setState({

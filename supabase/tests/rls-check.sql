@@ -51,8 +51,8 @@ begin
   exception when insufficient_privilege then
     null;
   end;
-  if public.is_admin() then raise exception 'FAIL: a visitor counts as admin'; end if;
-  raise notice 'PASS visitor: admins table hidden, is_admin() is false';
+  if public.is_admin() or public.is_admin_account() then raise exception 'FAIL: a visitor counts as admin'; end if;
+  raise notice 'PASS visitor: admins table hidden, is_admin() and is_admin_account() are false';
 
   if not exists (select 1 from public.profiles) then
     raise exception 'FAIL: visitors cannot read profiles';
@@ -99,7 +99,7 @@ reset role;
 
 -- ─── As the admin ──────────────────────────────────────────────────────────
 select set_config('request.jwt.claims',
-  json_build_object('sub', current_setting('test.admin_id'), 'role', 'authenticated')::text, true);
+  json_build_object('sub', current_setting('test.admin_id'), 'role', 'authenticated', 'aal', 'aal2')::text, true);
 set local role authenticated;
 
 do $$
@@ -226,6 +226,47 @@ begin
 end;
 $$;
 
+-- ─── The admin without the two-factor code (aal1) ──────────────────────────
+-- Signed in, but the authenticator code not entered yet: still the admin's
+-- account (identity), but no admin powers (20261008120000).
+select set_config('request.jwt.claims',
+  json_build_object('sub', current_setting('test.admin_id'), 'role', 'authenticated', 'aal', 'aal1')::text, true);
+
+do $$
+declare
+  admin_id uuid := current_setting('test.admin_id')::uuid;
+  n        int;
+begin
+  if public.is_admin() then raise exception 'FAIL: the admin has admin powers without the two-factor code'; end if;
+  if not public.is_admin_account() then raise exception 'FAIL: is_admin_account() should not need the code'; end if;
+  begin
+    insert into public.books (title) values ('Without the code');
+    raise exception 'FAIL: the admin added a book without the two-factor code';
+  exception when insufficient_privilege then
+    null;
+  end;
+  if exists (select 1 from public.posts where status = 'draft') then
+    raise exception 'FAIL: drafts are visible without the two-factor code';
+  end if;
+  update public.posts set title = title || '!' where id = current_setting('test.post_id')::uuid;
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'FAIL: the admin edited an article without the two-factor code (undone)'; end if;
+  begin
+    perform public.reorder_items('books', array[]::uuid[]);
+    raise exception 'FAIL: the admin reordered without the two-factor code';
+  exception when insufficient_privilege then
+    null;
+  end;
+  raise notice 'PASS admin without the code: no admin powers (no drafts, no writes, no reordering)';
+
+  -- Identity rules still hold: the reserved name stays theirs.
+  update public.profiles set display_name = 'Gvan' where id = admin_id;
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'FAIL: the admin couldn''t keep the reserved name without the code'; end if;
+  raise notice 'PASS admin without the code: still the admin account (is_admin_account(), reserved name)';
+end;
+$$;
+
 -- ─── Sign-up: fake accounts (as the owner) ─────────────────────────────────
 -- Adding them runs the sign-up trigger, which must give each one a profile.
 reset role;
@@ -285,12 +326,16 @@ declare
   sees_draft boolean;
   n          int;
 begin
-  if public.is_admin() then raise exception 'FAIL: a reader counts as admin'; end if;
+  if public.is_admin() or public.is_admin_account() then raise exception 'FAIL: a reader counts as admin'; end if;
+  -- Even with a two-factor session of their own.
+  perform set_config('request.jwt.claims', json_build_object('sub', me, 'role', 'authenticated', 'aal', 'aal2')::text, true);
+  if public.is_admin() or public.is_admin_account() then raise exception 'FAIL: a reader with a two-factor code counts as admin'; end if;
+  perform set_config('request.jwt.claims', json_build_object('sub', me, 'role', 'authenticated')::text, true);
   foreach t in array array['posts', 'projects', 'books', 'tracks', 'games', 'hobby_items'] loop
     execute format('select exists (select 1 from public.%I where status = ''draft'')', t) into sees_draft;
     if sees_draft then raise exception 'FAIL: readers can see draft %', t; end if;
   end loop;
-  raise notice 'PASS reader: is_admin() is false, sees no drafts';
+  raise notice 'PASS reader: not the admin (even with a two-factor code), sees no drafts';
 
   -- Content: no adding, changing or deleting. One row is tried each time; if
   -- it ever worked, the FAIL would undo it.
@@ -603,9 +648,25 @@ begin
 end;
 $$;
 
--- The admin.
+-- The admin without the two-factor code can't delete other people's comments.
 select set_config('request.jwt.claims',
-  json_build_object('sub', current_setting('test.admin_id'), 'role', 'authenticated')::text, true);
+  json_build_object('sub', current_setting('test.admin_id'), 'role', 'authenticated', 'aal', 'aal1')::text, true);
+
+do $$
+begin
+  begin
+    perform public.delete_comment(current_setting('test.comment_id')::uuid);
+    raise exception 'FAIL: the admin deleted a reader''s comment without the two-factor code (undone)';
+  exception when insufficient_privilege then
+    null;
+  end;
+  raise notice 'PASS comments: without the two-factor code the admin can''t delete other people''s comments';
+end;
+$$;
+
+-- The admin (with the code).
+select set_config('request.jwt.claims',
+  json_build_object('sub', current_setting('test.admin_id'), 'role', 'authenticated', 'aal', 'aal2')::text, true);
 
 do $$
 declare

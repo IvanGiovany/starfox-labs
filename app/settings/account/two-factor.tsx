@@ -93,8 +93,9 @@ export function TwoFactorSetup({ factor }: { factor: { id: string; createdAt: st
     return (
       <div className="flex flex-col gap-4">
         <p className="text-fg-muted">
-          Off. With it on, signing in to the admin also asks for a 6-digit code from an app on your
-          phone, so a stolen email or Google account alone can&apos;t publish or email subscribers.
+          <span className="text-fg">Off, and the admin needs it.</span> Signing in to the admin
+          also asks for a 6-digit code from an app on your phone, so a stolen email or Google
+          account alone can&apos;t publish or email subscribers.
         </p>
         {errorNote}
         <button type="button" onClick={start} disabled={busy} autoComplete="off" className="button-primary self-start">
@@ -178,7 +179,10 @@ export function TwoFactorSetup({ factor }: { factor: { id: string; createdAt: st
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-fg-muted">To turn it off, type a current code from your authenticator app.</p>
+      <p className="text-fg-muted">
+        To turn it off, type a current code from your authenticator app.{" "}
+        <span className="text-fg">The admin stays closed until you set it up again.</span>
+      </p>
       <TwoFactorCodeInput
         value={code}
         onChange={setCode}

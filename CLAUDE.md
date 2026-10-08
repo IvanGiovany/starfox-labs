@@ -213,7 +213,9 @@ from the live schema (`npm run db:types`) — regenerate it after every migratio
   `in_progress = true`; "Reading" = books with `reading_status = 'reading'`; "Learning" =
   hobby items in the `Learning` category. They show on home whether or not "Show on
   home" is ticked, never twice (Ivan, 2026-10-05). Built in step 6.
-- **Access:** an `admins` table (`user_id`) + `public.is_admin()` function. Every table
+- **Access:** an `admins` table (`user_id`) + `public.is_admin()` function (admin powers;
+  **requires two-factor sign-in, `aal2`, since 2026-10-08**) and `public.is_admin_account()`
+  (identity only). Every table
   gets two kinds of policy: "anyone reads published rows" and "admin does everything".
 - **Storage:** one public-read `media` bucket, admin-only writes, folders per section
   (`writing/`, `projects/`, `books/`, `music/` for covers and audio snippets, `games/`,
@@ -373,8 +375,11 @@ Everything built so far, with file maps, decisions and how it was tested:
   migration only after Ivan has enrolled and signed in with it; **part A done
   2026-10-08** (code screen `/login/two-factor`, setup in Settings → Account, identity
   vs powers in `lib/auth.ts`; build log "Phase 6, Step 1"; tested by Ivan, checklist
-  1–8; **Ivan's authenticator is set up**, phone + backup device); then part B: migration (`is_admin()` requires aal2,
-  new `is_admin_account()`), `TWO_FACTOR_REQUIRED = true`, `rls-check.sql` with aal) → 6.2 schema
+  1–8; **Ivan's authenticator is set up**, phone + backup device); part B **applied 2026-10-08** with Ivan's OK
+  (migration `20261008120000_admin_two_factor.sql`: `is_admin()` requires aal2, new
+  `is_admin_account()` for identity; `TWO_FACTOR_REQUIRED = true`; `rls-check.sql` 54
+  PASS); **done 2026-10-08**: Ivan ran `rls-check.sql` (all passed) and checklist 1–5;
+  **6.1 is done**) → 6.2 schema
   (`newsletter_subscribers`, `newsletter_digests`; unsubscribing deletes the row;
   pending rows go after 7 days; `delete_my_account()` removes subscriptions) → 6.3
   subscribe (form at the end of each article + a `/newsletter` page linked from the

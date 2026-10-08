@@ -1538,6 +1538,27 @@ Plan and Ivan's decisions (2026-10-08): CLAUDE.md, "Start here".
     `wrapup-check` 15. Gotcha: redirects inside streamed pages (`redirect()` behind
     `<Suspense>`) land after the `load` event; checks must wait for the address.
 
+- **Step 1, part B — Admin powers require two-factor (done 2026-10-08: applied with Ivan's
+  OK; Ivan ran `rls-check.sql`, all passed, and checklist 1–5).**
+  - Backup first (`backups/2026-10-08T03-24-20.json`). Migration
+    `20261008120000_admin_two_factor.sql`: `is_admin_account()` (identity) and
+    `is_admin()` now also needs `auth.jwt() ->> 'aal' = 'aal2'` (same signature, so
+    every policy, `reorder_items()` and `delete_comment()` follow; grants kept by
+    `create or replace`). Identity rules that read `admins` directly are unchanged.
+  - Code: `TWO_FACTOR_REQUIRED = true` (no factor → Settings → Account);
+    `isAdminAccount()` and the header's Admin link use `is_admin_account()`; the
+    admin banner removed; setup texts say the admin needs it.
+  - `rls-check.sql`: 54 PASS lines: admin sessions carry `aal: aal2`; new parts: the
+    admin at aal1 (no drafts, no writes, no reordering, can't delete others' comments;
+    still `is_admin_account()` and keeps the reserved name), a reader with aal2 is not
+    the admin.
+  - Tested: both files parsed; dry run; over the API after applying: visitor, reader
+    aal1 and reader aal2 all false / false; `db:types` added `is_admin_account`; tsx;
+    build; reruns: `twofactor-check` 15, `admin-gate-check` 3, `wrapup-check` 15,
+    `comments-check` 45. Gotcha (`wrapup-check`): typing into a server-rendered,
+    streamed field before React hydrates it is lost; wait for the element's
+    `__reactProps…` key first (earlier passes were luck).
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:
