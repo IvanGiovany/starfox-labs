@@ -19,7 +19,10 @@ import { mkdir, readdir, readFile, unlink, writeFile } from "node:fs/promises";
 // Restore order: articles before the items that link to them, profiles before
 // the comments that point at them. New content tables go here (and get the
 // truncate guard, see 20261007130000).
-const TABLES = ["posts", "projects", "books", "tracks", "games", "hobby_items", "profiles", "comments"];
+const TABLES = [
+  "posts", "projects", "books", "tracks", "games", "hobby_items", "profiles", "comments",
+  "newsletter_subscribers", "newsletter_digests",
+];
 // Exposed through the API but not backed up: `admins` is one row, added again
 // by hand in the SQL editor; `post_items` is a view.
 const NOT_BACKED_UP = ["admins", "post_items"];
@@ -62,7 +65,15 @@ async function backup() {
   await warnAboutNewTables();
   const tables = {};
   for (const table of TABLES) {
-    tables[table] = await allRows(table);
+    try {
+      tables[table] = await allRows(table);
+    } catch (error) {
+      // A table listed before its migration is applied (back up first, then
+      // migrate) mustn't stop the backup of everything else.
+      if (!/does not exist|schema cache/i.test(error.message)) throw error;
+      console.warn(`${table}: not in the database yet, skipped`);
+      continue;
+    }
     console.log(`${table}: ${tables[table].length}`);
   }
   const createdAt = new Date().toISOString();
@@ -97,6 +108,8 @@ async function pruneOldBackups(now = Date.now()) {
 function label(row) {
   if (row.title) return row.title;
   if (row.username) return `@${row.username}`;
+  if (row.email) return row.email;
+  if (row.covers_until) return `digest until ${row.covers_until}`;
   if (typeof row.body === "string") return row.body ? JSON.stringify(row.body.slice(0, 40)) : "(deleted comment)";
   return "";
 }

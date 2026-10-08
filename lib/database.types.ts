@@ -312,6 +312,78 @@ export type Database = {
           },
         ]
       }
+      newsletter_digests: {
+        Row: {
+          covers_from: string
+          covers_until: string
+          failed_count: number
+          finished_at: string | null
+          id: string
+          post_ids: string[]
+          recipient_ids: string[]
+          sent_count: number
+          started_at: string
+          status: string
+        }
+        Insert: {
+          covers_from: string
+          covers_until: string
+          failed_count?: number
+          finished_at?: string | null
+          id?: string
+          post_ids?: string[]
+          recipient_ids?: string[]
+          sent_count?: number
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          covers_from?: string
+          covers_until?: string
+          failed_count?: number
+          finished_at?: string | null
+          id?: string
+          post_ids?: string[]
+          recipient_ids?: string[]
+          sent_count?: number
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      newsletter_subscribers: {
+        Row: {
+          confirm_sent_at: string | null
+          confirmed_at: string | null
+          created_at: string
+          email: string
+          id: string
+          source: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          confirm_sent_at?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          source: string
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          confirm_sent_at?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          source?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           body_md: string
@@ -550,6 +622,25 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_admin_account: { Args: never; Returns: boolean }
       is_reserved_name: { Args: { name: string }; Returns: boolean }
+      newsletter_confirm: {
+        Args: { p_id: string; p_secret: string; p_sent_at: string }
+        Returns: boolean
+      }
+      newsletter_my_status: { Args: never; Returns: string }
+      newsletter_subscribe: {
+        Args: { p_email: string; p_secret: string }
+        Returns: {
+          send_email: boolean
+          sent_at: string
+          subscriber_id: string
+        }[]
+      }
+      newsletter_subscribe_me: { Args: never; Returns: undefined }
+      newsletter_unsubscribe: {
+        Args: { p_id: string; p_secret: string }
+        Returns: boolean
+      }
+      newsletter_unsubscribe_me: { Args: never; Returns: undefined }
       next_username_change: { Args: never; Returns: string }
       reorder_items: {
         Args: { ids: string[]; section: string }

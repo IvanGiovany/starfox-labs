@@ -757,6 +757,204 @@ begin
 end;
 $$;
 
+-- ─── Newsletter ────────────────────────────────────────────────────────────
+-- A test secret, only inside this rolled-back transaction (the real one's
+-- hash is put back by the rollback). Visitors' functions need it.
+reset role;
+select set_config('request.jwt.claims', '', true);
+insert into private.newsletter_settings (secret_hash)
+values (sha256(convert_to('rls-check-secret', 'UTF8')))
+on conflict (id) do update set secret_hash = excluded.secret_hash;
+set local role anon;
+
+do $$
+declare
+  r      record;
+  again  record;
+begin
+  begin
+    perform (select count(*) from public.newsletter_subscribers);
+    raise exception 'FAIL: visitors can read subscribers';
+  exception when insufficient_privilege then
+    null;
+  end;
+  begin
+    perform (select count(*) from public.newsletter_digests);
+    raise exception 'FAIL: visitors can read digests';
+  exception when insufficient_privilege then
+    null;
+  end;
+  begin
+    perform public.newsletter_subscribe('wrong-secret', 'someone@example.com');
+    raise exception 'FAIL: subscribing worked without the secret';
+  exception when insufficient_privilege then
+    null;
+  end;
+  begin
+    perform public.newsletter_confirm('wrong-secret', gen_random_uuid(), now());
+    raise exception 'FAIL: confirming worked without the secret';
+  exception when insufficient_privilege then
+    null;
+  end;
+  begin
+    perform public.newsletter_unsubscribe('', gen_random_uuid());
+    raise exception 'FAIL: unsubscribing worked without the secret';
+  exception when insufficient_privilege then
+    null;
+  end;
+  begin
+    perform public.newsletter_subscribe_me();
+    raise exception 'FAIL: a visitor could call newsletter_subscribe_me()';
+  exception when insufficient_privilege then
+    null;
+  end;
+  raise notice 'PASS newsletter: visitors can''t read the tables, and the functions need the server''s secret';
+
+  -- With the secret (as our server calls it).
+  select * into r from public.newsletter_subscribe('rls-check-secret', '  Grace.Test@Example.COM ');
+  if not r.send_email or r.sent_at is null then raise exception 'FAIL: a new address should get a confirmation email'; end if;
+  select * into again from public.newsletter_subscribe('rls-check-secret', 'grace.test@example.com');
+  if again.send_email or again.subscriber_id <> r.subscriber_id then
+    raise exception 'FAIL: the same address (any case) within a day should get no second email';
+  end if;
+  begin
+    perform public.newsletter_subscribe('rls-check-secret', 'not-an-email');
+    raise exception 'FAIL: a malformed address was accepted';
+  exception when check_violation then
+    null;
+  end;
+  raise notice 'PASS newsletter: a new address gets one confirmation (any case); malformed ones are refused';
+
+  if public.newsletter_confirm('rls-check-secret', r.subscriber_id, r.sent_at - interval '1 second') then
+    raise exception 'FAIL: an older confirmation link worked';
+  end if;
+  if not public.newsletter_confirm('rls-check-secret', r.subscriber_id, r.sent_at) then
+    raise exception 'FAIL: the confirmation link didn''t work';
+  end if;
+  if not public.newsletter_confirm('rls-check-secret', r.subscriber_id, r.sent_at) then
+    raise exception 'FAIL: confirming twice should still say yes';
+  end if;
+  select * into again from public.newsletter_subscribe('rls-check-secret', 'grace.test@example.com');
+  if again.send_email then raise exception 'FAIL: a confirmed address got another confirmation email'; end if;
+  raise notice 'PASS newsletter: only the latest confirmation link confirms; confirmed addresses get no more';
+
+  if not public.newsletter_unsubscribe('rls-check-secret', r.subscriber_id) then
+    raise exception 'FAIL: unsubscribing didn''t delete the row';
+  end if;
+  if public.newsletter_unsubscribe('rls-check-secret', r.subscriber_id) then
+    raise exception 'FAIL: unsubscribing twice should find nothing';
+  end if;
+  raise notice 'PASS newsletter: unsubscribing deletes the row';
+end;
+$$;
+
+-- As the owner: the time rules (24-hour resend, 7-day expiry, hourly cap).
+reset role;
+
+do $$
+declare
+  r      record;
+  old_id uuid;
+begin
+  select * into r from public.newsletter_subscribe('rls-check-secret', 'resend.test@example.com');
+  update public.newsletter_subscribers set confirm_sent_at = now() - interval '25 hours' where id = r.subscriber_id;
+  select * into r from public.newsletter_subscribe('rls-check-secret', 'resend.test@example.com');
+  if not r.send_email then raise exception 'FAIL: after 24 hours a pending address should get a new email'; end if;
+
+  update public.newsletter_subscribers set confirm_sent_at = now() - interval '8 days' where id = r.subscriber_id;
+  if public.newsletter_confirm('rls-check-secret', r.subscriber_id, now() - interval '8 days') then
+    raise exception 'FAIL: an 8-day-old confirmation link worked';
+  end if;
+  old_id := r.subscriber_id;
+  perform public.newsletter_subscribe('rls-check-secret', 'someone.else@example.com');
+  if exists (select 1 from public.newsletter_subscribers where id = old_id) then
+    raise exception 'FAIL: a pending sign-up older than 7 days wasn''t cleared';
+  end if;
+  raise notice 'PASS newsletter: resend after 24 hours; links and pending sign-ups expire after 7 days';
+
+  insert into public.newsletter_subscribers (email, status, source, confirm_sent_at)
+  select 'cap' || i || '@example.com', 'pending', 'form', now() from generate_series(1, 20) as i;
+  begin
+    perform public.newsletter_subscribe('rls-check-secret', 'over.the.cap@example.com');
+    raise exception 'FAIL: more than 20 confirmation emails in an hour';
+  exception when sqlstate 'PT429' then
+    null;
+  end;
+  delete from public.newsletter_subscribers where email like 'cap%@example.com';
+  raise notice 'PASS newsletter: at most 20 confirmation emails an hour';
+end;
+$$;
+
+-- A signed-in reader: one click, their own account's address.
+select set_config('request.jwt.claims',
+  json_build_object('sub', current_setting('test.reader_id'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+
+do $$
+declare
+  n int;
+begin
+  perform public.newsletter_subscribe_me();
+  if public.newsletter_my_status() is distinct from 'confirmed' then
+    raise exception 'FAIL: subscribing with the account should be confirmed at once';
+  end if;
+  if exists (select 1 from public.newsletter_subscribers) then
+    raise exception 'FAIL: a reader can read subscribers';
+  end if;
+  delete from public.newsletter_subscribers;
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'FAIL: a reader deleted subscribers (undone)'; end if;
+  begin
+    insert into public.newsletter_digests (covers_from, covers_until) values (now() - interval '7 days', now());
+    raise exception 'FAIL: a reader started a digest';
+  exception when insufficient_privilege then
+    null;
+  end;
+  perform public.newsletter_unsubscribe_me();
+  if public.newsletter_my_status() is not null then raise exception 'FAIL: unsubscribing with the account didn''t work'; end if;
+  perform public.newsletter_subscribe_me(); -- again, for the account-deletion check below
+  raise notice 'PASS newsletter: readers subscribe and unsubscribe themselves only, and can''t read or touch the tables';
+end;
+$$;
+
+-- The admin: with the code, reads subscribers and manages digests; without, nothing.
+select set_config('request.jwt.claims',
+  json_build_object('sub', current_setting('test.admin_id'), 'role', 'authenticated', 'aal', 'aal1')::text, true);
+
+do $$
+begin
+  if exists (select 1 from public.newsletter_subscribers) then
+    raise exception 'FAIL: the admin reads subscribers without the two-factor code';
+  end if;
+  raise notice 'PASS newsletter: without the two-factor code the admin sees no subscribers';
+end;
+$$;
+
+select set_config('request.jwt.claims',
+  json_build_object('sub', current_setting('test.admin_id'), 'role', 'authenticated', 'aal', 'aal2')::text, true);
+
+do $$
+begin
+  if not exists (select 1 from public.newsletter_subscribers where email = 'reader@rls-check.invalid') then
+    raise exception 'FAIL: the admin can''t read subscribers';
+  end if;
+  insert into public.newsletter_digests (covers_from, covers_until) values (now() - interval '7 days', now());
+  begin
+    insert into public.newsletter_digests (covers_from, covers_until) values (now() - interval '1 day', now());
+    raise exception 'FAIL: two digests sending at once';
+  exception when unique_violation then
+    null;
+  end;
+  raise notice 'PASS newsletter: the admin reads subscribers and starts a digest; only one digest sends at a time';
+end;
+$$;
+
+-- As if the reader had subscribed with the form before signing up (no
+-- user_id): deleting the account must still remove it, by address.
+reset role;
+select set_config('request.jwt.claims', '', true);
+update public.newsletter_subscribers set user_id = null, source = 'form' where email = 'reader@rls-check.invalid';
+
 -- ─── Deleting the reader's account ─────────────────────────────────────────
 reset role;
 select set_config('request.jwt.claims',
@@ -786,6 +984,11 @@ begin
     raise exception 'FAIL: a deleted account''s comments should stay, as "deleted user"';
   end if;
   raise notice 'PASS comments: a deleted account''s comments stay, with no author ("deleted user")';
+
+  if exists (select 1 from public.newsletter_subscribers where email = 'reader@rls-check.invalid') then
+    raise exception 'FAIL: deleting the account left its newsletter subscription';
+  end if;
+  raise notice 'PASS newsletter: deleting an account removes its subscription (by address too)';
 end;
 $$;
 
@@ -797,7 +1000,8 @@ declare
   t text;
   refused boolean := false;
 begin
-  foreach t in array array['posts', 'projects', 'books', 'tracks', 'games', 'hobby_items', 'admins', 'profiles', 'comments'] loop
+  foreach t in array array['posts', 'projects', 'books', 'tracks', 'games', 'hobby_items', 'admins', 'profiles', 'comments',
+                          'newsletter_subscribers', 'newsletter_digests'] loop
     if not exists (
       select 1 from pg_trigger
       where tgrelid = format('public.%I', t)::regclass

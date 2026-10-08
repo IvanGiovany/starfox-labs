@@ -396,6 +396,20 @@ Everything built so far, with file maps, decisions and how it was tested:
     server can call (a server-only secret), not the service key on Vercel. Signed-in
     readers subscribe with one click (no confirmation email). Sender "Gvan from Starfox
     Labs" `<newsletter@starfoxlabs.org>`, replies to `starfoxlabs.contact@gmail.com`.
+  - **6.2 status:** migration `20261008130000_newsletter.sql` **applied 2026-10-08**
+    with Ivan's OK, `db:types` regenerated, `NEWSLETTER_SECRET` in `.env.local`;
+    **done 2026-10-08**: Ivan stored the hash, ran `rls-check.sql` (all passed) and added
+    the secret to Vercel Production; a live test with the real secret passed 7/7;
+    build log "Phase 6, Step 2". **Next: plan 6.3.**
+  - **6.2 decisions (Ivan, 2026-10-08):** visitors' subscribe / confirm / unsubscribe go
+    through database functions gated by a server-only secret `NEWSLETTER_SECRET`
+    (`.env.local` + Vercel **Production** only; the database stores only its SHA-256 in
+    `private.newsletter_settings`, pasted by Ivan in the SQL editor); confirm and
+    unsubscribe links are HMACs of the subscriber id (no stored tokens); pending
+    sign-ups expire after 7 days, a confirmation can be resent after 24 h, at most 20
+    confirmation emails an hour site-wide; the same answer whether or not an address is
+    subscribed; the first digest covers the last 7 days; keep 20 of Resend's 100 daily
+    emails for sign-in codes (a digest is refused above 80).
   - **If Ivan loses every device with the authenticator:** Supabase dashboard → SQL
     editor: `delete from auth.mfa_factors where user_id = (select user_id from
     public.admins);` then sign in and set it up again in Settings → Account.
