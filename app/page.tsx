@@ -7,6 +7,7 @@ import { Card } from "@/components/card";
 import { spanClass } from "@/components/card-grid";
 import { GameCard } from "@/components/game-card";
 import { HobbyCard } from "@/components/hobby-card";
+import { JsonLd } from "@/components/json-ld";
 import { ProjectCard } from "@/components/project-card";
 import { SongCard } from "@/components/song-card";
 import { VideoCard } from "@/components/video-card";
@@ -20,7 +21,8 @@ import { getPublishedHobbies } from "@/lib/hobbies-loader";
 import { homeLayout, type HomeEntry } from "@/lib/home";
 import { countTags, getPublishedPosts, type PostSummary, type TagCount } from "@/lib/posts";
 import { getPublishedProjects } from "@/lib/projects";
-import { openGraphDefaults, site } from "@/lib/site";
+import { openGraphDefaults, site, siteIdentity } from "@/lib/site";
+import { homeJsonLd } from "@/lib/structured-data";
 import { getNowProducing, getPublishedSongs } from "@/lib/tracks";
 import { getLatestVideos } from "@/lib/youtube-loader";
 
@@ -74,21 +76,26 @@ export default async function Home() {
   );
 
   return (
-    // Phones and tablets: the intro is a row of its own (as tall as its text),
-    // then square cells. Desktop: the intro takes the top-left 2 × 2 cells.
-    <div className="grid grid-flow-dense auto-rows-(--cell-2) grid-cols-2 grid-rows-[auto] gap-(--grid-gap) pt-2 pb-8 lg:auto-rows-(--cell) lg:grid-cols-4 lg:grid-rows-none">
-      <Intro className="col-span-2 lg:row-span-2" />
-      {slots.map((slot, i) => (
-        <Fragment key={slot.key}>{slot.render(spans[i], i)}</Fragment>
-      ))}
-      {fillers.map((span, i) =>
-        posts.length > 0 ? (
-          <MoreCard key={i} index={slots.length + i} className={spanClass(span)} />
-        ) : (
-          <StillGrowingCard key={i} index={slots.length + i} className={spanClass(span)} small />
-        ),
-      )}
-    </div>
+    <>
+      {/* The page's one heading, for search engines and screen readers (the intro is styled prose). */}
+      <h1 className="sr-only">{site.name}</h1>
+      <JsonLd data={homeJsonLd(siteIdentity)} />
+      {/* Phones and tablets: the intro is a row of its own (as tall as its text),
+          then square cells. Desktop: the intro takes the top-left 2 × 2 cells. */}
+      <div className="grid grid-flow-dense auto-rows-(--cell-2) grid-cols-2 grid-rows-[auto] gap-(--grid-gap) pt-2 pb-8 lg:auto-rows-(--cell) lg:grid-cols-4 lg:grid-rows-none">
+        <Intro className="col-span-2 lg:row-span-2" />
+        {slots.map((slot, i) => (
+          <Fragment key={slot.key}>{slot.render(spans[i], i)}</Fragment>
+        ))}
+        {fillers.map((span, i) =>
+          posts.length > 0 ? (
+            <MoreCard key={i} index={slots.length + i} className={spanClass(span)} />
+          ) : (
+            <StillGrowingCard key={i} index={slots.length + i} className={spanClass(span)} small />
+          ),
+        )}
+      </div>
+    </>
   );
 }
 

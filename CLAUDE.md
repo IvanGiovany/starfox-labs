@@ -344,7 +344,8 @@ from the live schema (`npm run db:types`) — regenerate it after every migratio
    (*done 2026-10-08*: one per section, no counts; `/privacy` re-exports the site card),
    the YouTube section (*done 2026-10-08*: 2 newest videos on home, Shorts included, from
    the channel's public feed), page transitions (*done 2026-10-08*: content-only cross-fade,
-   public pages only), then an SEO pass. (No ⌘K
+   public pages only), and an SEO pass (*done 2026-10-08*: structured data, home `h1`,
+   Lighthouse 100 for accessibility / best practices / SEO). **Phase 8 is done.** (No ⌘K
    search: dropped.)
 
 ## Rules for Claude
@@ -361,13 +362,35 @@ Everything built so far, with file maps, decisions and how it was tested:
 **`docs/build-log.md`**. Read the relevant part before changing that area.
 
 ### Start here (next session)
-- **State:** **Phases 1–5 are done** (Phase 5 finished 2026-10-08, every step tested by
-  Ivan, all pushed). **The demo content was removed on 2026-10-08** (Ivan's choice,
-  backup `backups/2026-10-08T12-24-45.json`): every content table is empty, and every
-  section shows a "Still growing" empty state until Ivan adds his real content. The working tree is clean except `GIFS/` (Ivan's originals, untracked, safe for
-  him to delete). Readers can sign up (Google or email), have a profile and picture,
-  change settings and delete their account; the live Google app is published. Signed-in
-  readers comment on articles (Phase 5).
+- **State (2026-10-08): the main build is done.** Phases 1–5 and 8 are complete, tested
+  and pushed; Phase 7 (ranks) was dropped; **Phase 6 (newsletter) is paused at 6.3** (6.1
+  two-factor and 6.2 schema done; the proposed 6.3 plan and its 6 open decisions are
+  saved below). **The demo content was removed on 2026-10-08** (backup
+  `backups/2026-10-08T12-24-45.json`): every content table is empty, and every section
+  shows a "Still growing" empty state. The working tree is clean except `GIFS/` (Ivan's
+  originals, untracked, safe for him to delete). The README describes everything built.
+- **Next: Ivan's real content**, entered in the admin (articles, his new projects, books,
+  songs including "speki", games, hobbies), plus the `TODO(Ivan)` section intros and,
+  later, the Polacrity and Spektral links. Each section's sprout disappears once
+  something is published there. After his first article: check it in `/sitemap.xml`,
+  `/rss.xml`, Google's Rich Results Test (BlogPosting) and Lighthouse (article pages
+  couldn't be tested without one).
+- **After that** (only when Ivan asks): resume the newsletter at 6.3; the "Unused media"
+  view; scheduled publishing; redirects for changed slugs; the other "Still open" to-dos.
+- **SEO pass (2026-10-08):** structured data in `lib/structured-data.ts` (pure, tested)
+  via `components/json-ld.tsx` (`<` escaped): home = `WebSite` + `Person` ("Gvan" only,
+  Ivan's choice; `sameAs` YouTube + GitHub, from `siteIdentity` in `lib/site.ts`);
+  articles = `BlogPosting` (headline ≤ 110, cover + `/writing/<slug>/opengraph-image/card`,
+  tags as keywords; no `dateModified`: posts don't load `updated_at`). Home got a
+  visually hidden `<h1>` (the intro is styled prose). `site.description` shared by the
+  metadata and the structured data. Lighthouse (production build, headless Edge):
+  accessibility, best practices and SEO **100** on home, Writing, Projects, Music,
+  Privacy (phone and desktop); performance desktop 99, phone 81–88. The phone figure is
+  Lighthouse's slow-4G simulation (measured LCP ≈ 0.3 s, CLS 0): it's the three
+  preloaded font files (321 KB). **Open option for Ivan:** dropping Newsreader's `opsz`
+  axis would roughly halve the serif files but changes the headings' look (fonts are
+  "keep as is", so not done). Splitting the italic into a non-preloaded font doesn't
+  work: each `next/font` instance is its own family, so italics would be faked.
 - **Page transitions (2026-10-08):** React's `<ViewTransition default="page-fade">`
   around the page content in `app/layout.tsx` (one wrapper `<div>`); CSS in
   `globals.css`: content out 120 ms, in 200 ms after 60 ms; the root (header, footer,
@@ -584,10 +607,8 @@ Everything built so far, with file maps, decisions and how it was tested:
     localhost with the test users. **Right after 4.2 deploys:** check `/privacy` is live,
     paste the new Magic link + Confirm signup templates (written to work with the old and
     new code), then publish the Google app at once.
-- **What comes next:** Ivan's choice (2026-10-08), with Phase 6 paused: **replace the demo
-  content with his real content**, and the **polish phase** (Phase 8: RSS feed, sitemap +
-  robots.txt, link previews for every page, the YouTube section). Then 6 Newsletter
-  (resume at 6.3). The standing rules still apply:
+- **What comes next:** see "Next: Ivan's real content" at the top of "Start here". The
+  standing rules still apply:
   - **Plan first** for every phase and step; wait for Ivan's OK before building.
   - **Ivan runs the browser checklists** himself; give him a short checklist each step.
     Playwright only when he explicitly asks, and then localhost only (see "Browser

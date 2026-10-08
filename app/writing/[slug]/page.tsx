@@ -4,12 +4,14 @@ import { notFound } from "next/navigation";
 import { AboutItem } from "@/components/about-item";
 import { ArticleView } from "@/components/article-view";
 import { Comments } from "@/components/comments";
+import { JsonLd } from "@/components/json-ld";
 import { ARTICLE_END_ID, SignUpPrompt } from "@/components/sign-up-prompt";
 import { readingTime } from "@/lib/format";
 import { renderMarkdown } from "@/lib/markdown";
 import { getPostItem } from "@/lib/post-items";
 import { articleStaticParams, getPostBySlug, getPublishedPosts, type PostSummary } from "@/lib/posts";
-import { openGraphDefaults, site } from "@/lib/site";
+import { openGraphDefaults, site, siteIdentity } from "@/lib/site";
+import { articleJsonLd } from "@/lib/structured-data";
 
 // One article: a simple reading column, text-first (no cards), styled after
 // chester.how's blog: big serif title, a quiet italic date line, a short rule.
@@ -63,6 +65,7 @@ export default async function ArticlePage({ params }: PageProps<"/writing/[slug]
 
   return (
     <article className="mx-auto max-w-[42rem] pt-6 pb-8 sm:pt-10">
+      <JsonLd data={articleJsonLd(post, siteIdentity)} />
       <Link href="/writing" className="text-sm text-fg-muted no-underline hover:text-fg">
         ← writing.
       </Link>

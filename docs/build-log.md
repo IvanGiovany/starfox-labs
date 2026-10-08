@@ -1730,6 +1730,34 @@ was dropped the same day; removed from CLAUDE.md and the README.)
   plays on the arriving page; sign-in instant; reduced motion: nothing animates;
   consoles clean. Reruns: `empty-check` 24, `video-check` 15, `preview-check` 40.
 
+## Phase 8, step 6 — SEO pass (2026-10-08)
+Ivan's choices: "Gvan" only in the structured data; refresh the README at the end.
+- Audit (`seo-audit`, every page in the sitemap plus the 404, `/goodbye`, `/login`, after
+  hydration): titles and descriptions present and sensible (the `noindex` pages use the
+  site default); one `h1` everywhere **except home** (fixed: a visually hidden `<h1>`);
+  no skipped heading levels; every `<img>` has `alt` (decorative ones empty).
+- Structured data: `lib/structured-data.ts` (`homeJsonLd`: `WebSite` published by
+  `Person` "Gvan" with `sameAs`; `articleJsonLd`: `BlogPosting` with headline ≤ 110,
+  cover (without its `#WxH`) and the generated preview image, keywords, author and
+  publisher by `@id`; `jsonLdText` escapes `<`). `components/json-ld.tsx` renders it on
+  the server, as the Next.js guide recommends. `siteIdentity` and `site.description` in
+  `lib/site.ts`.
+- Lighthouse 13 (scratchpad, `chrome-launcher` with headless Edge, production build):
+  phone and desktop for home, Writing, Projects, Music, Privacy: accessibility, best
+  practices, SEO 100; performance desktop 99, phone 81–88 (simulated LCP 4–5 s against a
+  measured ≈ 0.3 s; CLS 0; TBT ≤ 60 ms). The 404 can't be measured (Lighthouse refuses
+  404 responses). Remaining flags, left as they are: the one render-blocking stylesheet,
+  framework JavaScript, the lazily loaded YouTube thumbnail and Shinx animation, and the
+  preloaded fonts (see CLAUDE.md, "SEO pass", for the `opsz` option).
+- README rewritten to describe everything built (sections, admin, accounts, comments,
+  two-factor, feeds, transitions, empty states, how security and caching work, testing,
+  project structure, commands, environment variables, roadmap).
+- Tested: tsx 3 groups (home graph, article fields incl. headline limit and cover URL,
+  a title with `</script>` can't close the tag). Build; JSON-LD present in home's HTML;
+  audit and Lighthouse as above. Gotchas: Git Bash rewrites `/…` arguments into Windows
+  paths (`MSYS_NO_PATHCONV=1`); Lighthouse 13 names its LCP audits
+  `lcp-breakdown-insight` / `lcp-discovery-insight`.
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:

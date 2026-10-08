@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     default: site.name,
     template: `%s · ${site.name}`,
   },
-  description: "Ivan's notes on software, projects, and music as Spektral.",
+  description: site.description,
   openGraph: openGraphDefaults,
   twitter: { card: "summary_large_image" },
 };

@@ -6,6 +6,8 @@ const artist = "Spektral";
 
 export const site = {
   name: "Starfox Labs",
+  /** The site in one line: the default description, and the structured data's. */
+  description: "Ivan's notes on software, projects, and music as Spektral.",
   author: "Ivan",
   /** The name Ivan goes by on the site (the home tab, the footer, his profile, /privacy). */
   handle: "Gvan",
@@ -46,3 +48,12 @@ export const openGraphDefaults = {
   locale: "en_AU",
   type: "website",
 } as const;
+
+/** Who and what the site is, for structured data (lib/structured-data.ts). */
+export const siteIdentity = {
+  url: site.url,
+  name: site.name,
+  description: site.description,
+  handle: site.handle,
+  sameAs: Object.values(site.links).filter(Boolean),
+};
