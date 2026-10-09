@@ -282,8 +282,9 @@ body::before {
 /*
  * Cards drop into place (chester's grids): each fades in from 10px above,
  * 0.15 s after the one before it (--card-index, set by the grid). They animate
- * whenever they appear: on page load, on a client navigation, or when "Load
- * more" adds cards. Pure CSS, so cards show even without JavaScript.
+ * whenever they appear: on page load, on a client navigation (once the page
+ * cross-fade is over, see below), or when "Load more" adds cards. Pure CSS, so
+ * cards show even without JavaScript.
  */
 @keyframes card-in {
   from {
@@ -295,6 +296,16 @@ body::before {
   animation: card-in 1224ms var(--spring-card) both;
   /* --card-offset: time already played, when a card takes over from an identical one (see writing-browser.tsx). */
   animation-delay: calc(var(--card-index, 0) * 150ms - var(--card-offset, 0ms));
+}
+/*
+ * Cards wait for the page cross-fade (0.3 s) to end before dropping in.
+ * Firefox (157) can't draw the incoming page while a card inside it is still
+ * sliding: the page blinks out for a frame or two, sometimes twice. Fading
+ * alone is fine; any movement (transform, translate, even top) triggers it.
+ * Edge is unaffected, but the wait is too short to notice, so it's for all.
+ */
+:root:active-view-transition .card-in {
+  animation-play-state: paused;
 }
 
 /* The header's tab bar drops in from 50px above when the site first loads. */

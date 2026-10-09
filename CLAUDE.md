@@ -398,7 +398,13 @@ Everything built so far, with file maps, decisions and how it was tested:
   (admin, settings, sign-in) switch instantly via `:root:has([data-instant-navigation])`;
   reduced motion turns every view-transition animation off (the `*` rule doesn't reach
   those pseudo-elements). Any new signed-in or form-heavy page should render
-  `<InstantNavigation />`.
+  `<InstantNavigation />`. **Firefox blink (fixed 2026-10-09, tested by Ivan in Firefox and Edge, pushed):** Firefox (157) blanks
+  the incoming page for a frame or two (sometimes blank → show → blank) when something
+  inside it *moves* during the cross-fade (the cards' drop-in; transform, translate or
+  even `top`; fading alone is fine; Edge is unaffected). Fix: `:root:active-view-transition
+  .card-in { animation-play-state: paused }`, so cards drop in once the 0.3 s cross-fade
+  ends. Any new entrance animation that moves content needs the same treatment; check it
+  in a *visible* Firefox window (headless screenshots don't show view transitions).
 - **YouTube on home (2026-10-08):** `site.youtubeChannelId` (`UCi1vz5yZr_iJe3aW9xX4OmA`,
   the channel behind @gvan1); `lib/youtube-feed.ts` (pure: `parseYouTubeFeed`, thumbnails)
   and `lib/youtube-loader.ts` (`getLatestVideos`: "use cache", hours, tag `youtube`;
