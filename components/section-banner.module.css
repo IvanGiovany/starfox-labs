@@ -46,8 +46,10 @@
   pointer-events: none;
 }
 .art {
-  /* The breathing split below measures the art's box (cqw / cqh). */
+  /* The breathing split below measures the art's box (cqw / cqh). Paint
+     containment keeps anything changing in here from invalidating the text. */
   container-type: size;
+  contain: paint;
 }
 .plate {
   position: absolute;
@@ -98,14 +100,19 @@
     color-mix(in srgb, var(--banner-highlight) 10%, var(--banner-shadow));
 }
 
-/* Energy traces: one SVG over the backdrop (cropped like the art), under the
-   character. Shown at every width. */
+/* Energy traces: SVGs over the backdrop (cropped like the art), under the
+   character. Shown at every width. A static underlay, then three dash phases
+   that cross-fade in turn (opacity only: run by the compositor, no repaints).
+   Without motion only the first phase shows, as a still. */
 .traces {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   overflow: hidden;
+}
+.traceLater {
+  opacity: 0;
 }
 
 /* Drawn accents, centred on their x / y. Placed for the wide layout; on
@@ -120,7 +127,8 @@
   overflow: visible;
 }
 .motif .waveWindow {
-  /* The wave slides inside this window. */
+  /* The wave's SVG slides inside this window. */
+  display: block;
   overflow: hidden;
   mask-image: linear-gradient(to right, transparent, black 20%, black 80%, transparent);
 }
@@ -427,10 +435,17 @@
     transform: translateY(calc(-1 * var(--breath) * (100cqh - var(--neck-y))));
   }
 }
-/* Trace dashes travel along their path, one dash + gap per loop. */
-@keyframes trace-flow {
-  to {
-    stroke-dashoffset: var(--repeat);
+/* One trace phase: fully shown at the start of its cycle, fading out over the
+   next third while the following phase fades in, hidden for the last third
+   but fading back in. Three phases a third apart always add up to one. */
+@keyframes trace-phase {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  33.333%,
+  66.667% {
+    opacity: 0;
   }
 }
 @keyframes float {
@@ -470,8 +485,9 @@
   .front {
     animation: drift-front 10s ease-in-out infinite;
   }
-  .trace {
-    animation: trace-flow var(--dur) linear infinite;
+  /* 1.5 s per cycle: the dashes advance a third of a repeat every 0.5 s. */
+  .tracePhase {
+    animation: trace-phase 1.5s linear calc(var(--phase-lag) * -1.5s) infinite;
   }
   .breathBody {
     animation: breathe-body 4.8s ease-in-out infinite;

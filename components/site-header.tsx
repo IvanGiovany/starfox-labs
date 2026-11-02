@@ -1,6 +1,9 @@
+import { getImageProps, type StaticImageData } from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
+import { BANNER_QUALITY, BANNER_SIZES, SECTION_BANNERS } from "@/lib/section-banners";
 import { site } from "@/lib/site";
+import { BannerPrefetch, type BannerPrefetchTarget } from "./banner-prefetch";
 import { AccountMenu } from "./account-menu";
 import { HeaderExtras } from "./header-extras";
 import { NavLink, TAB_CLASS } from "./nav-link";
@@ -64,6 +67,19 @@ export function SiteHeader() {
           <AccountMenu />
         </Suspense>
       </HeaderExtras>
+      <BannerPrefetch targets={BANNER_PREFETCH} />
     </header>
   );
 }
+
+// For each section page, the srcset its banner images will use (character
+// first), worked out once with the same props as <Image> in section-banner.tsx.
+const BANNER_PREFETCH: BannerPrefetchTarget[] = Object.entries(SECTION_BANNERS).map(([section, art]) => ({
+  href: `/${section}`,
+  images: [art.layers?.front ?? art.image, art.layers?.back]
+    .filter((src): src is StaticImageData => src !== undefined)
+    .map((src) => {
+      const { props } = getImageProps({ src, alt: "", fill: true, sizes: BANNER_SIZES, quality: BANNER_QUALITY });
+      return { srcSet: props.srcSet ?? "", sizes: props.sizes ?? BANNER_SIZES };
+    }),
+}));

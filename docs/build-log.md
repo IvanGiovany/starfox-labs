@@ -1809,6 +1809,34 @@ reviewed; Claude wrote the code.
   and its advancing breathing transforms and quality-95 images checked. Ivan approved
   the result and requested the push.
 
+## Banner performance follow-up (2026-11-02)
+Ivan reported choppy motion in Firefox while Chrome was smooth, and a character-loading
+delay when switching sections on the live site. Claude Code investigated and implemented
+the source fixes; Codex independently measured delivery/rendering, supplied transparent
+previews, and verified the result.
+- **Cause isolated:** at 1920 × 1000 and DPR 2 in headless Firefox, the original Games
+  banner produced 177 frames over 7 seconds (~25 FPS), median interval 33.34 ms and
+  p95 66.68 ms. Disabling only the SVG dash animation restored ~60 FPS, with breathing
+  and masks still enabled. The profiler showed repeated display-list rebuilding/painting.
+- **Rendering fix:** replace animated SVG `stroke-dashoffset` with three pre-drawn dash
+  phases cross-fading through opacity. Character breathing, approved images, motion amounts,
+  full-width layout and pause/reduced-motion protections remain. The Music wave's whole
+  SVG now moves inside its window. No Firefox-only reduction in character motion.
+- **Loading fix:** foreground high priority; backdrop normal priority. A small transparent
+  character preview appears in server HTML until the quality-95 image arrives. Header
+  intent prefetch uses the same responsive URLs, waits 120 ms for hover/focus (press starts
+  immediately), retains in-flight images, deduplicates requests and skips Data Saver/2G.
+  No preload of every banner. Preview data stays outside client bundles. Regenerate after
+  art changes with `node scripts/generate-banner-previews.mjs`.
+- **Measured result:** same Firefox workload produced 420 frames (~60 FPS), median
+  16.66 ms, p95 16.68 ms and no intervals over 33 ms. Full-paint duration in the sampled
+  native profile fell from ~1530 ms to ~74 ms. These are local test measurements, not a
+  guarantee for every Firefox version/GPU.
+- **Checks:** build/TypeScript, lint and diff checks passed; all 192 existing browser
+  checks and 31 loading/prefetch checks passed in Edge/Firefox. Loading tests hold full
+  images pending to verify all six previews, then verify replacement by full-quality art,
+  correct priorities, hover prefetch, reuse on navigation and Data Saver behavior.
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:
