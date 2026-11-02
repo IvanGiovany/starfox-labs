@@ -1885,6 +1885,29 @@ were kept unchanged.
   Cold loads or immediate clicks can still briefly use the sharper fallback while image
   data arrives; decoded-bitmap reuse depends on the browser cache.
 
+## Home: the illustrated lab (2026-11-02, art being judged by Ivan)
+Ivan's choice: a little illustrated "Gvan's lab" in the home intro (desk, code monitor, headphones, books,
+a beetle, a bird by the window), with a few quiet movements. Built with Codex: Codex drew the three
+transparent images (`assets/home-lab/lab.webp`, `bird.webp`, a 3-frame sprite looking left / front /
+right, and `plant.webp`) and measured where the moving parts sit; Claude wrote the code.
+- **Files:** `components/home-lab.tsx` + `home-lab.module.css`, `lib/home-lab.ts` (images + placements,
+  all in % of the lab image), the `Intro` in `app/page.tsx`.
+- **Layout:** inside the intro cell; the grid is unchanged. Desktop: the intro text is `4.4cqw` (was
+  `5.7cqw`) and the lab takes the space left below it at its own shape (container units), so it shrinks
+  rather than overlapping the text. Phones and tablets: below the text, full width up to 40rem.
+- **Motion:** code scrolling a line at a time with a blinking cursor, the bird glancing (sprite frames with
+  hard cuts), the plant's foliage swaying over a still pot (two clipped copies of the plant, a rotation).
+  Small transforms / opacity only. The pause button is the banners' (`SectionBannerMotion`, now keyed on
+  `[data-motion-scope]`, so one remembered choice pauses every scene); also paused off screen, in hidden
+  tabs and during page transitions; none with reduced motion.
+
+- **Verification:** production build, lint and `git diff --check` pass. Homepage checks cover
+  Edge and Firefox, both themes, seven viewport widths (360–1920 px), unchanged intro copy
+  and grid packing, loaded artwork, unobstructed links, shared pause, reduced motion and
+  offscreen pause (40 checks). All 192 existing section-banner regression checks pass.
+  Native Firefox 159 compositor captures confirm three distinct bird poses, moving foliage
+  above a still pot, and changing monitor code. Ivan reviewed and approved the local preview.
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:

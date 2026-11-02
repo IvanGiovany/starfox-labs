@@ -3,13 +3,15 @@
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import styles from "./section-banner.module.css";
 
-// The one interactive part of a section banner: a small pause / play button
-// (moving content needs a way to stop it, WCAG 2.2.2). The choice lives in
-// memory, so the button always works, and is saved in this browser when
-// storage allows, so every section remembers it. The motion also stops while
-// the banner is off screen or the tab is hidden. This only sets data
-// attributes on the banner; the CSS module pauses the animations. With
+// The one interactive part of an animated scene (the section banners, the
+// home page's lab): a small pause / play button (moving content needs a way to
+// stop it, WCAG 2.2.2). The choice lives in memory, so the button always works,
+// and is saved in this browser when storage allows, so every scene on the site
+// remembers it. The motion also stops while the scene is off screen or the tab
+// is hidden. This only sets data attributes on the nearest
+// [data-motion-scope] element; each scene's CSS pauses its animations. With
 // reduced motion there is no motion, and the CSS hides the button.
+const SCOPE = "[data-motion-scope]";
 
 const KEY = "banner-motion";
 
@@ -53,17 +55,17 @@ function subscribe(onChange: () => void) {
   };
 }
 
-export function SectionBannerMotion() {
+export function SectionBannerMotion({ className = styles.toggle }: { className?: string }) {
   const button = useRef<HTMLButtonElement>(null);
   // The server can't know the saved choice, so it renders "playing".
   const isPaused = useSyncExternalStore(subscribe, getPaused, () => false);
 
   useEffect(() => {
-    button.current?.closest("[data-section-banner]")?.toggleAttribute("data-paused", isPaused);
+    button.current?.closest(SCOPE)?.toggleAttribute("data-paused", isPaused);
   }, [isPaused]);
 
   useEffect(() => {
-    const banner = button.current?.closest<HTMLElement>("[data-section-banner]");
+    const banner = button.current?.closest<HTMLElement>(SCOPE);
     if (!banner) return;
     const observer = new IntersectionObserver(([entry]) => banner.toggleAttribute("data-offscreen", !entry.isIntersecting));
     observer.observe(banner);
@@ -84,7 +86,7 @@ export function SectionBannerMotion() {
       aria-pressed={isPaused}
       aria-label="Pause animation"
       title={isPaused ? "Play animation" : "Pause animation"}
-      className={styles.toggle}
+      className={className}
     >
       <svg viewBox="0 0 16 16" className="size-3.5" fill="currentColor" aria-hidden="true">
         {isPaused ? <path d="M5 3.5v9l7.5-4.5z" /> : <path d="M4.5 3h2.5v10H4.5zM9 3h2.5v10H9z" />}

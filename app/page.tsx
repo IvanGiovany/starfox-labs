@@ -6,6 +6,7 @@ import { BookCard } from "@/components/book-card";
 import { Card } from "@/components/card";
 import { spanClass } from "@/components/card-grid";
 import { GameCard } from "@/components/game-card";
+import { HomeLab } from "@/components/home-lab";
 import { HobbyCard } from "@/components/hobby-card";
 import { JsonLd } from "@/components/json-ld";
 import { ProjectCard } from "@/components/project-card";
@@ -142,14 +143,15 @@ function Intro({ className }: { className?: string }) {
   // Muted prose with the key words in full ink, like chester.how; the words
   // with pages link there. Sized like chester's intro (light serif, tight
   // leading, a blank line between paragraphs): 24 px on phones, 30 px from
-  // `sm`, and from `lg`, where it fills the grid's top-left 2 × 2 cells, a
-  // size relative to that box (cqw), so it fills it the same at every width.
+  // `sm`, and from `lg`, where it shares the grid's top-left 2 × 2 cells with
+  // the illustrated lab below it, a size relative to that box (cqw), so the
+  // two divide it the same way at every width.
   const ink = "text-fg";
   const link = "text-fg no-underline decoration-fg-muted/50 decoration-dotted underline-offset-4 hover:underline";
 
   return (
-    <section className={`@container ${className}`}>
-      <div className="p-4 font-serif text-2xl leading-tight font-light text-fg-muted sm:p-8 sm:text-3xl lg:text-[5.7cqw] [&>p+p]:mt-[1lh]">
+    <section className={`@container flex flex-col ${className}`}>
+      <div className="px-4 pt-4 font-serif text-2xl leading-tight font-light text-fg-muted sm:px-8 sm:pt-8 sm:text-3xl lg:text-[4.4cqw] [&>p+p]:mt-[1lh]">
         <p>
           Hey, I&apos;m <span className={ink}>Gvan</span> 👋&nbsp; Welcome to my <span className={ink}>lab</span> 🧪 I like{" "}
           <span className={ink}>creating things</span>, and I&apos;m currently helping to build{" "}
@@ -183,6 +185,7 @@ function Intro({ className }: { className?: string }) {
           too, though not as consistently as I&apos;d like, but I&apos;m working on getting better at that.
         </p>
       </div>
+      <HomeLab className="px-4 pb-4 sm:px-8 sm:pb-8" />
     </section>
   );
 }

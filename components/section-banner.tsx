@@ -86,7 +86,7 @@ export function SectionBanner({ section, art, title, children }: { section: Sect
   const preview = previewFor(section);
 
   return (
-    <header data-section-banner={section} data-layered={art.layers ? "" : undefined} className={styles.banner} style={style}>
+    <header data-section-banner={section} data-motion-scope data-layered={art.layers ? "" : undefined} className={styles.banner} style={style}>
       <div className={styles.art} aria-hidden="true">
         {art.layers ? (
           <>

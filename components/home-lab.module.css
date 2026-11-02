@@ -1,0 +1,224 @@
+/*
+ * The home page's lab (components/home-lab.tsx). Transparent art on the page
+ * colour, the same in both themes; the site's tokens are untouched. Positions
+ * are percentages of the lab image (the stage keeps its exact shape).
+ *
+ * Motion is small transforms and opacity only, nothing that repaints: the
+ * code steps up a whole line at a time, the bird swaps sprite frames with hard
+ * cuts, and the foliage sways with a rotation (which Firefox resamples instead
+ * of snapping to whole pixels).
+ */
+.lab {
+  position: relative;
+  width: 100%;
+  max-width: 40rem;
+  padding-top: 1rem;
+}
+.stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--lab-ratio);
+  pointer-events: none;
+}
+/* Desktop: the intro is a fixed 2 × 2 cell box. The lab takes the space left
+   under the text and the stage is as wide as fits in it, keeping its shape, so
+   it shrinks rather than ever overlapping the text. */
+@media (width >= 64rem) {
+  .lab {
+    flex: 1 1 0;
+    min-height: 0;
+    max-width: none;
+    container-type: size;
+    display: flex;
+    align-items: flex-end;
+  }
+  .stage {
+    width: min(100cqw, 100cqh * var(--lab-ratio));
+  }
+}
+
+.fill {
+  object-fit: contain;
+}
+
+/* ---- Monitor ------------------------------------------------------------ */
+
+/* The screen is about 2:1 (measured: 31.5% × 46.7% of the lab). Seven line
+   heights fill it: six for the scrolling code, the bottom one for the prompt. */
+.screen {
+  position: absolute;
+  overflow: hidden;
+  /* Line heights are a share of the screen's height. */
+  container-type: size;
+  --line: calc(100cqh / 7);
+}
+.codeWindow {
+  position: absolute;
+  inset: calc(var(--line) * 0.35) 0 var(--line) 0;
+  overflow: hidden;
+}
+.code {
+  display: flex;
+  flex-direction: column;
+  padding-inline: 8%;
+}
+.line {
+  display: flex;
+  align-items: center;
+  height: var(--line);
+  flex: none;
+}
+.bar {
+  height: 38%;
+  border-radius: 999px;
+  opacity: 0.85;
+}
+.bar[data-tone="0"] {
+  background: #e9dcc4;
+}
+.bar[data-tone="1"] {
+  background: #7fbfb6;
+}
+.bar[data-tone="2"] {
+  background: #d39ab4;
+}
+.bar[data-tone="3"] {
+  background: #e0b062;
+}
+.cursor {
+  position: absolute;
+  left: 8%;
+  bottom: calc(var(--line) * 0.25);
+  width: 3%;
+  height: calc(var(--line) * 0.5);
+  background: #e9dcc4;
+}
+
+/* ---- Plant: a still pot, swaying foliage ------------------------------- */
+
+.plant {
+  position: absolute;
+}
+.pot {
+  clip-path: inset(calc(var(--pivot-y) * 100%) 0 0 0);
+}
+/* Foliage reaches 3% below the split, over the pot, so no gap opens as it sways. */
+.foliage {
+  clip-path: inset(0 0 calc((1 - var(--pivot-y)) * 100% - 3%) 0);
+  transform-origin: calc(var(--pivot-x) * 100%) calc(var(--pivot-y) * 100%);
+}
+
+/* ---- Bird: one square window on a 3-frame sprite (left, front, right) ---- */
+
+.bird {
+  position: absolute;
+  overflow: hidden;
+}
+.sprite {
+  display: block;
+  width: 300%;
+  max-width: none;
+  height: 100%;
+  /* At rest (and with reduced motion): looking out, the middle frame. */
+  transform: translateX(-33.3333%);
+}
+
+/* ---- Pause button ------------------------------------------------------- */
+
+.toggle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 9999px;
+  color: var(--fg-muted);
+  background: color-mix(in srgb, var(--bg) 75%, transparent);
+  opacity: 0.8;
+  cursor: pointer;
+  transition: opacity 150ms ease, color 150ms ease;
+}
+.toggle:hover,
+.toggle:focus-visible {
+  opacity: 1;
+  color: var(--fg);
+}
+
+/* ---- Motion ------------------------------------------------------------- */
+
+/* Up a line at a time (steps), through the list once, then seamlessly again. */
+@keyframes code-scroll {
+  to {
+    transform: translateY(-50%);
+  }
+}
+@keyframes cursor-blink {
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes sway {
+  0%,
+  100% {
+    rotate: -1.6deg;
+  }
+  50% {
+    rotate: 1.6deg;
+  }
+}
+/* Looking out most of the time; now and then a glance left, later one right. */
+@keyframes glance {
+  0% {
+    transform: translateX(-33.3333%);
+  }
+  38% {
+    transform: translateX(0);
+  }
+  52% {
+    transform: translateX(-33.3333%);
+  }
+  72% {
+    transform: translateX(-66.6667%);
+  }
+  86%,
+  100% {
+    transform: translateX(-33.3333%);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .code {
+    animation: code-scroll calc(var(--lines) * 1.6s) steps(var(--lines)) infinite;
+  }
+  .cursor {
+    animation: cursor-blink 1.1s step-end infinite;
+  }
+  .foliage {
+    animation: sway 7s ease-in-out infinite;
+  }
+  .sprite {
+    animation: glance 9s step-end infinite;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toggle {
+    display: none;
+  }
+}
+
+/* Paused by the button, off screen, in a hidden tab, and during page
+   transitions (as the section banners: Firefox blanks the incoming page while
+   anything in it moves). */
+.lab:is([data-paused], [data-offscreen], [data-hidden]) .anim,
+:global(:root:active-view-transition) .anim {
+  animation-play-state: paused;
+}
+
+@media (forced-colors: active) {
+  .lab {
+    display: none;
+  }
+}
