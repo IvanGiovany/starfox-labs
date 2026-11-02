@@ -1837,6 +1837,34 @@ previews, and verified the result.
   images pending to verify all six previews, then verify replacement by full-quality art,
   correct priorities, hover prefetch, reuse on navigation and Data Saver behavior.
 
+## Firefox pixel stepping from Ivan's recording (2026-11-02)
+Ivan's 25-second recording, made after the preceding deployment, still showed character
+stepping and a briefly empty Reading banner. Smooth animation-timer measurements had
+not established smooth painted movement. Codex analyzed the recording and reproduced
+the remaining defect in installed Firefox 159; Claude implemented the source correction.
+- **Measured defect:** in the recording's Projects portrait, 95 of 127 tracked frame pairs
+  were almost stationary and 28 jumped about one pixel. A controlled WebRender framebuffer
+  readback reproduced it: CSS offsets 0 / 0.2 / 0.4 / 0.6 / 0.8 / 1px painted at
+  0 / 0 / 0 / 1 / 1 / 1px, despite the computed transforms retaining their fractions.
+- **Correction:** a constant 0.05-degree individual rotation on the foreground/background
+  wrappers, scoped to Firefox, prevents axis-aligned image snapping. Existing transform
+  animations cannot override it. Chromium's rotation remains `none`; no artwork, heading,
+  motion amount or pause behavior was changed.
+- **Paint verification:** the same Firefox 159 compositor readback now measures horizontal
+  offsets 0 / .203 / .405 / .604 / .803 / .999px, matching the intended fractions. The
+  breathing head's vertical offsets were also checked (.199 / .385 / .579 / .785 / .999px).
+  Readback used an isolated browser profile with `remote.screenshot.use_readback=true`;
+  the user's profile/settings were untouched. Its physical window exceeded the viewport
+  to avoid reading outside the compositor's framebuffer.
+- **Loading:** `components/banner-character.tsx` renders a real transparent preview image
+  beneath each high-resolution copy. It remains visible until the full image has loaded
+  and decoded, then hides without a fade. This replaces the previous CSS background on
+  a pending image. Native Firefox readback confirmed the character stays visible with
+  high-resolution requests blocked, including navigation into Reading during a page fade.
+- **Checks:** build/TypeScript, lint, diff checks, 192 browser checks and 31 loading checks
+  passed. The separate frame-interval performance guard stayed near 60 FPS; fractional
+  painted motion, not that timer rate, is the evidence for this correction.
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:

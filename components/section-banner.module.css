@@ -88,6 +88,37 @@
   object-fit: cover;
   object-position: var(--banner-focal);
 }
+/* The character's tiny preview (components/banner-character.tsx): a real <img>
+   under the full image, cropped the same way, hidden (no fade) once the full
+   image has loaded and decoded. */
+.preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.banner[data-character-ready] .preview {
+  visibility: hidden;
+}
+
+/*
+ * Firefox only: WebRender snaps images to whole device pixels while their
+ * transform is a plain move / scale, so the slowly drifting and breathing
+ * character visibly stepped 1 px at a time (measured in Ivan's recording;
+ * Mozilla bug 739176). A tiny constant rotation makes the transform
+ * non-axis-aligned, so the layers are resampled at sub-pixel positions instead.
+ * 0.05° is invisible (±0.8 px at the far ends of a 1920 px banner; the
+ * backdrop's 2.5% overscan covers its edges) but clear of WebRender's
+ * "nearly zero" threshold. It's the separate `rotate` property, so the
+ * transform keyframes never override it, and it's the same in the still
+ * (reduced-motion) composition. Chrome is unaffected and keeps its rendering.
+ */
+@supports (-moz-appearance: none) {
+  .back,
+  .front {
+    rotate: 0.05deg;
+  }
+}
 
 /* Flat ink planes in the art's colours, used only when a card has no painted backdrop. */
 .inkPlanes {

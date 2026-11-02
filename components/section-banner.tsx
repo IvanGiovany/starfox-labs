@@ -7,6 +7,7 @@ import type { CSSProperties, ReactNode } from "react";
 import CHARACTER_PREVIEWS from "@/lib/section-banner-previews.json";
 import { BANNER_QUALITY, BANNER_SIZES, type BannerAccent, type BannerTrace, type SectionBannerArt } from "@/lib/section-banners";
 import type { SectionKey } from "@/lib/section-meta";
+import { BannerCharacter } from "./banner-character";
 import { SectionBannerMotion } from "./section-banner-motion";
 import styles from "./section-banner.module.css";
 
@@ -79,8 +80,9 @@ export function SectionBanner({ section, art, title, children }: { section: Sect
     "--breath": art.breath.amount,
   } as CSSProperties;
   const accents = art.accents.map((accent, i) => <Accent key={i} {...accent} />);
-  // Shown in the character's place until the full image arrives (Next removes
-  // it on load). Next's automatic blur can't be used: it makes transparent art opaque.
+  // Shown in the character's place until the full image has loaded and decoded
+  // (components/banner-character.tsx). Next's automatic blur can't be used: it
+  // makes transparent art opaque.
   const preview = previewFor(section);
 
   return (
@@ -99,10 +101,10 @@ export function SectionBanner({ section, art, title, children }: { section: Sect
                 (The same file, so the browser downloads it once.) */}
             <div className={`${styles.plate} ${styles.front} ${styles.anim}`}>
               <div className={`${styles.breathBody} ${styles.anim}`}>
-                <ArtImage src={art.layers.front} placeholder={preview} priority="high" />
+                <BannerCharacter src={art.layers.front} preview={preview} sizes={BANNER_SIZES} quality={BANNER_QUALITY} />
               </div>
               <div className={`${styles.breathHead} ${styles.anim}`}>
-                <ArtImage src={art.layers.front} placeholder={preview} priority="high" />
+                <BannerCharacter src={art.layers.front} preview={preview} sizes={BANNER_SIZES} quality={BANNER_QUALITY} />
               </div>
             </div>
           </>
