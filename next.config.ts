@@ -14,6 +14,9 @@ const nextConfig: NextConfig = {
     "/admin/writing/*": ["./WRITING.md"],
   },
   images: {
+    // 75 is the default for every image; 95 only for the section banners'
+    // flat-colour line art (components/section-banner.tsx), which bands and blurs at 75.
+    qualities: [75, 95],
     remotePatterns: [
       ...(supabaseUrl ? [new URL(`${supabaseUrl}/storage/v1/object/public/**`)] : []),
       // Thumbnails for the click-to-play YouTube player on articles.

@@ -26,7 +26,7 @@ export default async function MusicPage() {
 
   return (
     <>
-      <SectionHeader title="music">
+      <SectionHeader title="music" banner="music">
         {/* TODO(Ivan): rewrite in your own words. */}
         Songs I&apos;ve made in my spare time. Each one has a short preview and a few words about how it came
         together.

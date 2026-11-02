@@ -61,10 +61,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to content
         </a>
-        {/* One container for everything, so all pages line up. Card grids use
-            its full width; reading pages center a narrower column.
-            Width and padding come from --page-max / --page-pad in globals.css. */}
-        <div className="mx-auto flex min-h-dvh w-full max-w-[calc(var(--page-max)+2*var(--page-pad))] flex-col px-(--page-pad)">
+        {/* All pages line up on one centred column (--page-max wide, with
+            --page-pad gutters; see globals.css). Header, footer and the page
+            content (.page-shell) sit in it; only on the six section pages does
+            .page-shell become a full-width grid, so their banners run edge to edge. */}
+        <div className="flex min-h-dvh w-full flex-col">
           <SiteHeader />
           <main id="main" className="flex-1">
             {/* Page transitions: on navigation only the page content cross-fades
@@ -73,10 +74,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 (they carry data-instant-navigation). One wrapper element, so the
                 content fades as one piece. */}
             <ViewTransition default="page-fade">
-              <div>{children}</div>
+              <div className="page-shell">{children}</div>
             </ViewTransition>
           </main>
-          <SiteFooter />
+          <div className="page-column">
+            <SiteFooter />
+          </div>
         </div>
       </body>
     </html>

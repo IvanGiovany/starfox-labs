@@ -27,7 +27,7 @@ export default async function HobbiesPage() {
 
   return (
     <>
-      <SectionHeader title="hobbies">
+      <SectionHeader title="hobbies" banner="hobbies">
         {/* TODO(Ivan): rewrite in your own words. */}
         What I get up to when I&apos;m not at the keyboard, and the things I&apos;m learning right now. Some
         stick, some don&apos;t, and that&apos;s half the fun.

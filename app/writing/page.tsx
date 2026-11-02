@@ -22,7 +22,7 @@ export default async function WritingPage() {
 
   return (
     <>
-      <SectionHeader title="writing">
+      <SectionHeader title="writing" banner="writing">
         {/* TODO(Ivan): rewrite in your own words. */}
         Notes on the software I&apos;m building and learning, written as I go. Mostly Next.js,
         TypeScript and databases, with the occasional detour into music.

@@ -63,6 +63,44 @@
   }
 }
 
+/*
+ * The page column: centred, --page-max wide, --page-pad gutters. Header and
+ * footer use .page-column. Page content uses .page-shell, the same padded
+ * block column, so ordinary pages flow exactly as before (block margins
+ * collapse as usual). Only a page with a section banner switches its shell to
+ * a full-width grid with that column in the middle: every child goes in the
+ * column, and the banner ([data-section-banner]) spans the whole width. No
+ * 100vw in this layout, so the scrollbar never causes sideways scrolling. In
+ * the base layer, so utilities on a page's own elements still win.
+ */
+@layer base {
+  .page-column,
+  .page-shell {
+    width: 100%;
+    max-width: calc(var(--page-max) + 2 * var(--page-pad));
+    margin-inline: auto;
+    padding-inline: var(--page-pad);
+  }
+  .page-shell:has(> [data-section-banner]) {
+    display: grid;
+    max-width: none;
+    padding-inline: 0;
+    grid-template-columns:
+      [full-start] minmax(var(--page-pad), 1fr)
+      [content-start] minmax(0, var(--page-max))
+      [content-end] minmax(var(--page-pad), 1fr)
+      [full-end];
+  }
+  .page-shell:has(> [data-section-banner]) > * {
+    grid-column: content;
+    /* Like a block child: never wider than the column because of long content. */
+    min-width: 0;
+  }
+  .page-shell:has(> [data-section-banner]) > [data-section-banner] {
+    grid-column: full;
+  }
+}
+
 :root[data-theme="light"] {
   color-scheme: light;
 }

@@ -19,7 +19,7 @@ export function SiteHeader() {
   ].filter((link) => link.href);
 
   return (
-    <header className="pointer-events-none sticky top-0 z-20 flex items-center justify-between gap-3 py-4 text-sm">
+    <header className="page-column pointer-events-none sticky top-0 z-20 flex items-center justify-between gap-3 py-4 text-sm">
       <TabBar>
         {/*
           NavLink reads the URL to highlight the current tab. On pages whose

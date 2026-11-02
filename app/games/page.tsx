@@ -27,7 +27,7 @@ export default async function GamesPage() {
 
   return (
     <>
-      <SectionHeader title="games">
+      <SectionHeader title="games" banner="games">
         {/* TODO(Ivan): rewrite in your own words. */}
         What I&apos;m playing, what I&apos;ve finished and what I gave up on, all in my own screenshots. Every
         card opens my review of the game.

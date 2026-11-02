@@ -1769,6 +1769,46 @@ back gives the original pixels exactly), linked as `sizes="192x192"`; `favicon.i
 (16 / 32 / 48) and the 180 × 180 Apple icon stay. To refresh Google sooner: Search
 Console → URL inspection → `https://starfoxlabs.org/` → Request indexing.
 
+## Section banners (2026-11-02, approved by Ivan)
+Ivan explicitly requested animated, full-width banners behind the title and intro of the
+six section pages: Jujutsu Kaisen characters (Toji · Projects, Nanami · Writing, Sukuna ·
+Reading, Gojo · Music, Yuta and cursed Rika · Games, Mahito · Hobbies) in a Marvel Rivals
+nameplate style, plus title lettering matched to each character. This replaces "no hero
+banners" for those six pages only. Built with Codex: Codex made the artwork (assets) and
+reviewed; Claude wrote the code.
+- **Files:** `components/section-banner.tsx` (server), `section-banner-motion.tsx` (client:
+  the pause button), `section-banner.module.css`, `lib/section-banners.ts` (a required
+  entry per section: images, focal point, name-plate width, palette, accents),
+  `components/section-header.tsx` (`banner` prop; without it the plain header is
+  unchanged), the six pages (`banner="<section>"`), `assets/section-banners/` (a
+  transparent `<section>.webp` and an opaque `<section>-back.webp` per section, 2172 × 724).
+- **Full width:** `app/layout.tsx` no longer wraps everything in one padded container.
+  Header and footer use `.page-column`; page content goes in `.page-shell`, the same
+  padded block column, so ordinary pages flow exactly as before. Only
+  `.page-shell:has(> [data-section-banner])` becomes a full-width grid with the 1460 px
+  column in the middle: every child sits in that column, and the banner spans the full
+  width. No `100vw`. (A grid on every page was tried first: grid children don't collapse
+  margins, which moved `/privacy`'s content by 57 px.)
+- **Readability:** the text sits on a name plate of the art's shadow colour at 86%, solid
+  under the whole text block, with the slant and accent stripe outside it. Below 1024 px
+  the art is a band across the top and the plate sits under it.
+- **Motion:** CSS only. Each character has a 4.8-second breathing cycle: a masked body
+  copy swells 2–2.4%, while an unscaled head copy rises with the shoulders. The same
+  foreground file is downloaded once. Character float, backdrop pan, three flowing
+  section-specific energy/ink/wave/vine traces, and small drawn accents move separately.
+  The traces also show on phones. Paused by the button (remembered per browser, works without storage),
+  when off screen, in a hidden tab, and during page transitions (Firefox blink, see
+  "Page transitions"). None at all with reduced motion.
+- **Sharpness:** Games and Hobbies foregrounds refined with ImageGen and stored as
+  lossless WebP at native 2172 × 724. Banner images use quality 95, with responsive
+  sizes based on their painted width before cropping. Other site images keep quality 75.
+- **Verification:** production build (including TypeScript), ESLint and diff checks
+  passed. 192 Edge/Firefox checks passed across all six pages, both themes and five
+  widths, including actual breathing transforms, unscaled heads, masks, energy flow,
+  pause, reduced motion and section navigation. The actual in-app preview was reloaded
+  and its advancing breathing transforms and quality-95 images checked. Ivan approved
+  the result and requested the push.
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:

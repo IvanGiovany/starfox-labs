@@ -1,0 +1,528 @@
+/*
+ * Section banners (components/section-banner.tsx). Loaded only on the six
+ * section pages. Colours come from the art (--banner-shadow / -bg / -accent /
+ * -highlight, set per section); the text colours are scoped here, so the
+ * site's own tokens are untouched.
+ *
+ * The banner spans the full window width (.page-shell in globals.css). Its
+ * text starts on the page column's left edge: --gutter is the same width as
+ * the grid's side track. Percentages in it resolve against the banner, so
+ * --gutter is only used on the banner's direct children and pseudo-elements.
+ *
+ * Contrast: the text sits on a name plate of the art's shadow colour at 86%,
+ * the same strength under every part of the text block (the plate's slant and
+ * accent stripe lie outside the block). Even if the art under it were pure
+ * white, the cream title and the muted intro stay above 4.5:1.
+ */
+.banner {
+  --gutter: max(var(--page-pad), calc((100% - var(--page-max)) / 2));
+  --pad: 1.25rem;
+  --slant: clamp(2.5rem, 5vw, 5.5rem);
+  /* Below 1024 px: the height of the art band across the top (3:1 on tablets). */
+  --band: clamp(15rem, 33.333vw, 22rem);
+  --scrim: color-mix(in srgb, var(--banner-shadow) 86%, transparent);
+  --banner-fg: #f4ece0;
+  --banner-muted: #d8cdbd;
+
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  overflow: hidden;
+  /* Edge to edge, so no outer corners; a soft shadow seats it on the paper in light mode. */
+  margin-block: 0.25rem 2rem;
+  background: var(--banner-bg);
+  color: var(--banner-fg);
+  box-shadow: 0 18px 36px -30px light-dark(rgb(60 40 20 / 0.5), transparent);
+}
+
+/* ---- The art ------------------------------------------------------------ */
+
+.art {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 0;
+  height: var(--band);
+  overflow: hidden;
+  pointer-events: none;
+}
+.art {
+  /* The breathing split below measures the art's box (cqw / cqh). */
+  container-type: size;
+}
+.plate {
+  position: absolute;
+  inset: 0;
+  transform-origin: var(--banner-focal);
+}
+
+/*
+ * Breathing: the character image twice, split at the neck. Positions in the
+ * image (--neck, --body-x, --fx/--fy: fractions) are turned into the art box's
+ * pixels through the same cover crop the image gets: painted size
+ * max(100cqw, 300cqh) × max(100cqw/3, 100cqh), shifted by the focal point.
+ * - Body copy: hidden above the neck (soft 1.5cqh ramp), swells from the bottom
+ *   of the box at the body's centre: up to `--breath` taller, a fifth of that wider.
+ * - Head copy: shown only above the line just under the neck, never scaled; it
+ *   moves up by exactly what the swell lifts the neck by, so the two copies
+ *   meet with no seam and faces keep their proportions. It sits on top, so the
+ *   overlap band is always fully opaque.
+ */
+.breathBody,
+.breathHead {
+  --ph: max(100cqw / 3, 100cqh);
+  --pw: max(100cqw, 300cqh);
+  --neck-y: calc(var(--neck) * var(--ph) - var(--fy) * (var(--ph) - 100cqh));
+  position: absolute;
+  inset: 0;
+}
+.breathBody {
+  transform-origin: calc(var(--body-x) * var(--pw) - var(--fx) * (var(--pw) - 100cqw)) 100%;
+  mask-image: linear-gradient(to bottom, transparent calc(var(--neck-y) - 1.5cqh), #000 var(--neck-y));
+}
+.breathHead {
+  mask-image: linear-gradient(to bottom, #000 calc(var(--neck-y) + 1.5cqh), transparent calc(var(--neck-y) + 1.5cqh + 1px));
+}
+.image {
+  object-fit: cover;
+  object-position: var(--banner-focal);
+}
+
+/* Flat ink planes in the art's colours, used only when a card has no painted backdrop. */
+.inkPlanes {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(112deg, transparent 0 58%, color-mix(in srgb, var(--banner-accent) 85%, var(--banner-shadow)) 58% 59.2%, transparent 59.2%),
+    linear-gradient(112deg, transparent 0 63%, color-mix(in srgb, var(--banner-highlight) 22%, var(--banner-shadow)) 63% 100%),
+    linear-gradient(68deg, transparent 0 74%, color-mix(in srgb, var(--banner-accent) 35%, var(--banner-shadow)) 74% 100%),
+    color-mix(in srgb, var(--banner-highlight) 10%, var(--banner-shadow));
+}
+
+/* Energy traces: one SVG over the backdrop (cropped like the art), under the
+   character. Shown at every width. */
+.traces {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Drawn accents, centred on their x / y. Placed for the wide layout; on
+   phones the band crops the art differently, so they're left out there. */
+.motif {
+  position: absolute;
+  display: none;
+  translate: -50% -50%;
+}
+.motif svg {
+  display: block;
+  overflow: visible;
+}
+.motif .waveWindow {
+  /* The wave slides inside this window. */
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, black 20%, black 80%, transparent);
+}
+@media (width >= 40rem) {
+  .motif {
+    display: block;
+  }
+}
+
+/* ---- The name plate ----------------------------------------------------- */
+
+/* Below 1024 px it starts under the art band, with a slanted top edge that
+   stays above the first line of text (text starts at --band − 2.5rem). */
+.banner::before {
+  content: "";
+  position: absolute;
+  inset: calc(var(--band) - 5rem) 0 0;
+  z-index: 1;
+  background: var(--scrim);
+  clip-path: polygon(0 2rem, 100% 0, 100% 100%, 0 100%);
+}
+/* A thin accent stripe along the slanted edge. */
+.banner::after {
+  content: "";
+  position: absolute;
+  inset: calc(var(--band) - 5rem - 7px) 0 auto;
+  z-index: 1;
+  height: calc(2rem + 4px);
+  background: var(--banner-accent);
+  clip-path: polygon(0 2rem, 100% 0, 100% 4px, 0 calc(2rem + 4px));
+}
+
+/* ---- The text ----------------------------------------------------------- */
+
+.content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding: calc(var(--band) - 2.5rem) var(--gutter) var(--pad);
+  /* Titles size themselves against the text column (cqi). */
+  container-type: inline-size;
+}
+.intro {
+  color: var(--banner-muted);
+}
+
+/* ---- Pause button ------------------------------------------------------- */
+
+.toggle {
+  position: absolute;
+  top: 0.5rem;
+  right: var(--gutter);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-right: -0.5rem;
+  border-radius: 9999px;
+  color: var(--banner-fg);
+  background: color-mix(in srgb, var(--banner-shadow) 60%, transparent);
+  opacity: 0.75;
+  cursor: pointer;
+  transition: opacity 150ms ease;
+}
+.toggle:hover,
+.toggle:focus-visible {
+  opacity: 1;
+}
+.toggle:focus-visible {
+  outline: 2px solid var(--banner-fg);
+  outline-offset: 2px;
+}
+
+/* ---- 1024 px and up: the art fills the banner, the plate on the left ---- */
+
+@media (width >= 40rem) {
+  .banner {
+    --pad: 2rem;
+    margin-block: 0.5rem 2.5rem;
+  }
+}
+@media (width >= 64rem) {
+  .banner {
+    --pad: 3rem;
+    min-height: clamp(22rem, 26vw, 30rem);
+  }
+  .art {
+    inset: 0;
+    height: auto;
+  }
+  .content {
+    /* A fixed share of the banner, so the plate never reaches the face. */
+    flex: none;
+    width: var(--plate-w);
+    padding: var(--pad) var(--pad) var(--pad) var(--gutter);
+  }
+  /* From the banner's left edge to the text block's right edge at the bottom,
+     and a slant further at the top: solid across the whole block. */
+  .banner::before {
+    inset: 0 auto 0 0;
+    width: calc(var(--plate-w) + var(--slant));
+    clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
+  }
+  .banner::after {
+    inset: 0 auto 0 calc(var(--plate-w) + 6px);
+    width: calc(var(--slant) + 4px);
+    height: auto;
+    clip-path: polygon(var(--slant) 0, calc(var(--slant) + 4px) 0, 4px 100%, 0 100%);
+  }
+  .toggle {
+    top: auto;
+    bottom: 0.75rem;
+  }
+}
+
+/* ---- Titles: one lettering per character -------------------------------- */
+
+/* Shared: live text, cream on the plate, sized to fit its column. Each section
+   sets its face and a cap (--cap, in cqi) worked out from how wide its word is
+   in that face. Decorative details are empty pseudo-elements (not read out). */
+.title {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0;
+  font-family: var(--font-newsreader), ui-serif, Georgia, serif;
+  font-size: min(clamp(3.5rem, 8vw, 7rem), var(--cap, 24cqi));
+  font-weight: 400;
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+  color: var(--banner-fg);
+  overflow-wrap: anywhere;
+}
+.title::after {
+  display: block;
+}
+
+/* Projects · Toji: rugged, heavy, leaning forward; a thick block underline. */
+.banner[data-section-banner="projects"] .title {
+  --cap: 16cqi;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+  transform: skewX(-8deg);
+  transform-origin: left bottom;
+  text-shadow: 0.05em 0.05em 0 color-mix(in srgb, var(--banner-accent) 45%, transparent);
+}
+.banner[data-section-banner="projects"] .stop {
+  color: var(--banner-accent);
+}
+.banner[data-section-banner="projects"] .title::after {
+  content: "";
+  width: 38%;
+  height: 0.09em;
+  margin-top: 0.14em;
+  background: var(--banner-accent);
+}
+
+/* Writing · Nanami: precise and composed; light geometric sans, a hairline
+   rule split at the 7:3 point. */
+.banner[data-section-banner="writing"] .title {
+  --cap: 26cqi;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 300;
+  letter-spacing: 0;
+  line-height: 1;
+}
+.banner[data-section-banner="writing"] .stop {
+  color: var(--banner-accent);
+}
+.banner[data-section-banner="writing"] .title::after {
+  content: "";
+  width: 100%;
+  height: 2px;
+  margin-top: 0.16em;
+  background: linear-gradient(90deg, var(--banner-highlight) 0 70%, transparent 70% calc(70% + 6px), var(--banner-accent) calc(70% + 6px) 100%);
+}
+
+/* Reading · Sukuna: regal, sharp, inked capitals; crimson stop and two short
+   parallel marks beneath. */
+.banner[data-section-banner="reading"] .title {
+  --cap: 17cqi;
+  font-weight: 600;
+  font-variation-settings: "opsz" 72;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 0.95;
+}
+.banner[data-section-banner="reading"] .stop {
+  color: var(--banner-accent);
+}
+.banner[data-section-banner="reading"] .title::after {
+  content: "";
+  width: 1.3em;
+  height: 0.17em;
+  margin-top: 0.16em;
+  background: linear-gradient(var(--banner-accent) 0 35%, transparent 35% 65%, var(--banner-accent) 65%);
+  clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%);
+}
+
+/* Music · Gojo: playful, bold italic, tipped back a little; a hard cyan offset. */
+.banner[data-section-banner="music"] .title {
+  --cap: 28cqi;
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  transform: rotate(-4deg);
+  transform-origin: left bottom;
+  text-shadow: 0.05em 0.04em 0 var(--banner-accent);
+}
+.banner[data-section-banner="music"] .stop {
+  color: var(--banner-accent);
+}
+
+/* Games · Yuta & Rika: a heavy ivory game headline with a jade edge beneath. */
+.banner[data-section-banner="games"] .title {
+  --cap: 20cqi;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 0.95;
+  color: var(--banner-highlight);
+  text-shadow: 0 0.06em 0 var(--banner-accent);
+}
+
+/* Hobbies · Mahito: loose, light italic; a stitched seam beneath. */
+.banner[data-section-banner="hobbies"] .title {
+  --cap: 26cqi;
+  font-style: italic;
+  font-weight: 300;
+  letter-spacing: -0.01em;
+}
+.banner[data-section-banner="hobbies"] .title::after {
+  content: "";
+  width: 100%;
+  height: 0.14em;
+  margin-top: 0.08em;
+  background:
+    linear-gradient(var(--banner-accent), var(--banner-accent)) center / 100% 2px no-repeat,
+    repeating-linear-gradient(90deg, transparent 0 0.25em, var(--banner-accent) 0.25em calc(0.25em + 2px), transparent calc(0.25em + 2px) 0.5em);
+  opacity: 0.9;
+}
+
+/* ---- Motion: small, like an animated illustration ----------------------- */
+
+@keyframes drift {
+  to {
+    transform: scale(1.012) translate(-0.4%, -0.3%);
+  }
+}
+/* Layered art: two planes moving independently, enough to see within a few
+   seconds but slow and even (no zoom).
+   - Backdrop: held at a constant 105% (the 2.5% overscan on each side hides
+     its edges) and panned ±1.5% sideways, ±0.8% up and down, over 14 s.
+   - Character: floats on a looping path, 10 s, moving only right and down
+     (up to 1% and 1.6%), so no gap ever opens at the right or bottom edges
+     the figure is cropped by. */
+@keyframes drift-back {
+  from {
+    transform: scale(1.05) translate(1.5%, 0.8%);
+  }
+  to {
+    transform: scale(1.05) translate(-1.5%, -0.8%);
+  }
+}
+@keyframes drift-front {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  33% {
+    transform: translate(1%, 0.6%);
+  }
+  66% {
+    transform: translate(0.35%, 1.6%);
+  }
+}
+/* A breath: in over ~2.2 s, out over ~2.6 s. Head and body share the timing,
+   so they stay locked together. */
+@keyframes breathe-body {
+  0%,
+  100% {
+    transform: none;
+  }
+  45% {
+    transform: scale(calc(1 + var(--breath) * 0.2), calc(1 + var(--breath)));
+  }
+}
+@keyframes breathe-head {
+  0%,
+  100% {
+    transform: none;
+  }
+  45% {
+    transform: translateY(calc(-1 * var(--breath) * (100cqh - var(--neck-y))));
+  }
+}
+/* Trace dashes travel along their path, one dash + gap per loop. */
+@keyframes trace-flow {
+  to {
+    stroke-dashoffset: var(--repeat);
+  }
+}
+@keyframes float {
+  to {
+    transform: translate(var(--dx), var(--dy)) rotate(var(--rot));
+  }
+}
+@keyframes twinkle {
+  from {
+    opacity: 0.35;
+    transform: scale(0.85) rotate(0deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(45deg);
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+@keyframes wave {
+  to {
+    transform: translateX(-40px);
+  }
+}
+
+/* Only with motion allowed: otherwise the still composition is the design. */
+@media (prefers-reduced-motion: no-preference) {
+  .plate {
+    animation: drift 40s ease-in-out infinite alternate;
+  }
+  .back {
+    animation: drift-back 14s ease-in-out infinite alternate;
+  }
+  .front {
+    animation: drift-front 10s ease-in-out infinite;
+  }
+  .trace {
+    animation: trace-flow var(--dur) linear infinite;
+  }
+  .breathBody {
+    animation: breathe-body 4.8s ease-in-out infinite;
+  }
+  .breathHead {
+    animation: breathe-head 4.8s ease-in-out infinite;
+  }
+  .float {
+    animation: float var(--dur) ease-in-out var(--delay) infinite alternate;
+  }
+  .twinkle {
+    animation: twinkle var(--dur) ease-in-out var(--delay) infinite alternate;
+  }
+  .spin {
+    animation: spin var(--dur) linear infinite;
+  }
+  .wave {
+    /* --dur is set on its .motif and inherited. */
+    animation: wave var(--dur, 7s) linear infinite;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toggle {
+    display: none;
+  }
+}
+
+/* Paused: by the button, off screen, in a hidden tab, and during page
+   transitions (Firefox blanks the incoming page while anything in it moves;
+   see the .card-in rule in globals.css). */
+.banner:is([data-paused], [data-offscreen], [data-hidden]) .anim,
+:global(:root:active-view-transition) .anim {
+  animation-play-state: paused;
+}
+
+/* Windows high contrast: the text alone, in system colours. */
+@media (forced-colors: active) {
+  .art,
+  .banner::before,
+  .banner::after,
+  .title::after {
+    display: none;
+  }
+  .banner {
+    background: Canvas;
+    color: CanvasText;
+    border-block: 1px solid CanvasText;
+  }
+  .title,
+  .intro {
+    color: CanvasText;
+    text-shadow: none;
+  }
+}

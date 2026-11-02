@@ -26,7 +26,7 @@ export default async function ProjectsPage() {
 
   return (
     <>
-      <SectionHeader title="projects">
+      <SectionHeader title="projects" banner="projects">
         {/* TODO(Ivan): rewrite in your own words. */}
         I like building things. Here are a few I&apos;ve made, from browser games to small tools, mostly for
         fun and to learn something new.

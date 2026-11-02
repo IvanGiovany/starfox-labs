@@ -294,7 +294,12 @@ from the live schema (`npm run db:types`) — regenerate it after every migratio
     forms are text-first: typography, spacing and alignment do the work.
   - NO sparse layouts: every grid is dense, every page feels full of content.
   - NO hero banners or giant centered headings. (Section titles are huge but left-aligned
-    and sit in the normal flow, chester-style.)
+    and sit in the normal flow, chester-style.) **Exception (Ivan, 2026-11-02):** the six
+    section index pages (`/projects` … `/hobbies`) have full-width animated banners behind
+    their title and intro: Jujutsu Kaisen characters in a Marvel Rivals player-card style
+    (a painted backdrop + a transparent character with breathing and flowing effects), each with
+    its own title lettering. Ivan explicitly requested these characters and styles. Only
+    those six pages; every other page keeps the plain header. Build log: "Section banners".
   - Content aligns to one consistent container/grid: **max 1460px wide** (about 80% of a
     1920px screen, like chester.how), centered, with side padding of 16px / 24px / 40px
     (mobile / tablet / desktop). Set by `--page-max` and `--page-pad` in `globals.css`.

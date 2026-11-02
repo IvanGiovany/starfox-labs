@@ -27,7 +27,7 @@ export default async function ReadingPage() {
 
   return (
     <>
-      <SectionHeader title="reading">
+      <SectionHeader title="reading" banner="reading">
         {/* TODO(Ivan): rewrite in your own words. */}
         The books I&apos;m reading now, the ones I&apos;ve finished, and the pile waiting by the bed. When I
         write about a book, its card takes you there.
