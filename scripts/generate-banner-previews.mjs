@@ -8,8 +8,8 @@ const source = new URL("../assets/section-banners/", import.meta.url);
 const previews = {};
 for (const section of ["projects", "writing", "reading", "music", "games", "hobbies"]) {
   const buffer = await sharp(fileURLToPath(new URL(`${section}.webp`, source)))
-    .resize({ width: 324, withoutEnlargement: true })
-    .webp({ quality: 70, alphaQuality: 80, effort: 6 })
+    .resize({ width: 648, withoutEnlargement: true })
+    .webp({ quality: 84, alphaQuality: 95, effort: 6 })
     .toBuffer();
   previews[section] = `data:image/webp;base64,${buffer.toString("base64")}`;
 }

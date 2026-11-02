@@ -15,6 +15,12 @@ const started = new Set<string>();
 // In-flight images, referenced until they finish so they can't be garbage
 // collected (and their download cancelled) half-way.
 const inFlight = new Set<HTMLImageElement>();
+// The decoded characters of the most recent sections, kept referenced so the
+// browser keeps their decoded bitmaps (an unreferenced image's decoded pixels
+// can be discarded) until the page arrives and its own <img> reuses them.
+// Bounded: a decoded 2172 × 724 image is ~6 MB, so only the last two are kept.
+const decoded = new Map<string, HTMLImageElement>();
+const KEEP_DECODED = 2;
 
 // How long a pointer or keyboard focus has to rest on a link before it counts
 // as intent: sweeping across the tab bar, or tabbing past, fetches nothing.
@@ -27,9 +33,11 @@ type Connection = { saveData?: boolean; effectiveType?: string };
 // there, so the character is already downloaded when the page arrives. The
 // browser picks the same candidate from the same srcset / sizes the page will
 // use, so the page's own <img> reuses the finished (or still in-flight)
-// download. Once per section, never for the current page, and not with Data
-// Saver or on 2G. The character comes first; the backdrop (which has a
-// blurred placeholder) only after it.
+// download. The character is decoded ahead too, so its full-quality pixels are
+// ready to paint the moment the page shows. Once per section, never for the
+// current page, and not with Data Saver or on 2G. The character comes first;
+// the backdrop (which has a blurred placeholder) only after it. Nothing here
+// holds up the navigation.
 export function BannerPrefetch({ targets }: { targets: BannerPrefetchTarget[] }) {
   useEffect(() => {
     const connection = (navigator as Navigator & { connection?: Connection }).connection;
@@ -45,7 +53,8 @@ export function BannerPrefetch({ targets }: { targets: BannerPrefetchTarget[] })
       return targets.find((t) => t.href === path) ?? null;
     }
 
-    function fetchSection(target: BannerPrefetchTarget) {
+    // `urgent`: a press, so the navigation is already under way.
+    function fetchSection(target: BannerPrefetchTarget, urgent: boolean) {
       if (started.has(target.href)) return;
       started.add(target.href);
       const load = (index: number) => {
@@ -57,9 +66,27 @@ export function BannerPrefetch({ targets }: { targets: BannerPrefetchTarget[] })
           inFlight.delete(img);
           load(index + 1);
         };
-        img.onload = next;
+        img.onload = () => {
+          if (index > 0) return next();
+          // The character: also decode it ahead of arrival, so the page can
+          // swap its preview for the full image without waiting on decoding.
+          // Fire and forget; nothing waits on this but the backdrop's turn.
+          img.decode().then(
+            () => {
+              decoded.delete(target.href);
+              decoded.set(target.href, img);
+              for (const key of decoded.keys()) {
+                if (decoded.size <= KEEP_DECODED) break;
+                decoded.delete(key);
+              }
+              next();
+            },
+            next,
+          );
+        };
         img.onerror = next;
         img.decoding = "async";
+        if (index === 0 && urgent) img.fetchPriority = "high";
         img.sizes = source.sizes; // before srcset, so the right candidate is chosen
         img.srcset = source.srcSet;
       };
@@ -78,12 +105,12 @@ export function BannerPrefetch({ targets }: { targets: BannerPrefetchTarget[] })
       // the page's own HTML arriving.
       if (event.type === "touchstart" || event.type === "pointerdown") {
         cancelPending();
-        fetchSection(target);
+        fetchSection(target, true);
         return;
       }
       if (pending?.path === target.href) return;
       cancelPending();
-      pending = { path: target.href, timer: window.setTimeout(() => fetchSection(target), DWELL_MS) };
+      pending = { path: target.href, timer: window.setTimeout(() => fetchSection(target, false), DWELL_MS) };
     }
 
     function onLeave(event: Event) {

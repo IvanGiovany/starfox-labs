@@ -1865,6 +1865,26 @@ the remaining defect in installed Firefox 159; Claude implemented the source cor
   passed. The separate frame-interval performance guard stayed near 60 FPS; fractional
   painted motion, not that timer rate, is the evidence for this correction.
 
+## Loading-preview sharpness polish (2026-11-02)
+Ivan's next recording confirmed Firefox motion is good; only the short soft-image phase
+on section navigation remained. Animation CSS and the Firefox resampling correction
+were kept unchanged.
+- **Sharper fallback:** previews are now 648 × 216 instead of 324 × 108 (four times the
+  pixels), WebP quality 84 with alpha quality 95. Each is ~34–42 KB before base64 encoding.
+  This was chosen over larger 864/1080 px candidates to bound the inline page payload.
+  The generator and artwork README match the new settings; full images stay quality 95.
+- **Decode ahead:** after intent prefetch downloads a character, it now calls `decode()`
+  and retains the last two decoded Image objects (bounded to about 12 MB at native size).
+  A request started by a press is high priority. Navigation is never blocked, and the
+  existing Data Saver/2G guards and matching responsive URLs remain.
+- **Checks:** build/TypeScript, lint and diff checks passed. All 33 loading/prefetch checks
+  passed in Edge/Firefox, including all six sharper previews and decode before navigation.
+  Installed Firefox159 WebRender readback confirmed a warmed Reading navigation had
+  full-resolution images complete and the character marked ready at capture. The fractional
+  position readback still matched .2/.4/.6/.8/1 px; no motion regression was introduced.
+  Cold loads or immediate clicks can still briefly use the sharper fallback while image
+  data arrives; decoded-bitmap reuse depends on the browser cache.
+
 ## How things were tested
 Admin pages need Ivan's sign-in (signed-out requests get a 307 from `proxy.ts`), so
 admin code is tested in pieces, then by Ivan in the browser:
